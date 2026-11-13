@@ -10,8 +10,9 @@ Writes
                                                 icons the window shows
 
 The achievements are the WoW 3.x ones that the 1.12 world holds: levels, quest
-counts, the Loremaster line, exploring every zone, and the classic dungeons
-and raids. Two inputs make them fit this world rather than 3.x's:
+counts, the Loremaster line, exploring every zone, the classic dungeons and
+raids, plus a Feats set (world bosses, famous rares, iconic quests). Two
+inputs make them fit this world rather than 3.x's:
 
   * Exploration criteria are the client's WorldMapOverlay rows, as in 3.x: an
     overlay counts once any of its areas is explored. Read from the zhCN
@@ -59,6 +60,7 @@ CATEGORIES = [
     (4, 0, "Dungeons & Raids", "地下城与团队副本"),
     (41, 4, "Classic Dungeons", "经典地下城"),
     (42, 4, "Classic Raids", "经典团队副本"),
+    (5, 0, "Feats", "轶事"),
 ]
 
 CITIES = {1519, 1537, 1657, 1637, 1638, 1497}
@@ -322,6 +324,91 @@ def build(tmp):
          "完成所有经典地下城成就。", "INV_Misc_Bone_HumanSkull_01", dungeons, points=25)
     meta(1499, 42, "Classic Raider", "经典团队副本攻略者", "Complete the classic raid achievements.",
          "完成所有经典团队副本成就。", "INV_Misc_Bone_ElfSkull_01", raids, points=25)
+
+    # Feats: world bosses, famous rares, and a few iconic quests the 1.12
+    # world actually has. Kill progress is kept; quests are recounted at login.
+    feats_bosses = creature_names([448, 645, 5828, 6109, 7846, 12397, 14507, 14509, 14510,
+                                   14515, 14517, 14887, 14888, 14889, 14890])
+
+    def kill(id, en, zh, den, dzh, icon, entry, points=10, n=1, bar=False):
+        name_en, name_zh = feats_bosses[entry]
+        a = Ach(id, 5, en, zh, den, dzh, icon, points=points, bar=bar)
+        a.add(KILL_CREATURE, n, [entry], name_en, name_zh)
+        out.append(a)
+        return a
+
+    def quest(id, en, zh, den, dzh, icon, quest_id, points=10, faction=BOTH):
+        a = Ach(id, 5, en, zh, den, dzh, icon, points=points, faction=faction)
+        a.add(COMPLETE_QUEST, 1, [quest_id])
+        out.append(a)
+        return a
+
+    kill(1501, "Hogger", "霍格", "Defeat Hogger.", "击败霍格。",
+         "Ability_Hunter_Pet_Wolf", 448)
+    kill(1502, "Again?", "又是你？", "Defeat Hogger 10 times.", "击败霍格10次。",
+         "INV_Misc_MonsterClaw_03", 448, n=10, bar=True)
+    quest(1503, "Wanted: Hogger", "通缉：霍格", 'Complete the quest "Wanted: Hogger".',
+          "完成任务「通缉：霍格」。", "INV_Misc_Note_06", 176, faction=ALLIANCE)
+    kill(1504, "Cookie's Specialty", "厨子的拿手菜", "Defeat Cookie in the Deadmines.",
+         "在死亡矿井击败曲奇。", "INV_Misc_Food_16", 645)
+    kill(1505, "Humar the Pridelord", "狮王修玛", "Defeat Humar the Pridelord in the Barrens.",
+         "在贫瘠之地击败狮王修玛。", "Ability_Mount_JungleTiger", 5828)
+    kill(1506, "Teremus the Devourer", "吞噬者特雷姆斯",
+         "Defeat Teremus the Devourer in the Blasted Lands.",
+         "在诅咒之地击败吞噬者特雷姆斯。", "INV_Misc_Head_Dragon_01", 7846)
+    kazzak = kill(1507, "Lord Kazzak", "卡扎克", "Defeat Lord Kazzak.", "击败卡扎克。",
+                  "Spell_Shadow_SummonVoidWalker", 12397, points=25)
+    azuregos = kill(1508, "Azuregos", "艾索雷葛斯", "Defeat Azuregos.", "击败艾索雷葛斯。",
+                    "INV_Misc_Head_Dragon_Blue", 6109, points=25)
+    emeriss = kill(1509, "Emeriss", "艾莫莉丝", "Defeat Emeriss.", "击败艾莫莉丝。",
+                   "INV_Misc_Head_Dragon_Green", 14889, points=25)
+    lethon = kill(1510, "Lethon", "莱索恩", "Defeat Lethon.", "击败莱索恩。",
+                  "INV_Misc_Head_Dragon_Green", 14888, points=25)
+    ysondre = kill(1511, "Ysondre", "伊索德雷", "Defeat Ysondre.", "击败伊索德雷。",
+                   "INV_Misc_Head_Dragon_Green", 14887, points=25)
+    taerar = kill(1512, "Taerar", "泰拉尔", "Defeat Taerar.", "击败泰拉尔。",
+                  "INV_Misc_Head_Dragon_Green", 14890, points=25)
+    nightmare = meta(1513, 5, "Dragons of Nightmare", "梦魇巨龙",
+                     "Defeat the four Dragons of Nightmare.", "击败四条梦魇巨龙。",
+                     "Spell_Nature_ForceOfNature", [emeriss, lethon, ysondre, taerar], points=25)
+    meta(1514, 5, "World Bosses", "世界首领",
+         "Defeat Lord Kazzak, Azuregos, and the Dragons of Nightmare.",
+         "击败卡扎克、艾索雷葛斯和梦魇巨龙。",
+         "INV_Misc_Head_Dragon_Black", [kazzak, azuregos, nightmare], points=50)
+
+    # ZG high priests before Hakkar (Hakkar itself is the raid achievement).
+    zg = Ach(1515, 5, "High Priests of Zul'Gurub", "祖尔格拉布的高阶祭司",
+             "Defeat the five High Priests of Zul'Gurub.",
+             "击败祖尔格拉布的五位高阶祭司。", "INV_Misc_Head_Troll_01", points=25)
+    for e in (14517, 14507, 14510, 14515, 14509):
+        zg.add(KILL_CREATURE, 1, [e], feats_bosses[e][0], feats_bosses[e][1])
+    out.append(zg)
+
+    quest(1516, "Big Game Hunter", "王牌猎人",
+          'Complete the quest "Big Game Hunter".', "完成任务「王牌猎人」。",
+          "INV_Weapon_Rifle_06", 208)
+    quest(1517, "The Green Hills of Stranglethorn", "荆棘谷的青山",
+          'Complete the quest "The Green Hills of Stranglethorn".',
+          "完成任务「荆棘谷的青山」。", "INV_Misc_Book_06", 338)
+    # Alliance and Horde each have their own Onyxia attunement finale.
+    ony = Ach(1518, 5, "Drakefire Amulet", "龙火护符",
+              "Complete the Onyxia attunement quest.", "完成奥妮克希亚的钥匙任务。",
+              "INV_Jewelry_Talisman_11", required=1)
+    ony.add(COMPLETE_QUEST, 1, [6502], "Drakefire Amulet", "龙火护符")
+    ony.add(COMPLETE_QUEST, 1, [6602], "Blood of the Black Dragon Champion", "黑龙勇士之血")
+    out.append(ony)
+    quest(1519, "Rise, Thunderfury!", "觉醒吧，雷霆之怒！",
+          'Complete the quest "Rise, Thunderfury!".', "完成任务「觉醒吧，雷霆之怒！」。",
+          "INV_Sword_39", 7787, points=25)
+    quest(1520, "The Nightmare Manifests", "梦魇显现",
+          'Complete the quest "The Nightmare Manifests".', "完成任务「梦魇显现」。",
+          "Spell_Nature_Sleep", 8736, points=25)
+    quest(1521, "Victory for the Alliance", "联盟的胜利",
+          'Complete the quest "Victory for the Alliance".', "完成任务「联盟的胜利」。",
+          "INV_Misc_Head_Dragon_Black", 7495, faction=ALLIANCE)
+    quest(1522, "For All To See", "万人敬仰",
+          'Complete the quest "For All To See".', "完成任务「万人敬仰」。",
+          "INV_Misc_Head_Dragon_Black", 7491, faction=HORDE)
 
     for a in out:
         if not icon_exists(a.icon):
