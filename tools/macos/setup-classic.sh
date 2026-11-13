@@ -36,7 +36,7 @@ for f in mangosd.conf.dist realmd.conf.dist; do ln -sfn "$server/etc/$f" "$root/
 for d in maps vmaps mmaps 5875; do
     if [ ! -e "$root/server/data/$d" ]; then
         [ -d "$extracted/$d" ] || die "missing $extracted/$d (set HOA_EXTRACTED)"
-        ln -s "$extracted/$d" "$root/server/data/$d"
+        ln -sfn "$(cd "$extracted/$d" && pwd -P)" "$root/server/data/$d"
         echo "link server/data/$d"
     fi
 done

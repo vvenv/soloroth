@@ -73,16 +73,11 @@ first_login() {
 }
 
 [ -f "$login" ] || first_login
-if [ -f "$login" ]; then
-    while IFS='=' read -r key value; do
-        case "$key" in WOW_USER|WOW_PASS|WOW_CHAR) export "$key=$value" ;; esac
-    done < "$login"
-    # The client only auto-logs in as the account .probe-identity declares
-    # (the agents' test account) unless told the player chose this one.
-    export WOW_ALLOW_ACCOUNT=1
-fi
-
-export WOW_DATA="$root/Data"
-export WGPU_BACKEND="${WGPU_BACKEND:-metal}"
+# shellcheck source=bundle.sh
+source "$root/tools/macos/bundle.sh"
+export_client_env
+# Soloroth.app starts the server and the account itself, then execs the
+# client in this process so the Dock keeps a single Soloroth icon.
+[ "${1:-}" = "--no-client" ] && exit 0
 cd "$root"
-exec "$client" "$@"
+exec "$(resolve_client "$client")" "$@"

@@ -56,6 +56,11 @@ local PFUI = {
   -- Info panels: no guild or friends to count.
   { { "panel", "left", "left" }, "exp" },
   { { "panel", "left", "right" }, "bagspace" },
+  -- The right panel stays on screen without the right chat: the length of the
+  -- current or last fight where the frame rate was, beside the time and gold.
+  { { "panel", "right", "left" }, "combat" },
+  -- The experience bar beside the chat stays visible, not only after a kill.
+  { { "panel", "xp", "xp_always" }, "1" },
   -- One chat window (the message log); the right one stays off.
   { { "chat", "right", "enable" }, "0" },
   -- A travel journal: pfUI takes a screenshot on level up and on epic loot,
@@ -138,10 +143,30 @@ local function QuietChat()
   end
 end
 
+-- ------------------------------------------------------------- combat text --
+
+-- Floating combat text ships off. Turned on once per account, with dodges,
+-- parries and misses; after that the options window's switch is the player's.
+-- The saved interface variables have landed by VARIABLES_LOADED.
+local function EnableCombatText()
+  if type(Solo_State) ~= "table" then Solo_State = {} end
+  if Solo_State.combattext then return end
+  Solo_State.combattext = true
+  SHOW_COMBAT_TEXT = "1"
+  COMBAT_TEXT_SHOW_DODGE_PARRY_MISS = "1"
+  if BenillaCombatText_UpdateOrLoad then
+    BenillaCombatText_UpdateOrLoad()
+  else
+    UIParentLoadAddOn("Blizzard_CombatText")
+    if CombatText_UpdateDisplayedMessages then CombatText_UpdateDisplayedMessages() end
+  end
+end
+
 -- ------------------------------------------------------------------ events --
 
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("ADDON_LOADED")
+ev:RegisterEvent("VARIABLES_LOADED")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:SetScript("OnEvent", function()
   if event == "ADDON_LOADED" then
@@ -150,6 +175,8 @@ ev:SetScript("OnEvent", function()
     elseif arg1 == "pfQuest" then
       PreparePfQuest()
     end
+  elseif event == "VARIABLES_LOADED" then
+    EnableCombatText()
   elseif event == "PLAYER_ENTERING_WORLD" then
     QuietChat()
   end
