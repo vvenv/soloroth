@@ -1,0 +1,8 @@
+[submodule "server/core"]
+	path = server/core
+	url = https://github.com/vvenv/soloroth-server.git
+	branch = main
+[submodule "client"]
+	path = client
+	url = https://github.com/vvenv/soloroth-client.git
+	branch = main

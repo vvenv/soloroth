@@ -1,0 +1,10 @@
+## Interface: 11200
+## Title: GM Box
+## Notes: Teleports, items, dungeons with bot party members, and VMaNGOS GM commands, one click each.
+## Author: local
+## Version: 2.0.0 (dungeons tab with bot party members, minimap button, usable-item filter)
+## SavedVariables: GMBoxDB
+
+Data_Tele.lua
+Data_Items.lua
+GMBox.lua

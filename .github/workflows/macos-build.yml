@@ -1,0 +1,29 @@
+name: macOS build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'client'
+      - 'server/core'
+      - 'tools/macos/**'
+      - '.github/workflows/macos-build.yml'
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Install deps
+        run: |
+          brew install cmake openssl@3 mariadb pkg-config
+          curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Build server and client
+        run: tools/macos/build-classic.sh all

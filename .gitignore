@@ -1,0 +1,38 @@
+# Whitelist repo: everything is ignored unless explicitly un-ignored below.
+# Game data (Data/*.MPQ), builds, databases, logs and the client's own
+# settings (benilla-config/) never get tracked.
+/*
+
+# Repo metadata
+!/.gitignore
+!/.gitmodules
+!/README.md
+!/LICENSE
+!/THIRD-PARTY-NOTICES.md
+!/.github/
+
+# The addon set: this project's own (GMBox, !Solo) and the vetted third-party
+# ones, which tools/macos/install-addons.sh copies into benilla-config/AddOns.
+!/Interface/
+/Interface/*
+!/Interface/AddOns/
+
+# Server configuration and the macOS scripts.
+!/config/
+!/tools/
+/tools/*
+!/tools/macos/
+
+# Under /server only the VMaNGOS fork (a submodule) is tracked; the build,
+# MariaDB and the extracted map data are generated or third-party.
+!/server/
+/server/*
+!/server/core
+
+# The benilla client fork (a submodule).
+!/client
+
+__pycache__/
+.DS_Store
+.probe-identity
+client/.probe-identity
