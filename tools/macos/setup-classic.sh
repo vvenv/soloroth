@@ -111,14 +111,23 @@ case "$locale" in
     enUS) client_data="$wow_data/client/Data" ;;
     *) die "CLIENT_LOCALE is zhCN or enUS" ;;
 esac
+[ -d "$client_data" ] || die "missing $client_data (set WOW_DATA_ROOT)"
 if [ ! -e "$root/Data" ]; then
-    [ -d "$client_data" ] || die "missing $client_data (set WOW_DATA_ROOT)"
     mkdir "$root/Data"
     for f in "$client_data"/*.MPQ; do ln -s "$f" "$root/Data/"; done
     echo "Data/ links the MPQs of $client_data"
 else
     echo "keep Data/ (move it away to relink)"
 fi
+# Login-screen agreements and credits are loose under Data\, not archive
+# members: SimpleHTML opens tos.html / eula.html / Credits.html by bare
+# name, and Storm finds them in the Data\ walk. Link any that are missing.
+for f in tos.html eula.html Credits.html connection-help.html; do
+    if [ -f "$client_data/$f" ] && [ ! -e "$root/Data/$f" ]; then
+        ln -s "$client_data/$f" "$root/Data/$f"
+        echo "link Data/$f"
+    fi
+done
 
 # The client's own settings: the classic realm, and no script memory cap
 # (pfQuest and AtlasLoot need more than 1.12's 48 MB; 0 = no limit).
