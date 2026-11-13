@@ -1,6 +1,7 @@
 // Soloroth.app's launcher window. It starts the server (play.sh --no-client)
 // as soon as it opens, shows the art and an optional promo, and exits when
-// the player is done with it; the app's launch script then execs the client.
+// the player is done with it; the app's launch script then runs the client
+// and brings this window back when the game quits.
 //
 //   Launcher --root <checkout>                         the window
 //   Launcher --root <checkout> --snapshot out.png      render it to a PNG and exit
@@ -8,7 +9,8 @@
 //
 // Exit codes: 0 play (the server is up), 1 the player closed the window,
 // 2 skipped ("skip": true in the config), 64 bad arguments. The launch script
-// starts the game without the window on any code but 0, 1 and a signal.
+// starts the game without the window on any code but 0, 1 and a signal, and
+// only loops back here after a 0.
 //
 // Content comes from tools/macos/launcher/launcher.json; benilla-config/launcher.json
 // replaces any of its top-level keys. The promo shows only when it has a title or text.

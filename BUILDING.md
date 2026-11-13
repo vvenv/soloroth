@@ -31,7 +31,7 @@ tools/macos/make-app.sh                              # 生成 /Applications/Solo
 双击 Soloroth.app 先打开的那个窗口，源码在 `tools/macos/launcher/`：
 
 - `Launcher.swift` 是单文件的 AppKit 程序，`make-app.sh` 用 Xcode 命令行工具里的 `swiftc` 把它编进 `Soloroth.app/Contents/MacOS/Launcher`。编译失败时 app 照样能用，只是不弹窗口，直接进游戏。
-- 窗口一打开就在后台运行 `play.sh --no-client`（开服、外观补丁、登录界面补丁），底栏显示进度。点「开始游戏」时窗口以退出码 0 结束，app 的启动脚本接着启动客户端；关掉窗口或按 ⌘Q 是退出码 1，什么都不启动。
+- 窗口一打开就在后台运行 `play.sh --no-client`（开服、外观补丁、登录界面补丁），底栏显示进度。点「开始游戏」时窗口以退出码 0 结束，app 的启动脚本接着启动客户端；客户端退出后再打开启动器（`skip` / `SOLOROTH_SKIP_LAUNCHER=1` 时不弹窗，跟客户端一起结束）。关掉启动器窗口或按 ⌘Q 是退出码 1，离开 app。
 - 窗口上除了底栏不放文字。内容来自 `tools/macos/launcher/launcher.json`：`hero`（背景插画，按窗口铺满、保留右边缘，默认是同目录的 `hero.jpg`；不填就画图标的剑和环）、`links`（底栏链接）、`promo`（左下角推广位，`title` 和 `text` 都为空时不显示；`url` 是点击后打开的网址，`image` 是图片路径，相对仓库根目录）。`benilla-config/launcher.json` 里写的顶层键会整个替换掉仓库里的同名键。
 - 出一张截图，不开窗口：
 
