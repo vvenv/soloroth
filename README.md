@@ -7,6 +7,7 @@
 - **中文**：用简体中文 1.12 客户端的数据，界面、任务、NPC、物品都是中文。
 - **单人化**：没有聊天频道，聊天框只当消息记录用（系统、拾取、经验、任务和 NPC 说话）。
 - **插件**：pfUI、pfQuest、Atlas 三件套、Bagshui 等一套 1.12 插件，已经按单人旅行做任务配好，不弹首次设置向导。另有 GMBox 2.0（副本与机器人面板、传送、物品、GM 工具），界面和 pfUI 风格一致。
+- **成就**：3.x 成就里 1.12 世界有的部分（等级、任务、探索、地下城与团队副本，146 个），已有角色登录时按做过的内容补发。
 - **低等级任务不白做**：等级高出任务太多、经验打折时，少拿的那部分经验按 60 级的规则折成金币。
 - **经验 2 倍**，掉落和金钱保持 1 倍。在 `config/mangosd.overrides.conf` 里可以改。
 
@@ -125,6 +126,25 @@ tools/macos/play.sh                                  # 进游戏
 
 想改某一项，就改 `Solo.lua` 里对应的表，再运行 `tools/macos/install-addons.sh`。
 
+### 成就
+
+输入 `/ach`（或 `/cj`），或者点小地图上的缎带按钮打开成就窗口。获得成就时屏幕上方弹出提示，聊天框也有一行。
+
+- **综合**：10 到 60 级。
+- **任务**：完成任务总数；各区域的任务（要求该区域本阵营能接的任务的六成）；两块大陆的博学者和博学者。
+- **探索**：探索每个区域（世界地图上被遮住的每一块都算一项），探索东部王国、卡利姆多，世界探索者。
+- **地下城与团队副本**：每个经典副本的最终首领，和机器人一起打也算；经典地下城大师、经典团队副本攻略者。
+
+等级、任务和探索是登录时从角色身上重新数的，所以老角色一登录就能拿到已经做到的；首领击杀从开始有成就系统时算起。分阵营的成就（各区域任务、博学者）只显示本阵营的那一份。
+
+| 命令 | 作用 |
+|---|---|
+| `.achievement` | 已获得的成就数和点数 |
+| `.achievement add\|remove <id>` | GM：给选中的角色发放 / 收回一个成就（还满足条件的会马上回来） |
+| `.achievement reset` | GM：清空选中角色的成就，按角色现状重新数（首领击杀会清掉） |
+
+成就的定义由 `tools/achievements/gen-achievements.py` 从世界数据库和客户端数据生成，一次写出服务端的迁移和插件的 `Data.lua`，要改就改这个脚本。
+
 ### GMBox 的其他页
 
 - **传送**：服务器上的 997 个传送点，中文、英文、拼音都能搜。也可以用 `/gt 地名`。
@@ -137,11 +157,12 @@ tools/macos/play.sh                                  # 进游戏
 
 | 位置 | 内容 |
 |---|---|
-| `server/core` | 服务端（子模块 [soloroth-server](https://github.com/vvenv/soloroth-server)）：原版 vmangos 加上 macOS 修复和副本机器人 `src/game/PlayerBots/DungeonBotMgr.*` |
+| `server/core` | 服务端（子模块 [soloroth-server](https://github.com/vvenv/soloroth-server)）：原版 vmangos 加上 macOS 修复、副本机器人 `src/game/PlayerBots/DungeonBotMgr.*` 和成就 `src/game/AchievementMgr.*` |
 | `client` | 客户端（子模块 [soloroth-client](https://github.com/vvenv/soloroth-client)）：[benilla](https://github.com/samwhosung/benilla)，用 Rust 从零写的 1.12 客户端，加上少量修复 |
-| `Interface/AddOns` | 整套插件：GMBox、单人设置插件 `!Solo`（名字以 `!` 开头，保证比其他插件先加载），和第三方的 pfUI、pfQuest、Atlas 三件套、Bagshui 等（原样收录，各自的作者和许可见 THIRD-PARTY-NOTICES.md） |
+| `Interface/AddOns` | 整套插件：GMBox、成就窗口 `Achievements`、单人设置插件 `!Solo`（名字以 `!` 开头，保证比其他插件先加载），和第三方的 pfUI、pfQuest、Atlas 三件套、Bagshui 等（原样收录，各自的作者和许可见 THIRD-PARTY-NOTICES.md） |
 | `config/` | 服务端配置改动（`*.overrides.conf`）和 MariaDB 配置 |
 | `tools/macos/` | 构建、安装、启动脚本 |
+| `tools/achievements/` | 成就定义的生成脚本 |
 | `benilla-config/` | 客户端设置、插件（`AddOns/`）和插件存档（`saved/`），不进 git |
 | `Data/` | 指向客户端 MPQ 的链接，不进 git |
 | `server/run`、`server/data`、`server/logs` | 服务端运行目录、地图数据、日志，不进 git |

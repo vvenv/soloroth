@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="SOLOACHIEVEMENTS_TOGGLE" header="SOLOACHIEVEMENTS">
+    SoloAchievements_Toggle()
+  </Binding>
+</Bindings>

@@ -11,17 +11,18 @@
 !/THIRD-PARTY-NOTICES.md
 !/.github/
 
-# The addon set: this project's own (GMBox, !Solo) and the vetted third-party
+# The addon set: this project's own (GMBox, !Solo, Achievements) and the vetted third-party
 # ones, which tools/macos/install-addons.sh copies into benilla-config/AddOns.
 !/Interface/
 /Interface/*
 !/Interface/AddOns/
 
-# Server configuration and the macOS scripts.
+# Server configuration, the macOS scripts and the achievement generator.
 !/config/
 !/tools/
 /tools/*
 !/tools/macos/
+!/tools/achievements/
 
 # Under /server only the VMaNGOS fork (a submodule) is tracked; the build,
 # MariaDB and the extracted map data are generated or third-party.
