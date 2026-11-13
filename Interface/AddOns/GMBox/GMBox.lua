@@ -867,7 +867,7 @@ mm:SetFrameLevel(8)
 mm:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
 mm:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 mm:RegisterForDrag("LeftButton")
-local mmIcon = mm:CreateTexture(nil, "BACKGROUND")
+local mmIcon = mm:CreateTexture(nil, "ARTWORK")
 mmIcon:SetTexture("Interface\\Icons\\Ability_Warrior_BattleShout")
 mmIcon:SetWidth(20) mmIcon:SetHeight(20)
 mmIcon:SetPoint("TOPLEFT", mm, "TOPLEFT", 7, -5)
@@ -1103,14 +1103,8 @@ local function SkinWithPfUI()
     skin.rows[i]:GetHighlightTexture():SetVertexColor(c.r, c.g, c.b, .2)
   end
 
-  -- The minimap button gets pfUI's square look on its square minimap.
-  mmBorder:Hide()
-  mmIcon:ClearAllPoints()
-  mmIcon:SetPoint("TOPLEFT", mm, "TOPLEFT", 4, -4)
-  mmIcon:SetPoint("BOTTOMRIGHT", mm, "BOTTOMRIGHT", -4, 4)
-  mmIcon:SetTexCoord(.08, .92, .08, .92)
-  mm:SetWidth(24) mm:SetHeight(24)
-  api.CreateBackdrop(mm, nil, true)
+  -- The minimap button keeps its round look: pfUI collects it into the
+  -- button row under the minimap next to the other addons' round buttons.
 
   if f:IsVisible() then SetTab(db.tab) end
 end

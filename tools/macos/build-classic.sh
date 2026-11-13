@@ -20,6 +20,7 @@ jobs="$(sysctl -n hw.ncpu)"
 build_server() {
     local build="$root/release/build/macos/classic-build"
     local prefix="$root/release/build/macos/server-classic"
+    mkdir -p "$(dirname "$build")"
     echo "== server: configure"
     cmake -S "$root/server/core" -B "$build" \
         -DCMAKE_BUILD_TYPE=Release \
