@@ -9,6 +9,7 @@ BenillaOptions_zhCN.lua
 PfuiSkin.lua
 SkinKit.lua
 Visual.lua
+AutoLoot.lua
 SkinAtlas.lua
 SkinSuperMacro.lua
 SkinShaguNotify.lua
