@@ -24,3 +24,12 @@ if [ "${3:-}" = "gm" ]; then
 fi
 sleep 1
 tail -n +"$((before + 1))" "$out" | sed 's/\x1b\[[0-9;]*m//g' | grep -iE "account|gm|exist|error" || true
+
+# The first account becomes the one play.sh logs in with by itself.
+login="${BENILLA_HOME:-$root/benilla-config}/login.env"
+if [ ! -f "$login" ] && printf '%s\n%s\n' "$name" "$pass" | python3 "$root/tools/macos/check-login.py"; then
+    mkdir -p "$(dirname "$login")"
+    ( umask 077; printf 'WOW_USER=%s\nWOW_PASS=%s\n# WOW_CHAR=角色名  (进游戏时跳过角色选择)\n' \
+        "$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')" "$pass" > "$login" )
+    echo "play.sh logs in as $name by itself (saved in $login)"
+fi

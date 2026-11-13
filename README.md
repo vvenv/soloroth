@@ -51,8 +51,10 @@ tools/macos/build-classic.sh                         # 编译服务端和客户�
 tools/macos/setup-classic.sh                         # 数据库、配置、客户端数据、插件
 tools/macos/play.sh --server-only                    # 先把服务器开起来
 tools/macos/create-account.sh 账号 密码 gm           # 建账号；gm 表示给 GM 权限
-tools/macos/play.sh                                  # 进游戏
+tools/macos/make-app.sh                              # 生成 /Applications/Soloroth.app
 ```
+
+以后双击 **Soloroth.app**（或者在启动台、Spotlight 里搜 Soloroth）就能玩：服务器没开会先开，然后自动登录，直接到角色选择。
 
 各步骤做了什么：
 
@@ -65,20 +67,35 @@ tools/macos/play.sh                                  # 进游戏
    - 设置客户端（服务器名 Azeroth，不限插件脚本内存），安装插件。
 
    加 `--reset-db` 会清空重建这四个库，**角色也会被清掉**。
-3. **`create-account.sh`**：需要服务器在运行。加 `gm` 的账号才能用 GMBox 的传送、物品和工具按钮；机器人组队不需要 GM。
+3. **`create-account.sh`**：需要服务器在运行。加 `gm` 的账号才能用 GMBox 的传送、物品和工具按钮；机器人组队不需要 GM。建的第一个账号会存进 `benilla-config/login.env`，以后自动用它登录。
+4. **`make-app.sh`**：生成启动器 `Soloroth.app`，默认放进 `/Applications`，也可以指定目录：`make-app.sh ~/Desktop`。它直接运行这个仓库里的脚本和客户端，所以重新编译、拉代码之后不用重新生成；只有仓库换了位置才要再运行一次。放一张 1024×1024 的 `tools/macos/AppIcon.png` 再运行，就有自己的图标。
+
+### 自动登录
+
+`play.sh` 和 Soloroth.app 用 `benilla-config/login.env` 里的账号自动登录（这个文件不进 git，只有你自己能读）：
+
+```
+WOW_USER=PLAYER
+WOW_PASS=密码
+# WOW_CHAR=角色名  (进游戏时跳过角色选择)
+```
+
+- 没有这个文件时，第一次启动会弹窗问一次账号密码，跟服务器核对无误后保存；服务器上还没有账号的话，直接建一个 `PLAYER`（带 GM 权限）。在弹窗里点取消，就照常显示登录界面。
+- 去掉 `WOW_CHAR` 那行前面的 `#` 并填上角色名，启动后直接进入这个角色的游戏世界。
+- 改了密码或想换账号，删掉 `login.env`，下次启动会重新问。
 
 ## 日常使用
 
 | 做什么 | 命令 |
 |---|---|
-| 开始玩 | `tools/macos/play.sh`（服务器没开会先开） |
+| 开始玩 | 双击 Soloroth.app，或 `tools/macos/play.sh`（服务器没开会先开） |
 | 只开服务器 | `tools/macos/play.sh --server-only` |
 | 关服务器 | `tools/macos/stop-server.sh`（加 `--all` 连 MariaDB 一起关） |
 | 拉代码后重新编译 | `tools/macos/build-classic.sh`，再 `tools/macos/setup-classic.sh`（补数据库迁移） |
 | 改了服务端设置 | 改 `config/mangosd.overrides.conf`，然后运行 `tools/macos/apply-config.sh`，重启服务器 |
 | 更新插件 | 拉代码后运行 `tools/macos/install-addons.sh`，然后**完全重启**客户端（`/reload` 不会加载新插件） |
 
-关掉客户端后服务器会继续运行。服务器的输出在 `server/logs/mangosd.out`。
+关掉客户端后服务器会继续运行。服务器的输出在 `server/logs/mangosd.out`，Soloroth.app 的输出在 `server/logs/launcher.log`。
 
 ---
 
