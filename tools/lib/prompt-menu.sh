@@ -1,12 +1,13 @@
 #!/bin/bash
 # 交互式菜单：支持 ↑/↓ 箭头、j/k、空格/回车、数字键直跳
+# Esc 或 ← 取消（stdout 输出 __back__，方便回到上一级）
 # bash 3.2+ 即可（自动适配 read 超时）；无 tput 时回退数字输入菜单
 # Ctrl-C 中断会恢复终端（光标/颜色），不残留不可见光标
 # 用法:
 #   value=$(prompt_menu "标题" --default=1 \
 #     "production:生产环境 (/var/www/app, 端口 3700)" \
 #     "test:测试环境 (/var/www/app_test, 端口 3702)")
-# 输出选中项的 value（冒号前）到 stdout，菜单到 stderr
+# 输出选中项的 value（冒号前）到 stdout，菜单到 stderr；取消时输出 __back__
 
 prompt_menu() {
   local title="$1"
@@ -57,6 +58,7 @@ prompt_menu() {
   done
 
   local sel=$default_idx
+  local cancelled=0
 
   # 选择交互模式：tput 可用 → TUI；否则经典数字菜单
   # bash 3.2 不支持小数秒超时，方向键后续字节立即可达，整数秒不产生实际延迟
@@ -86,7 +88,7 @@ prompt_menu() {
     # 标题区
     echo "" >&2
     printf '%s%s%s\n' "$bold" "$title" "$sgr0" >&2
-    printf '  %s↑/↓ 或 j/k 移动 · 空格/回车确认 · 数字键直跳%s\n' "$cyan" "$sgr0" >&2
+    printf '  %s↑/↓ 或 j/k 移动 · 空格/回车确认 · Esc/← 返回 · 数字键直跳%s\n' "$cyan" "$sgr0" >&2
     echo "" >&2
 
     # 隐藏光标
@@ -129,14 +131,22 @@ prompt_menu() {
       IFS= read -rsn1 key </dev/tty || true
       case "$key" in
         $'\x1b')
-          # 方向键转义序列：ESC [ A/B（部分终端用 ESC O A/B）
+          # 光 Esc → 返回；方向键 ESC [ A/B/C/D（部分终端用 ESC O …）
           seq1=""; seq2=""
           read -rsn1 -t "$esc_t" seq1 </dev/tty || true
+          if [ -z "$seq1" ]; then
+            cancelled=1
+            break
+          fi
           read -rsn1 -t "$esc_t" seq2 </dev/tty || true
           if [ "$seq1" = "[" ] || [ "$seq1" = "O" ]; then
             case "$seq2" in
               A) sel=$((sel - 1)); [ "$sel" -lt 1 ] && sel=1 ;;
               B) sel=$((sel + 1)); [ "$sel" -gt "$count" ] && sel=$count ;;
+              D)
+                cancelled=1
+                break
+                ;;
             esac
           fi
           ;;
@@ -153,6 +163,10 @@ prompt_menu() {
           ;;
         k|K)
           sel=$((sel - 1)); [ "$sel" -lt 1 ] && sel=1
+          ;;
+        h|H|q|Q)
+          cancelled=1
+          break
           ;;
         [1-9])
           # 数字键直跳到对应项（仅当选项数允许）
@@ -186,20 +200,32 @@ prompt_menu() {
       echo "  ${i}) ${opt}${mark}" >&2
       i=$((i + 1))
     done
+    echo "  0) 返回上一级" >&2
 
     echo "" >&2
     local choice=""
-    read -r -p "请选择 [1-${count}]: " choice </dev/tty || true
+    read -r -p "请选择 [0-${count}]: " choice </dev/tty || true
     choice="${choice:-$default_idx}"
 
-    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "$count" ]; then
-      echo "无效选择: '${choice}', 使用默认项 ${default_idx}" >&2
-      sel="$default_idx"
-    else
-      sel="$choice"
-    fi
+    case "$choice" in
+      0|q|Q|b|B)
+        cancelled=1
+        ;;
+      *)
+        if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "$count" ]; then
+          echo "无效选择: '${choice}', 使用默认项 ${default_idx}" >&2
+          sel="$default_idx"
+        else
+          sel="$choice"
+        fi
+        ;;
+    esac
   fi
 
+  if [ "$cancelled" -eq 1 ]; then
+    echo "__back__"
+    return 0
+  fi
   echo "${options[$((sel - 1))]%%:*}"
 }
 

@@ -2,7 +2,8 @@
 # Soloroth 开发 / 日常入口。无参数进入交互菜单；具体做法仍在 tools/macos/ 里，这里只做转发。
 #
 # 用法:
-#   ./do.sh                         # 交互主菜单
+#   ./do.sh                         # 交互主菜单（会提示该不该编译）
+#   ./do.sh status                  # 只看改动提示（该编译 / 装插件 / 应用配置？）
 #   ./do.sh play                    # 开服务器（如未开）+ 客户端
 #   ./do.sh server                  # 只开服务器
 #   ./do.sh stop                    # 关服务器（交互可选连 MariaDB 一起关）
@@ -16,17 +17,27 @@
 #   ./do.sh visual                  # 外观：下载补丁或切换方案
 #   ./do.sh visual fetch|--hd|list|vanilla|hd|reforged-creatures|...
 #   ./do.sh config                  # 应用 config/mangosd.overrides.conf
+#
+# 菜单里 Esc / ← 返回上一级；主菜单 Esc 退出。
+# cargo / cmake 本身是增量的：提示说该编时再跑 build 即可，不必每次全编。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 MACOS="$ROOT/tools/macos"
+CLIENT_BIN="$ROOT/release/build/macos/client-target/release/benilla"
+SERVER_BIN="$ROOT/release/build/macos/server-classic/bin/mangosd"
 LOG_TAG=soloroth
 # shellcheck source=tools/lib/log.sh
 source "$ROOT/tools/lib/log.sh"
 # shellcheck source=tools/lib/prompt-menu.sh
 source "$ROOT/tools/lib/prompt-menu.sh"
+
+# 主菜单默认项 / build 子菜单默认边（由 refresh_hints 填写）
+HINT_MENU_DEFAULT=1
+HINT_BUILD_PART=all
+HINT_LINES=()
 
 usage() {
   sed -n '2,/^set -euo pipefail$/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'
@@ -70,6 +81,145 @@ run_macos() {
   bash "$MACOS/$script" "$@"
 }
 
+# prompt_menu 取消（Esc/←）时输出 __back__
+is_back() { [ "${1:-}" = "__back__" ]; }
+
+# ---------- 改动提示（什么时候该编译） ----------
+
+# 源树里是否有比 ref 更新的普通文件。$2… 是相对 $1 的 prune 名（目录名）。
+_tree_newer_than() {
+  local root="$1" ref="$2"
+  shift 2
+  if [ ! -e "$ref" ]; then
+    return 0
+  fi
+  local args=() d
+  for d in "$@"; do
+    args+=( -name "$d" -prune -o )
+  done
+  # 有任一命中就 stale
+  [ -n "$(find "$root" "${args[@]}" -type f ! -name '.DS_Store' -newer "$ref" -print -quit 2>/dev/null)" ]
+}
+
+_addons_stale() {
+  local src="$ROOT/Interface/AddOns"
+  local dst="${BENILLA_HOME:-$ROOT/benilla-config}/AddOns"
+  [ -d "$src" ] || return 1
+  if [ ! -d "$dst" ]; then
+    return 0
+  fi
+  local f rel
+  while IFS= read -r -d '' f; do
+    rel="${f#"$src"/}"
+    if [ ! -e "$dst/$rel" ] || [ "$f" -nt "$dst/$rel" ]; then
+      return 0
+    fi
+  done < <(find "$src" -type f ! -name '.DS_Store' -print0 2>/dev/null)
+  return 1
+}
+
+_config_stale() {
+  local o conf
+  for o in mangosd realmd; do
+    conf="$ROOT/server/run/$o.conf"
+    if [ -f "$ROOT/config/$o.overrides.conf" ]; then
+      if [ ! -f "$conf" ] || [ "$ROOT/config/$o.overrides.conf" -nt "$conf" ]; then
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+
+_glue_stale() {
+  local patch="$ROOT/Data/patch-S.MPQ"
+  [ -f "$patch" ] || return 1
+  _tree_newer_than "$ROOT/tools/glue-skin" "$patch" __pycache__
+}
+
+# 刷新 HINT_*。stdout 给人看的提示行；菜单默认项写进全局。
+refresh_hints() {
+  HINT_LINES=()
+  HINT_MENU_DEFAULT=1
+  HINT_BUILD_PART=all
+  local need_client=0 need_server=0 need_addons=0 need_config=0 need_glue=0
+  local need_first=0
+
+  if [ ! -x "$CLIENT_BIN" ] && [ ! -x "$SERVER_BIN" ]; then
+    need_first=1
+  else
+    if [ ! -x "$CLIENT_BIN" ] || _tree_newer_than "$ROOT/client" "$CLIENT_BIN" .git target; then
+      need_client=1
+    fi
+    if [ ! -x "$SERVER_BIN" ] || _tree_newer_than "$ROOT/server/core" "$SERVER_BIN" .git build 'cmake-build-*'; then
+      need_server=1
+    fi
+  fi
+  _addons_stale && need_addons=1
+  _config_stale && need_config=1
+  _glue_stale && need_glue=1
+
+  if [ "$need_first" -eq 1 ]; then
+    HINT_LINES+=("还没有编过 → 选「第一次安装」，或 ./do.sh first")
+    HINT_MENU_DEFAULT=4  # first
+    return
+  fi
+
+  if [ "$need_client" -eq 1 ] && [ "$need_server" -eq 1 ]; then
+    HINT_LINES+=("服务端和客户端源码都比二进制新 → ./do.sh build（cargo/cmake 增量）")
+    HINT_BUILD_PART=all
+    HINT_MENU_DEFAULT=5  # build
+  elif [ "$need_client" -eq 1 ]; then
+    HINT_LINES+=("客户端（client/）有改动 → ./do.sh build client（cargo 增量）")
+    HINT_BUILD_PART=client
+    HINT_MENU_DEFAULT=5
+  elif [ "$need_server" -eq 1 ]; then
+    HINT_LINES+=("服务端（server/core）有改动 → ./do.sh build server，再重启服务器")
+    HINT_BUILD_PART=server
+    HINT_MENU_DEFAULT=5
+  fi
+
+  if [ "$need_addons" -eq 1 ]; then
+    HINT_LINES+=("插件有改动 → ./do.sh addons，然后完全重启客户端（/reload 不够）")
+    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=9  # addons
+  fi
+  if [ "$need_config" -eq 1 ]; then
+    HINT_LINES+=("服务端 overrides 有改动 → ./do.sh config，再重启服务器")
+    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=11  # config
+  fi
+  if [ "$need_glue" -eq 1 ]; then
+    HINT_LINES+=("登录界面 glue-skin 有改动 → 再开一次客户端即可（play 会重打 patch-S）")
+  fi
+
+  if [ "${#HINT_LINES[@]}" -eq 0 ]; then
+    HINT_LINES+=("源码和当前二进制一致，开玩就行（改插件 / 配置 / 客户端 / 服务端才会提示）")
+  fi
+}
+
+print_hints() {
+  refresh_hints
+  local line
+  # 全部走 stderr，避免和后面的说明（或菜单）在重定向时乱序
+  echo "" >&2
+  for line in "${HINT_LINES[@]}"; do
+    case "$line" in
+      源码和当前二进制一致*) log_success "$line" >&2 ;;
+      *) log_warn "$line" ;;
+    esac
+  done
+}
+
+cmd_status() {
+  print_hints
+  echo "" >&2
+  echo "对照：" >&2
+  echo "  改 Interface/AddOns 或 !Solo     → addons + 重启客户端（不用编译）" >&2
+  echo "  改 client/（Rust）               → build client（增量）" >&2
+  echo "  改 server/core（C++）            → build server（增量）+ 重启服务器" >&2
+  echo "  改 config/*.overrides.conf       → config + 重启服务器" >&2
+  echo "  改 tools/glue-skin               → 直接再开客户端" >&2
+}
+
 # ---------- 子命令 ----------
 
 cmd_play() {
@@ -99,6 +249,9 @@ cmd_stop() {
     a="$(prompt_menu "关服务器" --default=1 \
       "server:只关 mangosd / realmd" \
       "all:连 MariaDB 一起关")"
+    if is_back "$a"; then
+      return 0
+    fi
     [ "$a" = "all" ] && all=1
   fi
 
@@ -122,14 +275,25 @@ cmd_build() {
   done
 
   if [ -z "$part" ] && [ -t 0 ]; then
-    part="$(prompt_menu "编译哪边" --default=1 \
+    refresh_hints
+    local def=1
+    case "$HINT_BUILD_PART" in
+      all) def=1 ;;
+      server) def=2 ;;
+      client) def=3 ;;
+    esac
+    part="$(prompt_menu "编译哪边（已编过的会增量）" --default="$def" \
       "all:服务端 + 客户端" \
       "server:只服务端" \
       "client:只客户端")"
+    if is_back "$part"; then
+      return 0
+    fi
   fi
+  part="${part:-$HINT_BUILD_PART}"
   part="${part:-all}"
 
-  log_info "编译 ${part}（第一次要一阵子）"
+  log_info "编译 ${part}（cargo/cmake 增量；第一次要一阵子）"
   run_macos build-classic.sh "$part"
   log_success "编译完成（${part}）"
 }
@@ -150,6 +314,9 @@ cmd_setup() {
     r="$(prompt_menu "数据库" --default=1 \
       "keep:保留已有库（安全重跑）" \
       "reset:清空重建（角色也会没）")"
+    if is_back "$r"; then
+      return 0
+    fi
     [ "$r" = "reset" ] && reset=1
   fi
 
@@ -183,6 +350,9 @@ cmd_account() {
       g="$(prompt_menu "GM 权限" --default=1 \
         "gm:给 GM（传送 / 物品 / GMBox 工具）" \
         "no:普通账号")"
+      if is_back "$g"; then
+        return 0
+      fi
       [ "$g" = "gm" ] && gm=gm
     fi
   fi
@@ -208,6 +378,9 @@ cmd_app() {
       "default:默认（/Applications 或 ~/Applications）" \
       "desktop:桌面" \
       "ask:指定目录")"
+    if is_back "$where"; then
+      return 0
+    fi
     case "$where" in
       desktop) dest="$HOME/Desktop" ;;
       ask)
@@ -246,16 +419,14 @@ cmd_visual() {
       "list:看已装方案" \
       "vanilla:切回原版模型" \
       "reforged:高清怪物" \
-      "full:高清合集" \
-      "quit:取消")"
+      "full:高清合集")"
+    if is_back "$action"; then
+      return 0
+    fi
   fi
   action="${action:-list}"
 
   case "$action" in
-    quit)
-      log_info "已取消"
-      return 0
-      ;;
     fetch)
       log_info "下载 Reforged 生物包"
       run_macos fetch-visual-patches.sh
@@ -280,7 +451,6 @@ cmd_visual() {
       log_success "已切高清合集；完全退出客户端再开才生效"
       ;;
     *)
-      # 透传给 apply-visual.sh（自定义 profile 名）
       run_macos apply-visual.sh "$action" "$@"
       ;;
   esac
@@ -316,27 +486,32 @@ cmd_first() {
 
 run_main_menu() {
   while true; do
+    print_hints
     local choice
-    choice="$(prompt_menu "Soloroth" --default=1 \
+    choice="$(prompt_menu "Soloroth" --default="$HINT_MENU_DEFAULT" \
       "play:开始玩" \
       "server:只开服务器" \
       "stop:关服务器" \
       "first:第一次安装" \
-      "build:编译" \
+      "build:编译（增量）" \
       "setup:配置（库 / 数据 / 插件）" \
       "account:建账号" \
       "app:生成 Soloroth.app" \
       "addons:更新插件" \
       "visual:外观补丁" \
       "config:应用服务端配置" \
+      "status:为什么要编译？（对照表）" \
       "quit:退出")"
     case "$choice" in
-      quit)
+      __back__|quit)
         exit 0
         ;;
-      play|server|stop|first|build|setup|account|app|addons|visual|config)
+      play|server|stop|first|build|setup|account|app|addons|visual|config|status)
         "cmd_$choice" || log_error "执行失败（${choice}）"
-        pause_menu
+        # status 只是看一眼，不必再按回车
+        if [ "$choice" != "status" ]; then
+          pause_menu
+        fi
         ;;
       *)
         log_die "未知命令: $choice"
@@ -349,12 +524,13 @@ CMD=""
 if [ $# -gt 0 ]; then
   case "$1" in
     -h|--help|help) usage 0 ;;
-    play|server|stop|first|build|setup|account|app|addons|visual|config)
+    play|server|stop|first|build|setup|account|app|addons|visual|config|status|hint|doctor)
       CMD="$1"
+      [ "$CMD" = "hint" ] || [ "$CMD" = "doctor" ] && CMD=status
       shift
       ;;
     -*)
-      log_die "请先给出子命令（play / first / build …），或直接运行 ./do.sh"
+      log_die "请先给出子命令（play / status / first / build …），或直接运行 ./do.sh"
       ;;
     *)
       echo "未知命令: $1" >&2

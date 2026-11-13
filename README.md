@@ -96,13 +96,14 @@ WOW_PASS=密码
 
 ## 日常使用
 
-根目录 `./do.sh` 是交互菜单（也可 `./do.sh play` 等子命令），对应下面这些脚本：
+根目录 `./do.sh` 是交互菜单（也可 `./do.sh play` 等子命令），对应下面这些脚本。菜单会根据源码和二进制的新旧提示该不该编译；不确定时看 `./do.sh status`。Esc / ← 返回上一级。cargo / cmake 本身是增量的，提示说要编时再跑即可。
 
 | 做什么 | 命令 |
 |---|---|
 | 开始玩 | 双击 Soloroth.app，或 `./do.sh play`（服务器没开会先开） |
 | 只开服务器 | `./do.sh server` |
 | 关服务器 | `./do.sh stop`（可选连 MariaDB 一起关） |
+| 该不该编译？ | `./do.sh status`（或菜单里的提示） |
 | 拉代码后重新编译 | `./do.sh build`，再 `./do.sh setup`（补数据库迁移） |
 | 改了服务端设置 | 改 `config/mangosd.overrides.conf`，然后 `./do.sh config`，重启服务器 |
 | 更新插件 | 拉代码后 `./do.sh addons`，然后**完全重启**客户端（`/reload` 不会加载新插件） |
