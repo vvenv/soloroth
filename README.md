@@ -196,6 +196,7 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B�
 - **pfQuest**：新角色跳过欢迎向导，世界地图显示刷怪点和任务图标，小地图显示刷怪点，打开导航箭头。
 - **ESC 菜单和「选项」窗口**：换成 pfUI 的样式；去掉客户端里还没有功能的「编辑模式」按钮和「插件」页，以及 SuperMacro 挂在菜单边上的「宏命令」按钮（它的编辑器用 `/supermacro` 打开）。界面文字是中文。
 - **其他窗口也换成 pfUI 的样式**（作为 pfUI 皮肤注册，在 pfUI 设置里可以单独关掉，插件源码不改）：Atlas 地图（AtlasLoot 面板贴在下方，AtlasQuest 贴在旁边）、AtlasLoot、SuperMacro 编辑器和图标选择、ShaguNotify 的提示条、脚本错误日志（`/errors`），以及这些插件的设置窗口。原版窗口由 pfUI 自己的皮肤负责；Bagshui 自带 pfUI 皮肤。
+- **中文界面**：简体中文客户端下，pfUI / pfQuest / Atlas 三件套、Bagshui、成就、GMBox、benilla 选项本身带中文；SuperMacro、ShaguNotify、ShaguKill 的界面和提示由 `!Solo/AddOns_zhCN.lua` 在加载后换成中文（第三方源码不改）。
 
 登录、角色选择和角色创建界面不归插件管，它们也是 pfUI 样式（见 [BUILDING.md](BUILDING.md)）。用 `WOW_STOCK_UI=1 ./do.sh play` 启动就会恢复原版界面。
 

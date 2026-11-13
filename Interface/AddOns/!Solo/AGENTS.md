@@ -2,7 +2,9 @@
 
 Loads first (`!` sorts before every other folder) and applies the single-player defaults
 (`Solo.lua`) and every look change to other addons. Third-party addon sources are never
-edited; anything they should do differently is done from here.
+edited; anything they should do differently is done from here. Chinese for English-only
+third-party UI (SuperMacro, ShaguNotify, ShaguKill) lives in `AddOns_zhCN.lua`; Bagshui's
+`Locale/zhCN.lua` is the exception that ships inside Bagshui so its locale loader sees it.
 
 ## pfUI skins
 
