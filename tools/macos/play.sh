@@ -82,13 +82,6 @@ if [ "${WOW_STOCK_UI:-}" = 1 ]; then
 else
     python3 "$root/tools/glue-skin/build-patch.py" "$root/Data"
 fi
-# 16:9 HD loading screens (blue bar): Data/patch-L.MPQ. Built once into
-# ../wow-data/loading-screens/ and copied here; WOW_STOCK_LOADING=1 drops it.
-if [ "${WOW_STOCK_LOADING:-}" = 1 ]; then
-    python3 "$root/tools/loading-screens/build-patch.py" "$root/Data" --remove
-else
-    python3 "$root/tools/loading-screens/build-patch.py" "$root/Data"
-fi
 # shellcheck source=bundle.sh
 source "$root/tools/macos/bundle.sh"
 export_client_env

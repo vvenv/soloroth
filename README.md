@@ -49,6 +49,14 @@
 git clone --recurse-submodules https://github.com/vvenv/soloroth.git
 cd soloroth
 
+./do.sh                                              # 交互菜单；选「第一次安装」走完下面几步
+# 或直接：
+./do.sh first                                        # 编译 → 配置 → 开服 → 建账号 → 生成 App
+```
+
+也可以逐步跑（菜单和 `./do.sh <子命令>` 都是转发到这些脚本）：
+
+```sh
 tools/macos/build-classic.sh                         # 编译服务端和客户端（第一次要编译一阵子）
 tools/macos/setup-classic.sh                         # 数据库、配置、客户端数据、插件
 tools/macos/play.sh --server-only                    # 先把服务器开起来
@@ -56,7 +64,7 @@ tools/macos/create-account.sh 账号 密码 gm           # 建账号；gm 表示
 tools/macos/make-app.sh                              # 生成 /Applications/Soloroth.app
 ```
 
-以后双击 **Soloroth.app**（或者在启动台、Spotlight 里搜 Soloroth）就能玩：服务器没开会先开，然后自动登录，直接到角色选择。
+以后双击 **Soloroth.app**（或者在启动台、Spotlight 里搜 Soloroth）就能玩：服务器没开会先开，然后自动登录，直接到角色选择。日常也可用 `./do.sh`（开始玩、关服务器、编译、更新插件、外观补丁等）。
 
 各步骤做了什么：
 
@@ -88,15 +96,17 @@ WOW_PASS=密码
 
 ## 日常使用
 
+根目录 `./do.sh` 是交互菜单（也可 `./do.sh play` 等子命令），对应下面这些脚本：
+
 | 做什么 | 命令 |
 |---|---|
-| 开始玩 | 双击 Soloroth.app，或 `tools/macos/play.sh`（服务器没开会先开） |
-| 只开服务器 | `tools/macos/play.sh --server-only` |
-| 关服务器 | `tools/macos/stop-server.sh`（加 `--all` 连 MariaDB 一起关） |
-| 拉代码后重新编译 | `tools/macos/build-classic.sh`，再 `tools/macos/setup-classic.sh`（补数据库迁移） |
-| 改了服务端设置 | 改 `config/mangosd.overrides.conf`，然后运行 `tools/macos/apply-config.sh`，重启服务器 |
-| 更新插件 | 拉代码后运行 `tools/macos/install-addons.sh`，然后**完全重启**客户端（`/reload` 不会加载新插件） |
-| 原版 / HD 模型 | 选项 → 图形 →「怪物模型」，重启生效；见下文「客户端外观」 |
+| 开始玩 | 双击 Soloroth.app，或 `./do.sh play`（服务器没开会先开） |
+| 只开服务器 | `./do.sh server` |
+| 关服务器 | `./do.sh stop`（可选连 MariaDB 一起关） |
+| 拉代码后重新编译 | `./do.sh build`，再 `./do.sh setup`（补数据库迁移） |
+| 改了服务端设置 | 改 `config/mangosd.overrides.conf`，然后 `./do.sh config`，重启服务器 |
+| 更新插件 | 拉代码后 `./do.sh addons`，然后**完全重启**客户端（`/reload` 不会加载新插件） |
+| 原版 / HD 模型 | 选项 → 图形 →「怪物模型」，或 `./do.sh visual`；重启生效；见下文「客户端外观」 |
 
 关掉客户端后服务器会继续运行。服务器的输出在 `server/logs/mangosd.out`，Soloroth.app 的输出在 `server/logs/launcher.log`。
 
@@ -168,7 +178,7 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B�
 
 登录、角色选择和角色创建界面不归插件管，它们的 pfUI 样式由 `tools/glue-skin/SoloGlueSkin.lua` 实现：`play.sh` 每次启动时从客户端 MPQ 里读出原版 `GlueXML.toc`，加上这个文件，打包成 `Data/patch-S.MPQ`。用 `WOW_STOCK_UI=1` 启动就会去掉它，恢复原版界面。
 
-进世界和切图时的**蓝条加载图**默认是 16:9 高清铺满（原版是 512×512，宽屏两侧会留黑边）。`play.sh` 会生成 `Data/patch-L.MPQ`（源图来自客户端 MPQ，放大裁成 1920×1080，缓存到 `../wow-data/loading-screens/`）。客户端也改成整窗铺满。用 `WOW_STOCK_LOADING=1` 启动可恢复原版图和黑边。
+进世界、切地图和坐船时，客户端不显示原版的地图插画，只有黑底、底部一条细进度条和小提示，等地图加载好就消失。
 
 想改某一项，就改 `Solo.lua` 里对应的表，再运行 `tools/macos/install-addons.sh`。
 
@@ -221,7 +231,8 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B�
 | `tools/macos/` | 构建、安装、启动脚本 |
 | `tools/achievements/` | 成就定义的生成脚本 |
 | `tools/glue-skin/` | 登录和角色界面的 pfUI 样式，和把它打包成 `Data/patch-S.MPQ` 的脚本 |
-| `tools/loading-screens/` | 把原版蓝条背景放大裁成 16:9，打包成 `Data/patch-L.MPQ` |
+| `tools/lib/` | `do.sh` 用的交互菜单和日志库 |
+| `do.sh` | 根目录交互入口（第一次安装、开玩、编译、外观等） |
 | `benilla-config/` | 客户端设置、插件（`AddOns/`）和插件存档（`saved/`），不进 git |
 | `Data/` | 指向客户端 MPQ 和登录条款 HTML 的链接，不进 git |
 | `server/run`、`server/data`、`server/logs` | 服务端运行目录、地图数据、日志，不进 git |
