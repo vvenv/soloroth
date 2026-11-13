@@ -496,50 +496,6 @@ local function OnAddonMessage(text)
   end
 end
 
--- -------------------------------------------------------- minimap button ---
-
-local mm = CreateFrame("Button", "SoloAchievementMinimapButton", Minimap)
-mm:SetWidth(31) mm:SetHeight(31)
-mm:SetFrameStrata("MEDIUM")
-mm:SetFrameLevel(8)
-mm:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-mm:RegisterForDrag("LeftButton")
-local mmIcon = mm:CreateTexture(nil, "ARTWORK")
-mmIcon:SetTexture("Interface\\Icons\\INV_Misc_Ribbon_01")
-mmIcon:SetWidth(20) mmIcon:SetHeight(20)
-mmIcon:SetPoint("TOPLEFT", mm, "TOPLEFT", 7, -5)
-local mmBorder = mm:CreateTexture(nil, "OVERLAY")
-mmBorder:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-mmBorder:SetWidth(53) mmBorder:SetHeight(53)
-mmBorder:SetPoint("TOPLEFT", mm, "TOPLEFT", 0, 0)
-
-local function PlaceMinimapButton()
-  local a = math.rad(db and db.mmAngle or 160)
-  mm:ClearAllPoints()
-  mm:SetPoint("CENTER", Minimap, "CENTER", 80 * math.cos(a), 80 * math.sin(a))
-end
-
-mm:SetScript("OnDragStart", function()
-  this:SetScript("OnUpdate", function()
-    local mx, my = Minimap:GetCenter()
-    local px, py = GetCursorPosition()
-    local scale = Minimap:GetEffectiveScale()
-    db.mmAngle = math.deg(math.atan2(py / scale - my, px / scale - mx))
-    PlaceMinimapButton()
-  end)
-end)
-mm:SetScript("OnDragStop", function() this:SetScript("OnUpdate", nil) end)
-mm:SetScript("OnClick", function() Toggle() end)
-mm:SetScript("OnEnter", function()
-  GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-  GameTooltip:AddLine(L("Achievements", "成就"))
-  local done, total, points = Tally(0)
-  GameTooltip:AddLine(done .. " / " .. total .. "   " .. L("points ", "点数 ") .. points, .8, .8, .8)
-  GameTooltip:AddLine(L("Y / click: open or close   Drag: move", "Y / 点击：打开/关闭   拖动：移动"), .8, .8, .8)
-  GameTooltip:Show()
-end)
-mm:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
 -- ------------------------------------------------------------ pfUI skin ---
 
 local function SkinWithPfUI()
@@ -589,7 +545,6 @@ ev:SetScript("OnEvent", function()
       f:ClearAllPoints()
       f:SetPoint(db.point[1], UIParent, db.point[2], db.point[3], db.point[4])
     end
-    PlaceMinimapButton()
   elseif event == "PLAYER_LOGIN" then
     -- After the binding readers (post VARIABLES_LOADED); SaveBindings before that is dropped.
     EnsureDefaultKey()
