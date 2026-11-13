@@ -1,18 +1,19 @@
 --[[--------------------------------------------------------------------------
-Auto grinding and auto fishing for Soloroth, driven by the server.
+Auto farming for Soloroth, driven by the server.
 
-  * /grind [yards] (/dg): the server walks the character around where it
-    stands now, picks fights within that many yards (default 40), fights
-    with the class's own spells, loots, and eats or drinks when low.
-  * /fish [yards] (/dy): the server finds a fishing school, or open water,
-    within that many yards (default 25), equips the pole, casts, reels in
-    when the bobber splashes and loots.
-  * /farm stop, the panel's Stop button or the "Stop" key binding ends it;
-    so does a movement key pressed while the character stands still (while
-    the server moves the body, 1.12 ignores the movement keys).
+  Short Chinese names (avoid /cj = achievements, /farm = pfUI farm map):
+  * /dg [yards] (/grind): fight and loot around here (default 40).
+  * /dy [yards] (/fish): fish around here (default 25).
+  * /cy [yards] (/gather): herb, mine and skin around here (default 40).
+  * /gj [yards]: do whatever you can — fight, gather, fish schools
+    (default 40). Bare /gj reports status; /gj stop ends it.
 
-The server's `[solo] farm=grind 40` / `farm=fish 25` / `farm=off` lines
-drive the panel; AutoLoot.lua keeps every `[solo]` line out of the chat.
+  The panel's Stop button or the "Stop" key binding ends it; so does a
+  movement key pressed while the character stands still (while the server
+  moves the body, 1.12 ignores the movement keys).
+
+The server's `[solo] farm=grind|fish|gather|all N` / `farm=off` lines drive
+the panel; AutoLoot.lua keeps every `[solo]` line out of the chat.
 ----------------------------------------------------------------------------]]
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
@@ -29,6 +30,8 @@ end
 local MODE_NAME = {
   grind = L("Auto grinding", "自动打怪"),
   fish = L("Auto fishing", "自动钓鱼"),
+  gather = L("Auto gathering", "自动采集"),
+  all = L("Auto farming", "自动挂机"),
 }
 
 -- ------------------------------------------------------------------ panel --
@@ -111,7 +114,7 @@ function SoloFarm_Stop()
 end
 
 BINDING_HEADER_SOLOFARM = L("Solo auto farming", "单人挂机")
-BINDING_NAME_SOLOFARM_STOP = L("Stop auto grinding / fishing", "停止自动打怪/钓鱼")
+BINDING_NAME_SOLOFARM_STOP = L("Stop auto farming", "停止自动挂机")
 
 local function Trim(msg)
   return string.lower(string.gsub(msg or "", "^%s*(.-)%s*$", "%1"))
@@ -122,24 +125,34 @@ local function Start(mode, msg)
   Server(".solo " .. mode .. (yards and (" " .. math.floor(yards)) or ""))
 end
 
-SLASH_SOLOGRIND1 = "/grind"
-SLASH_SOLOGRIND2 = "/dg"
+SLASH_SOLOGRIND1 = "/dg"
+SLASH_SOLOGRIND2 = "/grind"
 SlashCmdList["SOLOGRIND"] = function(msg) Start("grind", msg) end
 
-SLASH_SOLOFISH1 = "/fish"
-SLASH_SOLOFISH2 = "/dy"
+SLASH_SOLOFISH1 = "/dy"
+SLASH_SOLOFISH2 = "/fish"
 SlashCmdList["SOLOFISH"] = function(msg) Start("fish", msg) end
 
-SLASH_SOLOFARM1 = "/farm"
-SlashCmdList["SOLOFARM"] = function(msg)
-  if Trim(msg) == "stop" then
+SLASH_SOLOGATHER1 = "/cy"
+SLASH_SOLOGATHER2 = "/gather"
+SlashCmdList["SOLOGATHER"] = function(msg) Start("gather", msg) end
+
+-- /gj = 挂机. Not /farm: pfUI already takes /farm for its farm map.
+SLASH_SOLOGJ1 = "/gj"
+SlashCmdList["SOLOGJ"] = function(msg)
+  local t = Trim(msg)
+  if t == "stop" then
     SoloFarm_Stop()
     return
   end
-  Say(state.mode and string.format(L("%s, %d yards.", "%s中，范围 %d 码。"), MODE_NAME[state.mode], state.radius)
-    or L("Not farming.", "没有在挂机。"))
-  Say(L("/grind [yards] fights around here, /fish [yards] fishes around here, /farm stop ends it.",
-    "/dg [码数] 在这里自动打怪，/dy [码数] 在这里自动钓鱼，/farm stop 停止。"))
+  if t == "" then
+    Say(state.mode and string.format(L("%s, %d yards.", "%s中，范围 %d 码。"), MODE_NAME[state.mode], state.radius)
+      or L("Not farming.", "没有在挂机。"))
+    Say(L("/dg fights, /dy fishes, /cy gathers, /gj [yards] does all three, /gj stop ends it.",
+      "/dg 打怪，/dy 钓鱼，/cy 采集，/gj [码数] 全能挂机，/gj stop 停止。"))
+    return
+  end
+  Start("all", msg)
 end
 
 -- ----------------------------------------------------------------- events --
