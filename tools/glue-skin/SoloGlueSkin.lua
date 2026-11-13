@@ -126,7 +126,10 @@ end
 
 -- Kill the AccountLogin page: hide the ModelFFX (Dark Portal and all children)
 -- and put a black blank over GlueParent so nothing of that screen remains.
+-- After character select/create has stood once, "back" to login has nowhere to
+-- go (page is gone), so QuitGame and let Soloroth.app return to the launcher.
 local blank
+local pastSelect = false
 
 local function KillLoginPage()
   if AccountLogin then AccountLogin:Hide() end
@@ -148,6 +151,7 @@ local function KillLoginPage()
 end
 
 local function ReleaseLoginPage()
+  pastSelect = true
   if blank then blank:Hide() end
 end
 
@@ -162,14 +166,19 @@ local function SkinLogin()
 
   KillLoginPage()
   -- Stock OnShow / ShowUserAgreements / survey will Show the page again; kill
-  -- it every time. Login/focus no-op so nothing fights the env fast path.
+  -- it every time. A later return from character select quits instead.
   local stockAgreements = AccountLogin_ShowUserAgreements
   function AccountLogin_ShowUserAgreements()
     stockAgreements()
+    if pastSelect then QuitGame() return end
     KillLoginPage()
   end
   local stockOnShow = AccountLogin_OnShow
   function AccountLogin_OnShow()
+    if pastSelect then
+      QuitGame()
+      return
+    end
     stockOnShow()
     KillLoginPage()
     if AccountLoginAccountEdit then AccountLoginAccountEdit:ClearFocus() end
@@ -194,6 +203,7 @@ local function SkinLogin()
   if stockSurveyDone then
     function AccountLogin_SurveyNotificationDone(accepted)
       stockSurveyDone(accepted)
+      if pastSelect then QuitGame() return end
       KillLoginPage()
     end
   end

@@ -10,10 +10,11 @@ The login, realm, character select and character create screens in pfUI's look.
 - `play.sh` rebuilds the patch each launch; `WOW_STOCK_UI=1` removes it.
 - The AccountLogin page is removed by default (`SoloShowLoginUI = false` prepended by
   `build-patch.py --hide-login-ui`): the ModelFFX is hidden and a black blank covers
-  GlueParent until character select. `play.sh` passes `--show-login-ui` when there is no
-  `login.env`, or when `WOW_SHOW_LOGIN_UI=1`. Glue Lua cannot read the process env, so the
-  choice is baked into the MPQ each launch. With the page gone, `DISCONNECTED_FROM_SERVER`
-  calls `QuitGame` (Soloroth.app returns to its launcher).
+  GlueParent until character select. Going back from character select (or a disconnect)
+  calls `QuitGame` — there is no login page to return to; Soloroth.app brings the
+  launcher back. `play.sh` passes `--show-login-ui` when there is no `login.env`, or
+  when `WOW_SHOW_LOGIN_UI=1`. Glue Lua cannot read the process env, so the choice is
+  baked into the MPQ each launch.
 - The skin runs once on `FRAMES_LOADED` (wrapping `GlueParent_OnEvent`), which fires after
   benilla's own glue file, so its Realmlist button is there too.
 - Backdrops go on a child one level below the owner, inset to where the stock art drew.
