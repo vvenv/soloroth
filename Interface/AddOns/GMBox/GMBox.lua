@@ -7,10 +7,12 @@ baked into Data_Tele.lua / Data_Items.lua (dumped straight from the world DB),
 so searching needs no server round trip and works while you are loading.
 
 How the commands get to the server: every button ends up in SendChatMessage()
-with a leading dot. VMaNGOS's WorldSession::HandleMessagechatOpcode hands any
-dot-prefixed chat line to the command parser and never broadcasts it -- an
-unknown command answers "There is no such command" rather than leaking into
-/say. Nothing here needs a protected/secure context; it is all plain chat.
+with a leading dot (SAY when alive, WHISPER-to-self when dead/ghost — the
+client refuses SAY then). VMaNGOS's WorldSession::HandleMessagechatOpcode
+hands any dot-prefixed chat line to the command parser and never broadcasts
+it -- an unknown command answers "There is no such command" rather than
+leaking into /say. Nothing here needs a protected/secure context; it is all
+plain chat.
 
 Requires a GM account (this realm: gmlevel 6). Without it the server simply
 refuses each command.
@@ -79,11 +81,18 @@ local function msg(s) DEFAULT_CHAT_FRAME:AddMessage(COL .. "GMBox|r: " .. s) end
 
 -- ---------------------------------------------------------------- sending --
 
+-- Benilla (and the 1.12 client) refuse SAY/YELL/EMOTE while dead or ghost
+-- (ERR_CHAT_WHILE_DEAD). Whisper is allowed; the server still parses a leading
+-- dot before any channel broadcast, so self-whisper works for .revive etc.
 local function Cmd(s)
   if not s or s == "" then return end
   if string.sub(s, 1, 1) ~= "." then s = "." .. s end
   if string.len(s) > 250 then s = string.sub(s, 1, 250) end
-  SendChatMessage(s, "SAY")
+  if UnitIsDeadOrGhost("player") then
+    SendChatMessage(s, "WHISPER", nil, UnitName("player"))
+  else
+    SendChatMessage(s, "SAY")
+  end
   return s
 end
 
