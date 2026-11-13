@@ -496,7 +496,7 @@ run_main_menu() {
       "build:编译（增量）" \
       "setup:配置（库 / 数据 / 插件）" \
       "account:建账号" \
-      "app:生成 Soloroth.app" \
+      "app:生成 App" \
       "addons:更新插件" \
       "visual:外观补丁" \
       "config:应用服务端配置" \
