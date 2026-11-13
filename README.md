@@ -109,11 +109,11 @@
 WOW_USER=PLAYER
 WOW_PASS=密码
 # WOW_CHAR=角色名  (进游戏时跳过角色选择)
-# WOW_SHOW_LOGIN_UI=1  (显示游戏内账号密码框；默认隐藏)
+# WOW_SHOW_LOGIN_UI=1  (显示游戏内登录层；默认隐藏)
 ```
 
 - 没有这个文件时，第一次启动会弹窗问一次账号密码，跟服务器核对无误后保存；服务器上还没有账号的话，直接建一个 `PLAYER`（带 GM 权限）。在弹窗里点取消，没有 `login.env`，游戏里会显示原生账号密码框以便手输。
-- 有 `login.env` 时，默认隐藏游戏内的账号、密码输入框和登录按钮（自动登录不需要它们）。想重新显示：在文件里加上 `WOW_SHOW_LOGIN_UI=1`，或启动时 `WOW_SHOW_LOGIN_UI=1 ./do.sh play`。
+- 有 `login.env` 时，默认干掉整个登录页（暗门、按钮、Logo 全不要），黑屏自动登录进角色选择。想恢复原版登录页：在文件里加上 `WOW_SHOW_LOGIN_UI=1`，或启动时 `WOW_SHOW_LOGIN_UI=1 ./do.sh play`。服务器断开时客户端直接退出；从 Soloroth.app 进的话会回到启动器。
 - 去掉 `WOW_CHAR` 那行前面的 `#` 并填上角色名，启动后直接进入这个角色的游戏世界。
 - 改了密码或想换账号，删掉 `login.env`，下次启动会重新问。
 

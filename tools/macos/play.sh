@@ -12,8 +12,8 @@
 # once (a dialog when there is no terminal, as from Soloroth.app), checks it
 # against the server and saves it; with no account on the server yet it
 # creates one (PLAYER, with GM rights). Cancelling leaves no login.env, so the
-# stock account/password boxes stay visible. With login.env they are hidden
-# unless WOW_SHOW_LOGIN_UI=1 (in the env or in login.env).
+# AccountLoginUI overlay stays visible. With login.env the whole overlay is
+# hidden unless WOW_SHOW_LOGIN_UI=1 (in the env or in login.env).
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 bash "$root/tools/macos/start-server.sh"
@@ -49,7 +49,7 @@ save_login() {
         "WOW_USER=$1" \
         "WOW_PASS=$2" \
         "# WOW_CHAR=角色名  (进游戏时跳过角色选择)" \
-        "# WOW_SHOW_LOGIN_UI=1  (显示游戏内账号密码框；默认隐藏)" \
+        "# WOW_SHOW_LOGIN_UI=1  (显示游戏内登录层；默认隐藏)" \
         > "$login" )
     echo "saved the login to $login"
 }
@@ -107,7 +107,7 @@ first_login() {
 bash "$root/tools/macos/apply-visual.sh"
 # pfUI-style login / character screens: Data/patch-S.MPQ, rebuilt off the
 # stock GlueXML.toc each launch; WOW_STOCK_UI=1 drops it with benilla's layer.
-# The patch also bakes whether the stock account/password boxes are shown.
+# The patch also bakes whether the stock AccountLoginUI overlay is shown.
 if [ "${WOW_STOCK_UI:-}" = 1 ]; then
     python3 "$root/tools/glue-skin/build-patch.py" "$root/Data" --remove
 else

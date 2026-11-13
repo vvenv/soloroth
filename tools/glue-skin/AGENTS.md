@@ -8,10 +8,12 @@ The login, realm, character select and character create screens in pfUI's look.
   copy of the stock `GlueXML.toc` with the file appended. The toc is read from the player's
   chain at build time; nothing from the install is committed.
 - `play.sh` rebuilds the patch each launch; `WOW_STOCK_UI=1` removes it.
-- Account/password boxes are hidden by default (`SoloShowLoginUI = false` prepended by
-  `build-patch.py --hide-login-ui`). `play.sh` passes `--show-login-ui` when there is no
-  `login.env`, or when `WOW_SHOW_LOGIN_UI=1` (env or that file). Glue Lua cannot read the
-  process env, so the choice is baked into the MPQ each launch.
+- The AccountLogin page is removed by default (`SoloShowLoginUI = false` prepended by
+  `build-patch.py --hide-login-ui`): the ModelFFX is hidden and a black blank covers
+  GlueParent until character select. `play.sh` passes `--show-login-ui` when there is no
+  `login.env`, or when `WOW_SHOW_LOGIN_UI=1`. Glue Lua cannot read the process env, so the
+  choice is baked into the MPQ each launch. With the page gone, `DISCONNECTED_FROM_SERVER`
+  calls `QuitGame` (Soloroth.app returns to its launcher).
 - The skin runs once on `FRAMES_LOADED` (wrapping `GlueParent_OnEvent`), which fires after
   benilla's own glue file, so its Realmlist button is there too.
 - Backdrops go on a child one level below the owner, inset to where the stock art drew.

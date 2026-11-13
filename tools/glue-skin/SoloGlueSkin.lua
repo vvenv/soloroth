@@ -8,9 +8,11 @@ GlueXML runs off the patch chain, never loose files, so this file reaches the
 client in a generated patch-S.MPQ beside a copy of the stock GlueXML.toc with
 this file appended (tools/glue-skin/build-patch.py).
 
-build-patch.py may prepend `SoloShowLoginUI = true|false`. Default false: hide
-the stock account/password boxes (Soloroth logs in from login.env). play.sh
-passes --show-login-ui when there is no login.env, or when WOW_SHOW_LOGIN_UI=1.
+build-patch.py may prepend `SoloShowLoginUI = true|false`. Default false: the
+AccountLogin page is removed for the run (model, overlay, the lot) while
+Soloroth logs in from login.env — a black blank until character select.
+play.sh passes --show-login-ui when there is no login.env, or when
+WOW_SHOW_LOGIN_UI=1.
 ----------------------------------------------------------------------------]]
 
 -- Prepended by build-patch.py; nil means hide (same as false).
@@ -122,55 +124,90 @@ local function EditBox(box)
   if bd then box:SetTextInsets(14, 8, 0, 4) end
 end
 
--- Account name, password, Login, and "remember name": the rest of AccountLogin
--- (quit, TOS, realmlist, …) stays.
-local function LoginFormFrames()
-  return { AccountLoginAccountEdit, AccountLoginPasswordEdit,
-           AccountLoginLoginButton, AccountLoginSaveAccountName }
+-- Kill the AccountLogin page: hide the ModelFFX (Dark Portal and all children)
+-- and put a black blank over GlueParent so nothing of that screen remains.
+local blank
+
+local function KillLoginPage()
+  if AccountLogin then AccountLogin:Hide() end
+  if not blank then
+    blank = CreateFrame("Frame", "SoloLoginBlank", GlueParent)
+    blank:SetAllPoints(GlueParent)
+    blank:SetFrameStrata("FULLSCREEN")
+    local fill = blank:CreateTexture(nil, "BACKGROUND")
+    fill:SetAllPoints()
+    fill:SetTexture(WHITE)
+    fill:SetVertexColor(0, 0, 0, 1)
+    blank:EnableKeyboard(true)
+    blank:SetScript("OnKeyDown", function()
+      if arg1 == "ESCAPE" then QuitGame() end
+    end)
+  end
+  blank:Show()
+  blank:EnableKeyboard(true)
 end
 
-local function HideLoginForm()
-  for _, f in ipairs(LoginFormFrames()) do
-    if f then f:Hide() end
-  end
+local function ReleaseLoginPage()
+  if blank then blank:Hide() end
 end
 
 local function SkinLogin()
   if SoloShowLoginUI then
     EditBox(AccountLoginAccountEdit)
     EditBox(AccountLoginPasswordEdit)
-  else
-    HideLoginForm()
-    -- OnShow focuses a box and ENTER calls AccountLogin_Login; both must no-op
-    -- while the form is gone, or an empty typed submit fights the env fast path.
-    local stockOnShow = AccountLogin_OnShow
-    function AccountLogin_OnShow()
-      stockOnShow()
-      HideLoginForm()
-      if AccountLoginAccountEdit then AccountLoginAccountEdit:ClearFocus() end
-      if AccountLoginPasswordEdit then AccountLoginPasswordEdit:ClearFocus() end
-    end
-    local stockLogin = AccountLogin_Login
-    function AccountLogin_Login()
-      if not SoloShowLoginUI then return end
-      return stockLogin()
-    end
-    local stockFocusPassword = AccountLogin_FocusPassword
-    function AccountLogin_FocusPassword()
-      if not SoloShowLoginUI then return end
-      return stockFocusPassword()
-    end
-    local stockFocusAccount = AccountLogin_FocusAccountName
-    function AccountLogin_FocusAccountName()
-      if not SoloShowLoginUI then return end
-      return stockFocusAccount()
+    Panel(ServerAlertFrame, 6, 6, 6, 6)
+    Panel(VirtualKeypadFrame, 6, 6, 6, 6)
+    return
+  end
+
+  KillLoginPage()
+  -- Stock OnShow / ShowUserAgreements / survey will Show the page again; kill
+  -- it every time. Login/focus no-op so nothing fights the env fast path.
+  local stockAgreements = AccountLogin_ShowUserAgreements
+  function AccountLogin_ShowUserAgreements()
+    stockAgreements()
+    KillLoginPage()
+  end
+  local stockOnShow = AccountLogin_OnShow
+  function AccountLogin_OnShow()
+    stockOnShow()
+    KillLoginPage()
+    if AccountLoginAccountEdit then AccountLoginAccountEdit:ClearFocus() end
+    if AccountLoginPasswordEdit then AccountLoginPasswordEdit:ClearFocus() end
+  end
+  local stockLogin = AccountLogin_Login
+  function AccountLogin_Login()
+    if not SoloShowLoginUI then return end
+    return stockLogin()
+  end
+  local stockFocusPassword = AccountLogin_FocusPassword
+  function AccountLogin_FocusPassword()
+    if not SoloShowLoginUI then return end
+    return stockFocusPassword()
+  end
+  local stockFocusAccount = AccountLogin_FocusAccountName
+  function AccountLogin_FocusAccountName()
+    if not SoloShowLoginUI then return end
+    return stockFocusAccount()
+  end
+  local stockSurveyDone = AccountLogin_SurveyNotificationDone
+  if stockSurveyDone then
+    function AccountLogin_SurveyNotificationDone(accepted)
+      stockSurveyDone(accepted)
+      KillLoginPage()
     end
   end
-  Panel(ServerAlertFrame, 6, 6, 6, 6)
-  Panel(VirtualKeypadFrame, 6, 6, 6, 6)
 end
 
 local function SkinCharacterSelect()
+  -- Login blank stays up until character select actually stands.
+  local stockCharShow = CharacterSelect_OnShow
+  if stockCharShow and not SoloShowLoginUI then
+    function CharacterSelect_OnShow()
+      ReleaseLoginPage()
+      return stockCharShow()
+    end
+  end
   Panel(CharacterSelectCharacterFrame, 8, 3, 3, 7, .6)
   Own(GameRoomBillingFrame)
   Panel(CharacterDeleteBackground, 6, 6, 6, 6, .85)
@@ -186,6 +223,15 @@ local function SkinCharacterSelect()
 end
 
 local function SkinCharacterCreate()
+  if not SoloShowLoginUI then
+    local stockCreateShow = CharacterCreate_OnShow
+    if stockCreateShow then
+      function CharacterCreate_OnShow()
+        ReleaseLoginPage()
+        return stockCreateShow()
+      end
+    end
+  end
   -- The left column's stone frame and parchment; the faction banners stay.
   for _, name in ipairs({ "CharacterCreateOuterBorder1", "CharacterCreateOuterBorder2",
                           "CharacterCreateOuterBorder3", "CharacterCreateBackground" }) do
@@ -263,11 +309,20 @@ end
 
 -- FRAMES_LOADED fires once the whole glue and benilla's own glue file have
 -- loaded, so their buttons are all there.
+--
+-- DISCONNECTED_FROM_SERVER: stock shows AccountLogin and a dialog. With the
+-- form hidden there is nothing to type into (env login already spent, creds
+-- cleared), so QuitGame and let Soloroth.app's launch script bring the
+-- launcher back instead of an empty password screen.
 local stockOnEvent = GlueParent_OnEvent
 function GlueParent_OnEvent(event)
   if event == "FRAMES_LOADED" and not SoloGlueSkinned then
     SoloGlueSkinned = true
     Skin()
+  end
+  if event == "DISCONNECTED_FROM_SERVER" and not SoloShowLoginUI then
+    QuitGame()
+    return
   end
   return stockOnEvent(event)
 end

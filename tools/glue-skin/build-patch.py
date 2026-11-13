@@ -10,8 +10,8 @@ resolves it (patch-?.MPQ by letter, then patch.MPQ, then interface.MPQ), never
 from patch-S.MPQ itself. Nothing from the install is kept in the repo: the toc
 is copied at build time.
 
---hide-login-ui (default) prepends SoloShowLoginUI = false so the skin hides the
-stock account/password boxes; --show-login-ui keeps them.
+--hide-login-ui (default) prepends SoloShowLoginUI = false so the skin removes the
+AccountLogin page; --show-login-ui keeps it.
 """
 import os
 import struct
