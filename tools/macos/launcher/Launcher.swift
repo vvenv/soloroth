@@ -227,14 +227,10 @@ final class PlayButton: NSButton {
             NSGraphicsContext.restoreGraphicsState()
             NSGradient(colorsAndLocations: (pressed ? gold : goldLight, 0), (gold, 0.55), (goldDeep, 1))?
                 .draw(in: path, angle: -90)
-            srgb(1, 0.95, 0.8, 0.6).setStroke()
         } else {
             srgb(0.25, 0.25, 0.28).setFill()
             path.fill()
-            srgb(0.35, 0.35, 0.38).setStroke()
         }
-        path.lineWidth = 1
-        path.stroke()
         let style = NSMutableParagraphStyle()
         style.alignment = .center
         let attrs: [NSAttributedString.Key: Any] = [
@@ -362,6 +358,7 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
         play.action = #selector(playPressed)
         play.keyEquivalent = "\r"
         play.isBordered = false
+        play.focusRingType = .none
         let inset = PlayButton.glowInset
         play.frame = NSRect(x: windowSize.width - margin - 190 - inset, y: mid - 24 - inset,
                             width: 190 + inset * 2, height: 48 + inset * 2)
