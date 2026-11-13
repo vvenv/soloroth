@@ -5,5 +5,10 @@
 ## Version: 1.0.0
 ## SavedVariables: Solo_State
 Solo.lua
+Visual.lua
 BenillaOptions_zhCN.lua
 PfuiSkin.lua
+SkinKit.lua
+SkinAtlas.lua
+SkinSuperMacro.lua
+SkinShaguNotify.lua

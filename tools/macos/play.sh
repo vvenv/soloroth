@@ -73,6 +73,15 @@ first_login() {
 }
 
 [ -f "$login" ] || first_login
+# Optional HD / model overlays from benilla-config/visual.env
+bash "$root/tools/macos/apply-visual.sh"
+# pfUI-style login / character screens: Data/patch-S.MPQ, rebuilt off the
+# stock GlueXML.toc each launch; WOW_STOCK_UI=1 drops it with benilla's layer.
+if [ "${WOW_STOCK_UI:-}" = 1 ]; then
+    python3 "$root/tools/glue-skin/build-patch.py" "$root/Data" --remove
+else
+    python3 "$root/tools/glue-skin/build-patch.py" "$root/Data"
+fi
 # shellcheck source=bundle.sh
 source "$root/tools/macos/bundle.sh"
 export_client_env

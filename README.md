@@ -170,6 +170,9 @@ tools/macos/apply-visual.sh vanilla             # 回到原版
 - **浮动战斗信息**：第一次登录时打开（伤害、治疗、躲闪/招架/未命中、进出战斗），以后在「选项 → 战斗」里关掉就不会再被打开。
 - **pfQuest**：新角色跳过欢迎向导，世界地图显示刷怪点和任务图标，小地图显示刷怪点，打开导航箭头。
 - **ESC 菜单和「选项」窗口**：换成 pfUI 的样式；去掉客户端里还没有功能的「编辑模式」按钮和「插件」页，以及 SuperMacro 挂在菜单边上的「宏命令」按钮（它的编辑器用 `/supermacro` 打开）。界面文字是中文。
+- **其他窗口也换成 pfUI 的样式**（作为 pfUI 皮肤注册，在 pfUI 设置里可以单独关掉，插件源码不改）：Atlas 地图（AtlasLoot 面板贴在下方，AtlasQuest 贴在旁边）、AtlasLoot、SuperMacro 编辑器和图标选择、ShaguNotify 的提示条、脚本错误日志（`/errors`），以及这些插件的设置窗口。原版窗口由 pfUI 自己的皮肤负责；Bagshui 自带 pfUI 皮肤。
+
+登录、角色选择和角色创建界面不归插件管，它们的 pfUI 样式由 `tools/glue-skin/SoloGlueSkin.lua` 实现：`play.sh` 每次启动时从客户端 MPQ 里读出原版 `GlueXML.toc`，加上这个文件，打包成 `Data/patch-S.MPQ`。用 `WOW_STOCK_UI=1` 启动就会去掉它，恢复原版界面。
 
 想改某一项，就改 `Solo.lua` 里对应的表，再运行 `tools/macos/install-addons.sh`。
 
@@ -210,6 +213,7 @@ tools/macos/apply-visual.sh vanilla             # 回到原版
 | `config/` | 服务端配置改动（`*.overrides.conf`）和 MariaDB 配置 |
 | `tools/macos/` | 构建、安装、启动脚本 |
 | `tools/achievements/` | 成就定义的生成脚本 |
+| `tools/glue-skin/` | 登录和角色界面的 pfUI 样式，和把它打包成 `Data/patch-S.MPQ` 的脚本 |
 | `benilla-config/` | 客户端设置、插件（`AddOns/`）和插件存档（`saved/`），不进 git |
 | `Data/` | 指向客户端 MPQ 的链接，不进 git |
 | `server/run`、`server/data`、`server/logs` | 服务端运行目录、地图数据、日志，不进 git |

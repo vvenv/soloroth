@@ -15,6 +15,10 @@
 #   HOA_EXTRACTED  maps, vmaps, mmaps and dbc extracted by the vmangos
 #                  extractors (default: $WOW_DATA_ROOT/vmangos-deploy/
 #                  storage/mangosd/extracted-data)
+#
+# Optional HD / model overlays: benilla-config/visual.env (VISUAL_PROFILE)
+# and folders under $WOW_DATA_ROOT/visual-patches/<profile>/ — see
+# tools/macos/apply-visual.sh and config/visual.env.example.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 wow_data="${WOW_DATA_ROOT:-$root/../wow-data}"
@@ -120,6 +124,12 @@ fi
 # (pfQuest and AtlasLoot need more than 1.12's 48 MB; 0 = no limit).
 home="$root/benilla-config"
 mkdir -p "$home"
+if [ ! -f "$home/visual.env" ]; then
+    cp "$root/config/visual.env.example" "$home/visual.env"
+    echo "benilla-config/visual.env (VISUAL_PROFILE=vanilla)"
+fi
+# Stock MPQs plus optional VISUAL_PROFILE overlays (HD creatures, etc.).
+bash "$root/tools/macos/apply-visual.sh"
 toml="$home/config.toml"
 [ -f "$toml" ] || printf '[cvars]\n' > "$toml"
 python3 - "$toml" <<'PY'

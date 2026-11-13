@@ -7,7 +7,9 @@ a pfUI skin (so pfUI's "disable skin" setting covers it too):
     button style;
   * the options window: no Game/AddOns tabs (AddOns has nothing behind it,
     Game alone is the whole window), and pfUI's backdrops, buttons,
-    checkboxes, sliders, dropdowns, scroll bars and search box.
+    checkboxes, sliders, dropdowns, scroll bars and search box;
+  * the script error log (/errors): pfUI's backdrop over the class trainer
+    art it borrows, its list and detail panes bordered.
 ----------------------------------------------------------------------------]]
 
 local function Texture(region)
@@ -129,6 +131,35 @@ local function SkinOptions()
   SkinControls(frame)
 end
 
+-- On the class trainer's art, so cut as pfUI cuts the class trainer.
+local function SkinScriptLog()
+  local frame = BenillaScriptLogFrame
+  if not frame then return end
+
+  StripTextures(frame)
+  CreateBackdrop(frame, nil, nil, .75)
+  CreateBackdropShadow(frame)
+  frame.backdrop:SetPoint("TOPLEFT", 10, -10)
+  frame.backdrop:SetPoint("BOTTOMRIGHT", -32, 72)
+  frame:SetHitRectInsets(10, 32, 10, 72)
+
+  BenillaScriptLogTitle:ClearAllPoints()
+  BenillaScriptLogTitle:SetPoint("TOP", frame.backdrop, "TOP", 0, -10)
+  SoloSkin.Close(BenillaScriptLogCloseButton)
+
+  for _, pane in ipairs({ BenillaScriptLogListScrollFrame, BenillaScriptLogDetailScroll }) do
+    local border = SoloSkin.Frame(frame, pane)
+    border:SetFrameLevel(frame:GetFrameLevel())
+    border:SetBackdropColor(0, 0, 0, .35)
+  end
+  SoloSkin.Controls(frame)
+
+  BenillaScriptLogCloseBottomButton:ClearAllPoints()
+  BenillaScriptLogCloseBottomButton:SetPoint("BOTTOMRIGHT", frame.backdrop, "BOTTOMRIGHT", -8, 8)
+  BenillaScriptLogClearButton:ClearAllPoints()
+  BenillaScriptLogClearButton:SetPoint("RIGHT", BenillaScriptLogCloseBottomButton, "LEFT", -4, 0)
+end
+
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function()
@@ -138,10 +169,11 @@ loader:SetScript("OnEvent", function()
     -- pfUI runs a skin in its own environment, where SkinButton and the rest
     -- live; the helpers above need it too.
     local env = getfenv(1)
-    for _, f in ipairs({ Texture, SkinGameMenu, SkinCheck, SkinSliderRow, SkinDropdown, SkinControls, SkinOptions }) do
+    for _, f in ipairs({ Texture, SkinGameMenu, SkinCheck, SkinSliderRow, SkinDropdown, SkinControls, SkinOptions, SkinScriptLog }) do
       setfenv(f, env)
     end
     SkinGameMenu()
     SkinOptions()
+    SkinScriptLog()
   end)
 end)
