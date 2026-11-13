@@ -23,6 +23,8 @@
 /tools/*
 !/tools/macos/
 !/tools/achievements/
+!/tools/glue-skin/
+!/tools/loading-screens/
 
 # Under /server only the VMaNGOS fork (a submodule) is tracked; the build,
 # MariaDB and the extracted map data are generated or third-party.

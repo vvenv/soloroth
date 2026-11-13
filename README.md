@@ -65,7 +65,7 @@ tools/macos/make-app.sh                              # 生成 /Applications/Solo
    - 把服务端程序和地图数据链接进 `server/run`、`server/data`；
    - 初始化并启动 MariaDB（数据在 `server/mariadb-data`）；
    - 第一次运行时，下载 vmangos 官方世界数据库快照（约 30 MB），建四个库：`classic_world`、`classic_characters`、`classic_realmd`、`classic_logs`；以后再运行只补新的数据库迁移；
-   - 生成服务端配置，把 `Data/` 链接到客户端的 MPQ；
+   - 生成服务端配置，把 `Data/` 链接到客户端的 MPQ，以及登录界面要用的 `tos.html` / `eula.html` 等松散文件；
    - 设置客户端（服务器名 Azeroth，不限插件脚本内存），安装插件。
 
    加 `--reset-db` 会清空重建这四个库，**角色也会被清掉**。
@@ -96,7 +96,7 @@ WOW_PASS=密码
 | 拉代码后重新编译 | `tools/macos/build-classic.sh`，再 `tools/macos/setup-classic.sh`（补数据库迁移） |
 | 改了服务端设置 | 改 `config/mangosd.overrides.conf`，然后运行 `tools/macos/apply-config.sh`，重启服务器 |
 | 更新插件 | 拉代码后运行 `tools/macos/install-addons.sh`，然后**完全重启**客户端（`/reload` 不会加载新插件） |
-| 原版 / HD 模型 | `tools/macos/apply-visual.sh vanilla` 或某个 profile 名；见下文「客户端外观」 |
+| 原版 / HD 模型 | 选项 → 图形 →「怪物模型」，重启生效；见下文「客户端外观」 |
 
 关掉客户端后服务器会继续运行。服务器的输出在 `server/logs/mangosd.out`，Soloroth.app 的输出在 `server/logs/launcher.log`。
 
@@ -104,25 +104,18 @@ WOW_PASS=密码
 
 ## 客户端外观（原版 / HD 怪物模型）
 
-默认是 **原版** 1.12 模型。想用更精细的怪物（或整套 HD），自己把社区补丁 MPQ 放进 `../wow-data/visual-patches/<名字>/`，再用配置切换，不用改服务端。
+默认是 **原版** 1.12 模型。想用更精细的怪物，下载社区补丁（Project Reforged）后在游戏里切换，不用改服务端。
 
 ```sh
-# 例如只换生物（Project Reforged 的 Patch-C，或 Improved Models）
-mkdir -p ../wow-data/visual-patches/reforged-creatures
-# 把下载的补丁改名为 patch-C.MPQ（单个字母；不要用已有的 A / 2）后放进该目录
-
-mkdir -p ../wow-data/visual-patches/improved-models
-# 同样放入 patch-C.MPQ（两个 profile 可以各放一份，切换时只挂当前这份）
-
-tools/macos/apply-visual.sh --list              # 看有哪些 profile
-tools/macos/apply-visual.sh reforged-creatures  # 选用并写入 benilla-config/visual.env
-tools/macos/apply-visual.sh vanilla             # 回到原版
+tools/macos/fetch-visual-patches.sh        # 下载 Reforged 生物包 Patch-C（约 2 GB，可中断，重跑续传）
+tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B、D、E、G、H）
 ```
 
-- **游戏里切换**：选项 → 图形 →「怪物 / 世界模型」（pfUI 样式），或 `/visual` / `/waiguan`。选好后**完全退出再开**才会换模型。
-- 选择写在 `config.toml` 的 `solorothVisual`。`play.sh` 启动前按它挂软链。
-- 下载：`tools/macos/fetch-visual-patches.sh`。会把 Reforged Patch-C 去掉 `DBFilesClient`（否则会盖住原版生物表，怪全变成方块）。产物在 `../wow-data/visual-patches/`。
-- 原版 Windows 客户端要的 VanillaHelpers / DXVK，benilla **用不上**；benilla 只吃「仅模型/贴图」的 patch。
+- **游戏里切换**：选项 → 图形 → 最下面的「怪物模型」，或 `/visual` / `/waiguan`。还没下载的方案是灰色，标「未安装」。选好后**完全退出再开**才会换模型；没重启前这一行旁边会提示「重启后生效」。
+- 方案：「原版」「高清怪物（Reforged）」只换生物；「高清合集（Reforged 全套）」在下载了 `--hd` 后多出环境和物品；「Improved Models」要自己把 MPQ 放进 `../wow-data/visual-patches/improved-models/`（见那里的 README.txt）。
+- 选择写在 `config.toml` 的 `solorothVisual`，`play.sh` 启动前按它把补丁链接进 `Data/`。命令行也能切：`tools/macos/apply-visual.sh hd` / `vanilla` / `--list`。
+- 下载器按 10 MB 分块并行下载，并用服务器的校验值核对整个文件；文件不完整时，怪物会隐形或变成方块。
+- 原版 Windows 客户端要的 VanillaHelpers / DXVK，benilla **用不上**。
 
 ---
 
@@ -175,7 +168,20 @@ tools/macos/apply-visual.sh vanilla             # 回到原版
 
 登录、角色选择和角色创建界面不归插件管，它们的 pfUI 样式由 `tools/glue-skin/SoloGlueSkin.lua` 实现：`play.sh` 每次启动时从客户端 MPQ 里读出原版 `GlueXML.toc`，加上这个文件，打包成 `Data/patch-S.MPQ`。用 `WOW_STOCK_UI=1` 启动就会去掉它，恢复原版界面。
 
+进世界和切图时的**蓝条加载图**默认是 16:9 高清铺满（原版是 512×512，宽屏两侧会留黑边）。`play.sh` 会生成 `Data/patch-L.MPQ`（源图来自客户端 MPQ，放大裁成 1920×1080，缓存到 `../wow-data/loading-screens/`）。客户端也改成整窗铺满。用 `WOW_STOCK_LOADING=1` 启动可恢复原版图和黑边。
+
 想改某一项，就改 `Solo.lua` 里对应的表，再运行 `tools/macos/install-addons.sh`。
+
+### 自动打怪和自动钓鱼
+
+1.12 的插件不能替玩家走路和施法，所以这两项由服务器直接驱动你的角色（和队伍 bot 用的是同一套职业战斗逻辑），插件只负责命令和面板。
+
+- **自动打怪**：`/dg [码数]`（或 `/grind`）。以当前位置为中心，默认 40 码，最大 150。角色在范围里游荡，找怪、上去打、拾取（物品和金钱直接进背包）。用的是你自己学会的技能（战士会自己换姿态）。血低于 60%、或蓝低于 40% 时停下休息到 95%：会治疗的职业先给自己加血，背包里有食物、饮料就吃喝。战斗中血低于 30% 会喝背包里的治疗药水。不打精英、灰名怪、比你高 3 级或更多的怪，也不抢别人的怪。
+- **自动钓鱼**：`/dy [码数]`（或 `/fish`）。默认 25 码，最大 60。要先学会钓鱼、背包里有鱼竿。范围里有鱼群就走到鱼群边上钓，没有就找一片能下钩的水面。鱼竿自动换上，停止时换回原来的武器。被怪打了会换回武器打完再继续钓。
+- **面板**：屏幕上方显示正在打怪还是钓鱼、范围和已运行时间，可以拖动，「停止」按钮随时停下。`/farm` 查看状态。
+- **停止**：点面板的「停止」，或输入 `/farm stop`（服务端命令是 `.solo stop`），或在「按键设置」的「单人挂机」里给「停止自动打怪/钓鱼」绑一个键。角色站着不动（休息、钓鱼）时按移动键也会停止；服务器正在带着角色走的时候，客户端不响应移动键，这时请用按钮或快捷键。角色死亡、背包满了、离中心太远（比如炉石、坐飞行点）、下线时也会自动停止。
+
+服务端命令是 `.solo grind [码数]`、`.solo fish [码数]`、`.solo stop`、`.solo farm`（查看状态）。
 
 ### 成就
 
@@ -215,8 +221,9 @@ tools/macos/apply-visual.sh vanilla             # 回到原版
 | `tools/macos/` | 构建、安装、启动脚本 |
 | `tools/achievements/` | 成就定义的生成脚本 |
 | `tools/glue-skin/` | 登录和角色界面的 pfUI 样式，和把它打包成 `Data/patch-S.MPQ` 的脚本 |
+| `tools/loading-screens/` | 把原版蓝条背景放大裁成 16:9，打包成 `Data/patch-L.MPQ` |
 | `benilla-config/` | 客户端设置、插件（`AddOns/`）和插件存档（`saved/`），不进 git |
-| `Data/` | 指向客户端 MPQ 的链接，不进 git |
+| `Data/` | 指向客户端 MPQ 和登录条款 HTML 的链接，不进 git |
 | `server/run`、`server/data`、`server/logs` | 服务端运行目录、地图数据、日志，不进 git |
 
 服务端完全是 vmangos 原版加我们自己的少量提交，跟进上游很直接：
