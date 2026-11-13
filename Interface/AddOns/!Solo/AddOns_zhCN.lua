@@ -1,11 +1,85 @@
 --[[--------------------------------------------------------------------------
 Chinese for third-party addons that ship English-only UI. Their sources stay
 untouched; this file swaps the strings after each addon loads (zhCN clients
-only). Bagshui has its own Locale/zhCN.lua; pfUI / pfQuest / Atlas* already
-ship Chinese.
+only). Bagshui has its own Locale/zhCN.lua. pfQuest's locales.lua has zhCN
+but the minimap shortcut menu keys were never translated upstream, so those
+are filled in here and the already-built menu labels are refreshed.
 ----------------------------------------------------------------------------]]
 
 if GetLocale() ~= "zhCN" then return end
+
+-- ------------------------------------------------------------------ pfQuest --
+
+-- Menu titles are looked up once when menu.lua loads; missing keys fall back
+-- to the English key string and get baked into the buttons.
+local PFQUEST_MENU = {
+  ["Shortcut Menu"] = "快捷菜单",
+  ["Database"] = "数据库",
+  ["Chests & Treasures"] = "宝箱与宝藏",
+  ["Herbs & Flowers"] = "草药与花朵",
+  ["Mines & Ores"] = "矿脉与矿石",
+  ["Fishing Pools"] = "鱼点",
+  ["Rare Mobs"] = "稀有怪物",
+  ["Auctioneer"] = "拍卖师",
+  ["Banker"] = "银行职员",
+  ["Battlemaster"] = "战场军官",
+  ["Flight Master"] = "飞行管理员",
+  ["Innkeeper"] = "旅店老板",
+  ["Mailbox"] = "邮箱",
+  ["Meeting Stones"] = "集合石",
+  ["Repair"] = "修理",
+  ["Spirit Healer"] = "灵魂医者",
+  ["Stable Master"] = "兽栏管理员",
+  ["Vendor"] = "商人",
+  ["Quest Journal"] = "任务日志",
+  ["Welcome Screen"] = "欢迎界面",
+  ["Settings"] = "设置",
+}
+
+-- Button names inside pfQuestMenu (see pfQuest/menu.lua).
+local PFQUEST_MENU_BUTTONS = {
+  {"database", "Database"},
+  {"chests", "Chests & Treasures"},
+  {"herbs", "Herbs & Flowers"},
+  {"mines", "Mines & Ores"},
+  {"fish", "Fishing Pools"},
+  {"rares", "Rare Mobs"},
+  {"auctioneer", "Auctioneer"},
+  {"banker", "Banker"},
+  {"battlemaster", "Battlemaster"},
+  {"flight", "Flight Master"},
+  {"innkeeper", "Innkeeper"},
+  {"mailbox", "Mailbox"},
+  {"meetingstone", "Meeting Stones"},
+  {"repair", "Repair"},
+  {"spirithealer", "Spirit Healer"},
+  {"stablemaster", "Stable Master"},
+  {"vendor", "Vendor"},
+  {"journal", "Quest Journal"},
+  {"welcome", "Welcome Screen"},
+  {"settings", "Settings"},
+}
+
+local function LocalizePfQuest()
+  if not pfQuest_Loc then return end
+  local k, v, i, row, btn, width
+  for k, v in pairs(PFQUEST_MENU) do
+    pfQuest_Loc[k] = v
+  end
+  if not pfQuestMenu then return end
+  width = 0
+  for i = 1, table.getn(PFQUEST_MENU_BUTTONS) do
+    row = PFQUEST_MENU_BUTTONS[i]
+    btn = pfQuestMenu[row[1]]
+    if btn and btn.title then
+      btn.title:SetText(PFQUEST_MENU[row[2]])
+      if btn.title.GetStringWidth then
+        width = math.max(width, btn.title:GetStringWidth() + 60)
+      end
+    end
+  end
+  if width > 0 then pfQuestMenu:SetWidth(width) end
+end
 
 -- ---------------------------------------------------------------- SuperMacro --
 
@@ -138,7 +212,9 @@ end
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("ADDON_LOADED")
 ev:SetScript("OnEvent", function()
-  if arg1 == "SuperMacro" then
+  if arg1 == "pfQuest" then
+    LocalizePfQuest()
+  elseif arg1 == "SuperMacro" then
     LocalizeSuperMacro()
   elseif arg1 == "ShaguNotify" then
     LocalizeShaguNotify()
@@ -148,6 +224,7 @@ ev:SetScript("OnEvent", function()
 end)
 
 -- Already-loaded addons (load order can put them before this file runs).
+if IsAddOnLoaded and IsAddOnLoaded("pfQuest") then LocalizePfQuest() end
 if IsAddOnLoaded and IsAddOnLoaded("SuperMacro") then LocalizeSuperMacro() end
 if IsAddOnLoaded and IsAddOnLoaded("ShaguNotify") then LocalizeShaguNotify() end
 if IsAddOnLoaded and IsAddOnLoaded("ShaguKill") then LocalizeShaguKill() end
