@@ -10,6 +10,8 @@
 - **成就**：3.x 成就里 1.12 世界有的部分（等级、任务、探索、地下城与团队副本，146 个），已有角色登录时按做过的内容补发。
 - **低等级任务不白做**：等级高出任务太多、经验打折时，少拿的那部分经验按 60 级的规则折成金币。
 - **经验 2 倍**，掉落和金钱保持 1 倍。在 `config/mangosd.overrides.conf` 里可以改。
+- **专业不限**：9 个主专业都能学（炼金、锻造、附魔、工程、草药、制皮、采矿、剥皮、裁缝），急救、烹饪、钓鱼照旧不占名额。
+- **新角色自带 1 金和 4 只 8 格包**（棕色小皮包）；已有角色不补发。
 
 目前只支持 **Apple Silicon 的 Mac**，从源码构建。
 
@@ -94,8 +96,34 @@ WOW_PASS=密码
 | 拉代码后重新编译 | `tools/macos/build-classic.sh`，再 `tools/macos/setup-classic.sh`（补数据库迁移） |
 | 改了服务端设置 | 改 `config/mangosd.overrides.conf`，然后运行 `tools/macos/apply-config.sh`，重启服务器 |
 | 更新插件 | 拉代码后运行 `tools/macos/install-addons.sh`，然后**完全重启**客户端（`/reload` 不会加载新插件） |
+| 原版 / HD 模型 | `tools/macos/apply-visual.sh vanilla` 或某个 profile 名；见下文「客户端外观」 |
 
 关掉客户端后服务器会继续运行。服务器的输出在 `server/logs/mangosd.out`，Soloroth.app 的输出在 `server/logs/launcher.log`。
+
+---
+
+## 客户端外观（原版 / HD 怪物模型）
+
+默认是 **原版** 1.12 模型。想用更精细的怪物（或整套 HD），自己把社区补丁 MPQ 放进 `../wow-data/visual-patches/<名字>/`，再用配置切换，不用改服务端。
+
+```sh
+# 例如只换生物（Project Reforged 的 Patch-C，或 Improved Models）
+mkdir -p ../wow-data/visual-patches/reforged-creatures
+# 把下载的补丁改名为 patch-C.MPQ（单个字母；不要用已有的 A / 2）后放进该目录
+
+mkdir -p ../wow-data/visual-patches/improved-models
+# 同样放入 patch-C.MPQ（两个 profile 可以各放一份，切换时只挂当前这份）
+
+tools/macos/apply-visual.sh --list              # 看有哪些 profile
+tools/macos/apply-visual.sh reforged-creatures  # 选用并写入 benilla-config/visual.env
+tools/macos/apply-visual.sh vanilla             # 回到原版
+```
+
+- **游戏里切换**：选项 → 图形 →「怪物 / 世界模型」，或输入 `/visual` / `/waiguan`。选好后**完全退出再开** Soloroth 才会换模型（MPQ 只能在启动时挂载）。
+- 选择写在 `benilla-config/config.toml` 的 `solorothVisual`（也可用 `benilla-config/visual.env`）。`play.sh` 启动前会按它挂软链。
+- 下载补丁：`tools/macos/fetch-visual-patches.sh`（只要怪物加 Reforged Patch-C；加 `--hd` 再拉场景等大包）。文件在 `../wow-data/visual-patches/`，不进 git。
+- 文件名必须是 `patch-?.MPQ`（`?` 一个字符）。中文客户端已有 `patch-A.MPQ`，生物补丁用 `C` 等空位。Reforged 的 VanillaHelpers / DXVK 给原版 Windows 用，benilla **不需要**。
+- Improved Models 上游用 adf.ly，脚本建好了空目录；有 MPQ 后放进 `visual-patches/improved-models/` 即可。
 
 ---
 
