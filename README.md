@@ -119,11 +119,10 @@ tools/macos/apply-visual.sh reforged-creatures  # 选用并写入 benilla-config
 tools/macos/apply-visual.sh vanilla             # 回到原版
 ```
 
-- **游戏里切换**：选项 → 图形 →「怪物 / 世界模型」，或输入 `/visual` / `/waiguan`。选好后**完全退出再开** Soloroth 才会换模型（MPQ 只能在启动时挂载）。
-- 选择写在 `benilla-config/config.toml` 的 `solorothVisual`（也可用 `benilla-config/visual.env`）。`play.sh` 启动前会按它挂软链。
-- 下载补丁：`tools/macos/fetch-visual-patches.sh`（只要怪物加 Reforged Patch-C；加 `--hd` 再拉场景等大包）。文件在 `../wow-data/visual-patches/`，不进 git。
-- 文件名必须是 `patch-?.MPQ`（`?` 一个字符）。中文客户端已有 `patch-A.MPQ`，生物补丁用 `C` 等空位。Reforged 的 VanillaHelpers / DXVK 给原版 Windows 用，benilla **不需要**。
-- Improved Models 上游用 adf.ly，脚本建好了空目录；有 MPQ 后放进 `visual-patches/improved-models/` 即可。
+- **游戏里切换**：选项 → 图形 →「怪物 / 世界模型」（pfUI 样式），或 `/visual` / `/waiguan`。选好后**完全退出再开**才会换模型。
+- 选择写在 `config.toml` 的 `solorothVisual`。`play.sh` 启动前按它挂软链。
+- 下载：`tools/macos/fetch-visual-patches.sh`。会把 Reforged Patch-C 去掉 `DBFilesClient`（否则会盖住原版生物表，怪全变成方块）。产物在 `../wow-data/visual-patches/`。
+- 原版 Windows 客户端要的 VanillaHelpers / DXVK，benilla **用不上**；benilla 只吃「仅模型/贴图」的 patch。
 
 ---
 

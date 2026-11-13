@@ -5,17 +5,21 @@ Lives on the Options → Graphics page. Choice is a RegisterCVar
 (solorothVisual) so it lands in benilla-config/config.toml; play.sh /
 apply-visual.sh remount the matching patch-?.MPQ overlays on the next
 launch. Mid-session swaps are impossible: the MPQ chain is fixed at boot.
+
+Buttons are skinned through SoloSkin (pfUI) once pfUI has loaded.
 ----------------------------------------------------------------------------]]
 
 local CVAR = "solorothVisual"
 local DEFAULT = "vanilla"
 
 -- id = folder under ../wow-data/visual-patches/ (or "vanilla")
+-- Reforged full packs ship DBC overrides that break benilla (ErrorCube /
+-- "pillar" mobs). Use reforged-creatures only after strip-mpq-dbc, or vanilla.
 local PROFILES = {
-  { id = "vanilla",             en = "Vanilla (original)",     zh = "原版（默认）" },
-  { id = "reforged-creatures",  en = "HD creatures (Reforged)", zh = "高清怪物（Reforged）" },
-  { id = "improved-models",     en = "Improved Models",        zh = "Improved Models" },
-  { id = "hd",                  en = "HD pack (multi-patch)",  zh = "高清合集" },
+  { id = "vanilla",             en = "Vanilla (original)",           zh = "原版（默认）" },
+  { id = "reforged-creatures",  en = "HD creatures (models only)",   zh = "高清怪物（仅模型）" },
+  { id = "improved-models",     en = "Improved Models",              zh = "Improved Models" },
+  { id = "hd",                  en = "HD pack (multi-patch)",        zh = "高清合集" },
 }
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
@@ -50,8 +54,8 @@ local function RefreshMarks()
   end
   if ui.hint then
     ui.hint:SetText(L(
-      "Applies on next launch. Current: " .. LabelOf(cur),
-      "下次启动客户端后生效。当前：" .. LabelOf(cur)
+      "Applies on next full launch. Current: " .. LabelOf(cur),
+      "下次完全启动后生效。当前：" .. LabelOf(cur)
     ))
   end
 end
@@ -67,13 +71,28 @@ local function Choose(id)
   SetCVar(CVAR, id)
   RefreshMarks()
   DEFAULT_CHAT_FRAME:AddMessage("|cff44ddffSolo|r: " .. L(
-    "visual profile → " .. LabelOf(id) .. ". Quit the game fully, then start Soloroth again.",
-    "外观已选「" .. LabelOf(id) .. "」。请完全退出游戏，再打开 Soloroth 才会换上。"
+    "visual profile → " .. LabelOf(id) .. ". Quit fully, then start Soloroth again.",
+    "外观已选「" .. LabelOf(id) .. "」。请完全退出，再打开 Soloroth。"
   ))
 end
 
+local function SkinButtons()
+  if not (pfUI and pfUI.api and pfUI.api.SkinButton) then return end
+  for i = 1, table.getn(ui.buttons) do
+    local b = ui.buttons[i]
+    if b and not b.soloSkinned then
+      b.soloSkinned = true
+      pfUI.api.SkinButton(b)
+    end
+  end
+end
+
 local function Build()
-  if ui.root then return end
+  if ui.root then
+    SkinButtons()
+    RefreshMarks()
+    return
+  end
   local graphics = BenillaOptionsFrameContainerBodyGraphics
   local anchor = BenillaOptionsFrameContainerBodyGraphicsRowRenderScale
   if not graphics or not anchor then return end
@@ -87,6 +106,7 @@ local function Build()
   local title = root:CreateFontString(nil, "ARTWORK", "GameFontNormal")
   title:SetPoint("TOPLEFT", root, "TOPLEFT", 0, 0)
   title:SetText(L("Creature / world models", "怪物 / 世界模型"))
+  ui.title = title
 
   local hint = root:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
   hint:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
@@ -111,8 +131,8 @@ local function Build()
       GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
       GameTooltip:AddLine(this.label)
       GameTooltip:AddLine(L(
-        "Needs the matching folder under wow-data/visual-patches/. Vanilla needs nothing.",
-        "需要 wow-data/visual-patches/ 下对应目录里的 patch。原版无需文件。"
+        "Needs wow-data/visual-patches/<id>/patch-?.MPQ. Vanilla needs nothing. Raw Reforged DBCs break models in benilla.",
+        "需要 wow-data/visual-patches/<id>/ 下的 patch。原版不用文件。未处理的 Reforged DBC 会在 benilla 里把怪变成方块。"
       ), 1, 1, 1, 1)
       GameTooltip:Show()
     end)
@@ -120,7 +140,16 @@ local function Build()
     ui.buttons[i] = b
   end
 
+  SkinButtons()
   RefreshMarks()
+end
+
+-- pfUI skins run after earlier addons; register so we re-skin when it lands.
+if SoloSkin and SoloSkin.Register then
+  SoloSkin.Register("SoloVisual", function()
+    Build()
+    SkinButtons()
+  end)
 end
 
 local ev = CreateFrame("Frame")
@@ -132,6 +161,7 @@ ev:SetScript("OnEvent", function()
     local prev = graphics:GetScript("OnShow")
     graphics:SetScript("OnShow", function()
       if prev then prev() end
+      SkinButtons()
       RefreshMarks()
     end)
   end

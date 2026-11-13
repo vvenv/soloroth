@@ -31,10 +31,20 @@ fetch() {
     fi
 }
 
-# Creatures only (~2 GB).
+# Creatures only (~2 GB). Raw Reforged Patch-C also ships DBCs that break
+# benilla (every mob becomes ErrorCube); strip them into patch-C-nodbc.MPQ.
 fetch "$R2/patch-C.mpq" "$cache/patch-C.MPQ"
-ln -sfn "$cache/patch-C.MPQ" "$base/reforged-creatures/patch-C.MPQ"
-ln -sfn "$cache/patch-C.MPQ" "$base/hd/patch-C.MPQ"
+strip="$root/tools/macos/strip-mpq-dbc"
+if [ ! -x "$strip" ]; then
+    clang -O2 -o "$strip" "$root/tools/macos/strip-mpq-dbc.c" \
+        -I/opt/homebrew/include -L/opt/homebrew/lib -lstorm
+fi
+if [ ! -f "$cache/patch-C-nodbc.MPQ" ] || [ "$cache/patch-C.MPQ" -nt "$cache/patch-C-nodbc.MPQ" ]; then
+    echo "strip DBFilesClient from Patch-C (benilla-safe)"
+    "$strip" "$cache/patch-C.MPQ" "$cache/patch-C-nodbc.MPQ"
+fi
+ln -sfn "$cache/patch-C-nodbc.MPQ" "$base/reforged-creatures/patch-C.MPQ"
+ln -sfn "$cache/patch-C-nodbc.MPQ" "$base/hd/patch-C.MPQ"
 
 if [ "${1:-}" = "--hd" ]; then
     # Environment set B+D+E must stay together. Reforged patch-A would collide
