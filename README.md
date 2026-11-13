@@ -123,7 +123,7 @@ WOW_PASS=密码
 | 做什么 | 命令 |
 |---|---|
 | 开始玩 | 双击 Soloroth.app，或 `./do.sh play`（终端里启动不弹启动器，服务器没开会先开） |
-| 只开服务器 | `./do.sh server` |
+| 开服务器 | `./do.sh server` |
 | 关服务器 | `./do.sh stop`（可选连 MariaDB 一起关），或启动器的 ··· 菜单 |
 | 该不该编译？ | `./do.sh status`（或菜单里的提示） |
 | 拉代码后重新编译 | `./do.sh build`，再 `./do.sh setup`（补数据库迁移） |

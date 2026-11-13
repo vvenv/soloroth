@@ -5,7 +5,7 @@
 #   ./do.sh                         # 交互主菜单（会提示该不该编译）
 #   ./do.sh status                  # 只看改动提示（该编译 / 装插件 / 应用配置？）
 #   ./do.sh play                    # 开服务器（如未开）+ 客户端
-#   ./do.sh server                  # 只开服务器
+#   ./do.sh server                  # 开服务器
 #   ./do.sh stop                    # 关服务器（交互可选连 MariaDB 一起关）
 #   ./do.sh stop --all              # 关服务器并关 MariaDB
 #   ./do.sh first                   # 第一次安装向导：编译 → 配置 → 开服 → 建账号 → 生成 App
@@ -228,7 +228,7 @@ cmd_play() {
 }
 
 cmd_server() {
-  log_info "只开服务器"
+  log_info "开服务器"
   run_macos play.sh --server-only
   log_success "服务器已开（日志 server/logs/mangosd.out）"
 }
@@ -391,10 +391,10 @@ cmd_app() {
   fi
 
   if [ -n "$dest" ]; then
-    log_info "生成 Soloroth.app → $dest"
+    log_info "生成 App → $dest"
     run_macos make-app.sh "$dest"
   else
-    log_info "生成 Soloroth.app"
+    log_info "生成 App"
     run_macos make-app.sh
   fi
   log_success "App 已生成"
@@ -490,7 +490,7 @@ run_main_menu() {
     local choice
     choice="$(prompt_menu "Soloroth" --default="$HINT_MENU_DEFAULT" \
       "play:开始玩" \
-      "server:只开服务器" \
+      "server:开服务器" \
       "stop:关服务器" \
       "first:第一次安装" \
       "build:编译（增量）" \
