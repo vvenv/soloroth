@@ -535,7 +535,7 @@ mm:SetScript("OnEnter", function()
   GameTooltip:AddLine(L("Achievements", "成就"))
   local done, total, points = Tally(0)
   GameTooltip:AddLine(done .. " / " .. total .. "   " .. L("points ", "点数 ") .. points, .8, .8, .8)
-  GameTooltip:AddLine(L("Click: open or close   Drag: move", "点击：打开/关闭   拖动：移动"), .8, .8, .8)
+  GameTooltip:AddLine(L("Y / click: open or close   Drag: move", "Y / 点击：打开/关闭   拖动：移动"), .8, .8, .8)
   GameTooltip:Show()
 end)
 mm:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -559,8 +559,20 @@ end
 
 SLASH_SOLOACHIEVEMENTS1 = "/ach"
 SLASH_SOLOACHIEVEMENTS2 = "/achievements"
-SLASH_SOLOACHIEVEMENTS3 = "/cj"
 SlashCmdList["SOLOACHIEVEMENTS"] = function() Toggle() end
+
+-- Y is free in 1.12 defaults and is Wrath's achievement key. Offer it once;
+-- leave alone if the player already bound or unbound the command, or if Y is taken.
+local function EnsureDefaultKey()
+  if not db or db.defaultKey then return end
+  db.defaultKey = true
+  if GetBindingKey("SOLOACHIEVEMENTS_TOGGLE") then return end
+  local taken = GetBindingAction("Y")
+  if taken and taken ~= "" then return end
+  SetBinding("Y", "SOLOACHIEVEMENTS_TOGGLE")
+  local which = GetCurrentBindingSet and GetCurrentBindingSet() or 1
+  if which == 1 or which == 2 then SaveBindings(which) end
+end
 
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("VARIABLES_LOADED")
@@ -579,6 +591,8 @@ ev:SetScript("OnEvent", function()
     end
     PlaceMinimapButton()
   elseif event == "PLAYER_LOGIN" then
+    -- After the binding readers (post VARIABLES_LOADED); SaveBindings before that is dropped.
+    EnsureDefaultKey()
     SkinWithPfUI()
   elseif event == "PLAYER_ENTERING_WORLD" then
     if not synced then RequestSync() end
