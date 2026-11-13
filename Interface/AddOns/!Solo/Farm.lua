@@ -111,7 +111,8 @@ function SoloFarm_Stop()
 end
 
 local function Start(mode, msg)
-  local yards = tonumber(string.gsub(msg or "", "^%s*(.-)%s*$", "%1"))
+  -- Extra parens: gsub's 2nd return (sub count) must not become tonumber's base.
+  local yards = tonumber((string.gsub(msg or "", "^%s*(.-)%s*$", "%1")))
   Server(".solo " .. mode .. (yards and (" " .. math.floor(yards)) or ""))
 end
 
