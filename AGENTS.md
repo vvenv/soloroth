@@ -2,7 +2,8 @@
 
 WoW 1.12.1 classic for one player on an Apple Silicon Mac: a vmangos server, the benilla
 client, and a vetted 1.12 addon set tuned for solo play. README.md (Chinese) is the user
-guide; keep it in step with any player-visible change.
+guide; keep it in step with any player-visible change. BUILDING.md (Chinese) holds what
+each script does, the directory table and upstream merging.
 
 ## Layout and who owns what
 
@@ -15,7 +16,11 @@ guide; keep it in step with any player-visible change.
 - `Interface/AddOns/` — the addon set. Third-party addons (pfUI, pfQuest, Atlas*, Bagshui,
   Shagu*, SuperMacro, CleverMacro) are kept as shipped: never edit their sources. Change
   their defaults or looks from `!Solo` (see its `AGENTS.md`).
-- `tools/macos/` — build, install, run scripts. `tools/glue-skin/` — login/character screens.
+- `tools/macos/` — build, install, run scripts. `tools/macos/launcher/` — Soloroth.app's
+ launcher window (AppKit, built by `make-app.sh`): the art with no text over it but the
+ bottom bar and the promo slot. Art, links and promo come from `launcher.json`, so an ad
+ changes there, not in Swift. Check it with
+ `--snapshot out.png`. `tools/glue-skin/` — login/character screens.
   `tools/lib/` — shared menu/log helpers for `do.sh`.
 - `do.sh` — interactive entry (first install, play, build, visual, …); wraps `tools/macos/`.
 - `Data/` (links to the client MPQs plus generated patches), `benilla-config/`, `server/run`,

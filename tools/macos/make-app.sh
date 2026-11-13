@@ -1,18 +1,20 @@
 #!/bin/bash
 # Builds Soloroth.app, a double-click launcher for tools/macos/play.sh: it
-# starts the server when it is not running (with a notification, since the
-# first start takes a while), then the client, which logs in by itself (see
-# play.sh). The app runs this checkout in place, so it stays current with
-# builds and pulls; rerun this only when the checkout moves.
+# opens the launcher window (tools/macos/launcher/), which starts the server
+# while it shows the news, and on 开始游戏 the client, which logs in by itself
+# (see play.sh). The app runs this checkout in place, so it stays current with
+# builds and pulls; rerun this when the checkout moves or Launcher.swift changes.
 #
 #   tools/macos/make-app.sh              into /Applications (~/Applications if not writable)
 #   tools/macos/make-app.sh <folder>     into <folder>
 #
 # The icon is tools/macos/AppIcon.png (1024x1024; render-icon.swift draws it).
-# Launcher output goes to server/logs/launcher.log.
+# Launcher output goes to server/logs/launcher.log. SOLOROTH_SKIP_LAUNCHER=1
+# (or "skip": true in launcher.json) goes straight to the game, as does a
+# launcher that failed to build or crashed.
 #
-# The bundle's executable is a shell script named "launch". It starts the
-# server, then replaces itself with a copy of the client at
+# The bundle's executable is a shell script named "launch". It runs the
+# launcher window, then replaces itself with a copy of the client at
 # Contents/MacOS/Soloroth. macOS takes the Dock name, menu bar and icon from
 # the bundle that contains the running executable, so the game shows up as
 # Soloroth rather than as the raw benilla binary.
@@ -83,15 +85,26 @@ if pgrep -f "^$bundle/Contents/MacOS/Soloroth" >/dev/null \
     || pgrep -f "^$client" >/dev/null; then
     exit 0
 fi
-if ! lsof -nP -iTCP:8085 -sTCP:LISTEN >/dev/null 2>&1; then
-    osascript -e 'display notification "第一次启动服务器要一点时间" with title "Soloroth" subtitle "正在启动服务器…"'
+# The window starts the server itself: 0 is play; 1, or a signal (Force
+# Quit), means the player closed it. Any other code (skipped, failed to run,
+# not built) starts the game without it.
+status=2
+if [ "${SOLOROTH_SKIP_LAUNCHER:-}" != 1 ] && [ -x "$bundle/Contents/MacOS/Launcher" ]; then
+    "$bundle/Contents/MacOS/Launcher" --root "$root"
+    status=$?
 fi
-bash "$root/tools/macos/play.sh" --no-client
-status=$?
+if [ "$status" = 1 ] || [ "$status" -ge 128 ]; then exit 0; fi
 if [ "$status" != 0 ]; then
-    alert "启动失败（退出码 $status）。详情见 server/logs/launcher.log：
+    if ! lsof -nP -iTCP:8085 -sTCP:LISTEN >/dev/null 2>&1; then
+        osascript -e 'display notification "第一次启动服务器要一点时间" with title "Soloroth" subtitle "正在启动服务器…"'
+    fi
+    bash "$root/tools/macos/play.sh" --no-client
+    status=$?
+    if [ "$status" != 0 ]; then
+        alert "启动失败（退出码 $status）。详情见 server/logs/launcher.log：
 $(tail -n 8 "$logs/launcher.log")"
-    exit "$status"
+        exit "$status"
+    fi
 fi
 # shellcheck source=bundle.sh
 source "$root/tools/macos/bundle.sh"
@@ -102,6 +115,11 @@ target="$(stage_client "$bundle" "$client")"
 exec "$target"
 EOF
 chmod +x "$app/Contents/MacOS/launch"
+
+if ! swiftc -O -o "$app/Contents/MacOS/Launcher" "$root/tools/macos/launcher/Launcher.swift"; then
+    rm -f "$app/Contents/MacOS/Launcher"
+    echo "warning: the launcher window did not build; the app starts the game directly" >&2
+fi
 
 icon="$root/tools/macos/AppIcon.png"
 if [ ! -f "$icon" ]; then

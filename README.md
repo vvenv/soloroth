@@ -1,23 +1,58 @@
-# Soloroth（经典单机版）
+<p align="center">
+  <img src=".github/images/launcher.jpg" alt="Soloroth 启动器" width="820">
+</p>
 
-一个在自己电脑上跑的魔兽世界 1.12.1 经典版：做任务、升级、探索，五人副本里自动有机器人队友补满队伍。
+<h1 align="center">Soloroth</h1>
+
+<p align="center">
+  一个在自己 Mac 上跑的魔兽世界 1.12.1 经典版：做任务、升级、探索。<br>
+  五人副本里机器人队友自动补满，一个人也能打完整个经典旧世。
+</p>
+
+<p align="center">
+  <img alt="Apple Silicon" src="https://img.shields.io/badge/Mac-Apple%20Silicon-111?style=for-the-badge&logo=apple">
+  <img alt="WoW 1.12.1" src="https://img.shields.io/badge/WoW-1.12.1%20(5875)-c9a227?style=for-the-badge">
+  <a href="LICENSE"><img alt="GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-2b5797?style=for-the-badge"></a>
+</p>
+
+> [!WARNING]
+> Soloroth 不包含、不提供、也不链接魔兽世界客户端，你需要自己的 1.12.1（build 5875）客户端。
+> 这是非官方的爱好者项目，与暴雪娱乐无关。代码只在 [这个仓库](https://github.com/vvenv/soloroth) 发布，别处提供的“整合包”或客户端下载都不是我们做的。
+
+<p align="center">
+  <a href="#快速开始">快速开始</a> ·
+  <a href="#特色">特色</a> ·
+  <a href="#日常使用">日常使用</a> ·
+  <a href="#游戏里">游戏里</a> ·
+  <a href="#常见问题">常见问题</a> ·
+  <a href="BUILDING.md">开发者</a> ·
+  <a href="https://github.com/vvenv/soloroth/issues">问题反馈</a>
+</p>
+
+---
+
+## 特色
 
 - **原版内容**：服务端是原版 [vmangos](https://github.com/vmangos/core)，世界数据、任务、刷怪都是 1.12 原样。
 - **机器人组队**：进入五人副本 3 秒后，队伍自动补满 5 人。缺坦克就补坦克，缺治疗就补治疗，其余补不同职业的输出。bot 和你同级、装备匹配等级，掷骰全部放弃。活着离开副本时 bot 自动解散。
 - **中文**：用简体中文 1.12 客户端的数据，界面、任务、NPC、物品都是中文。
 - **单人化**：没有聊天频道，聊天框只当消息记录用（系统、拾取、经验、任务和 NPC 说话）。
 - **插件**：pfUI、pfQuest、Atlas 三件套、Bagshui 等一套 1.12 插件，已经按单人旅行做任务配好，不弹首次设置向导。另有 GMBox 2.0（副本与机器人面板、传送、物品、GM 工具），界面和 pfUI 风格一致。
-- **成就**：3.x 成就里 1.12 世界有的部分（等级、任务、探索、地下城与团队副本，146 个），已有角色登录时按做过的内容补发。
+- **自动打怪、自动钓鱼**：`/dg`、`/dy`，由服务器带着角色打怪、拾取、休息或钓鱼。
+- **成就**：3.x 成就里 1.12 世界有的部分（等级、任务、探索、地下城与团队副本，146 个），达成时屏幕上方弹出提示。
 - **低等级任务不白做**：等级高出任务太多、经验打折时，少拿的那部分经验按 60 级的规则折成金币。
 - **经验 2 倍**，掉落和金钱保持 1 倍。在 `config/mangosd.overrides.conf` 里可以改。
 - **专业不限**：9 个主专业都能学（炼金、锻造、附魔、工程、草药、制皮、采矿、剥皮、裁缝），急救、烹饪、钓鱼照旧不占名额。
-- **新角色自带 1 金和 4 只 8 格包**（棕色小皮包）；已有角色不补发。
+- **新角色自带 1 金和 4 只 8 格包**（棕色小皮包）。
+- **原版或高清怪物模型**：游戏里一键切换，见下文「客户端外观」。
 
 目前只支持 **Apple Silicon 的 Mac**，从源码构建。
 
 ---
 
-## 需要准备
+## 快速开始
+
+### 需要准备
 
 | 东西 | 说明 |
 |---|---|
@@ -41,48 +76,33 @@
 
 还没有提取好的地图数据的话，用 vmangos 自带的提取工具从 1.12 客户端生成：构建时加 `-DBUILD_EXTRACTORS=1`，用法见 [vmangos](https://github.com/vmangos/core) 的文档。
 
----
+### 安装
 
-## 第一次安装
+1. 拉代码：
 
-```sh
-git clone --recurse-submodules https://github.com/vvenv/soloroth.git
-cd soloroth
+   ```sh
+   git clone --recurse-submodules https://github.com/vvenv/soloroth.git
+   cd soloroth
+   ```
 
-./do.sh                                              # 交互菜单；选「第一次安装」走完下面几步
-# 或直接：
-./do.sh first                                        # 编译 → 配置 → 开服 → 建账号 → 生成 App
-```
+2. 运行 `./do.sh`，在菜单里选「第一次安装」（或直接 `./do.sh first`）。它会编译、配置、开服、建账号，最后生成 `/Applications/Soloroth.app`。第一次编译要一阵子。
+3. 双击 **Soloroth.app**（或在启动台、Spotlight 里搜 Soloroth），在启动器里点 **开始游戏**。
 
-也可以逐步跑（菜单和 `./do.sh <子命令>` 都是转发到这些脚本）：
+每一步具体做了什么，见 [BUILDING.md](BUILDING.md)。
 
-```sh
-tools/macos/build-classic.sh                         # 编译服务端和客户端（第一次要编译一阵子）
-tools/macos/setup-classic.sh                         # 数据库、配置、客户端数据、插件
-tools/macos/play.sh --server-only                    # 先把服务器开起来
-tools/macos/create-account.sh 账号 密码 gm           # 建账号；gm 表示给 GM 权限
-tools/macos/make-app.sh                              # 生成 /Applications/Soloroth.app
-```
+### 启动器
 
-以后双击 **Soloroth.app**（或者在启动台、Spotlight 里搜 Soloroth）就能玩：服务器没开会先开，然后自动登录，直接到角色选择。日常也可用 `./do.sh`（开始玩、关服务器、编译、更新插件、外观补丁等）。
+双击 Soloroth.app 先打开启动器窗口（就是本页顶部那张图）。窗口一打开就在后台启动服务器，底栏显示进度：
 
-各步骤做了什么：
+- **开始游戏**：服务器就绪后进入游戏，自动登录到角色选择。服务器还没好时点它，会等就绪后自动进入。启动失败时按钮变成「重试」，底栏显示日志最后一行。
+- **底栏链接**：GitHub 和问题反馈。**···** 菜单里可以打开日志文件夹、插件文件夹、编辑启动器设置、关服务器。
+- **关掉窗口**（或 ⌘Q）就什么都不启动；服务器如果已经开了，会继续运行。
 
-1. **`build-classic.sh`**：编译服务端（`mangosd`、`realmd`），装到 `release/build/macos/server-classic`；再编译客户端，生成 `release/build/macos/client-target/release/benilla`。也可以只编一边：`build-classic.sh server` 或 `build-classic.sh client`。
-2. **`setup-classic.sh`**：重复运行是安全的，已有的东西不会动。它会：
-   - 把服务端程序和地图数据链接进 `server/run`、`server/data`；
-   - 初始化并启动 MariaDB（数据在 `server/mariadb-data`）；
-   - 第一次运行时，下载 vmangos 官方世界数据库快照（约 30 MB），建四个库：`classic_world`、`classic_characters`、`classic_realmd`、`classic_logs`；以后再运行只补新的数据库迁移；
-   - 生成服务端配置，把 `Data/` 链接到客户端的 MPQ，以及登录界面要用的 `tos.html` / `eula.html` 等松散文件；
-   - 设置客户端（服务器名 Azeroth，不限插件脚本内存），安装插件。
-
-   加 `--reset-db` 会清空重建这四个库，**角色也会被清掉**。
-3. **`create-account.sh`**：需要服务器在运行。加 `gm` 的账号才能用 GMBox 的传送、物品和工具按钮；机器人组队不需要 GM。建的第一个账号会存进 `benilla-config/login.env`，以后自动用它登录。
-4. **`make-app.sh`**：生成启动器 `Soloroth.app`，默认放进 `/Applications`，也可以指定目录：`make-app.sh ~/Desktop`。启动台、Spotlight、程序坞和「强制退出」里的名字都是 Soloroth，图标是仓库里的 `tools/macos/AppIcon.png`。窗口标题在重新编译客户端之后也是 Soloroth。它直接运行这个仓库里的脚本；客户端重新编译之后，下次启动会自动换上新的。只有仓库换了位置，或换了图标，才要再运行一次。想换成自己的图标，放一张 1024×1024 的 `AppIcon.png` 再运行即可。
+想换背景图、底栏链接，或者不想看到启动器：点 ··· →「编辑启动器设置」，会打开 `benilla-config/launcher.json`（第一次打开时新建，里面只有 `"skip": false`）。把它改成 `true` 就跳过窗口，双击 app 直接进游戏；只想临时跳过一次，用 `open --env SOLOROTH_SKIP_LAUNCHER=1 -a Soloroth`。这个文件里还可以写仓库 `tools/macos/launcher/launcher.json` 里的任何一项（背景图 `hero`、链接、推广位），写了的整项替换掉仓库的。改完下次启动生效。
 
 ### 自动登录
 
-`play.sh` 和 Soloroth.app 用 `benilla-config/login.env` 里的账号自动登录（这个文件不进 git，只有你自己能读）：
+启动器和 `./do.sh play` 用 `benilla-config/login.env` 里的账号自动登录（这个文件不进 git，只有你自己能读）：
 
 ```
 WOW_USER=PLAYER
@@ -94,26 +114,26 @@ WOW_PASS=密码
 - 去掉 `WOW_CHAR` 那行前面的 `#` 并填上角色名，启动后直接进入这个角色的游戏世界。
 - 改了密码或想换账号，删掉 `login.env`，下次启动会重新问。
 
+---
+
 ## 日常使用
 
-根目录 `./do.sh` 是交互菜单（也可 `./do.sh play` 等子命令），对应下面这些脚本。菜单会根据源码和二进制的新旧提示该不该编译；不确定时看 `./do.sh status`。Esc / ← 返回上一级。cargo / cmake 本身是增量的，提示说要编时再跑即可。
+根目录 `./do.sh` 是交互菜单（也可 `./do.sh play` 等子命令）。菜单会根据源码和二进制的新旧提示该不该编译；不确定时看 `./do.sh status`。Esc / ← 返回上一级。cargo / cmake 本身是增量的，提示说要编时再跑即可。
 
 | 做什么 | 命令 |
 |---|---|
-| 开始玩 | 双击 Soloroth.app，或 `./do.sh play`（服务器没开会先开） |
+| 开始玩 | 双击 Soloroth.app，或 `./do.sh play`（终端里启动不弹启动器，服务器没开会先开） |
 | 只开服务器 | `./do.sh server` |
-| 关服务器 | `./do.sh stop`（可选连 MariaDB 一起关） |
+| 关服务器 | `./do.sh stop`（可选连 MariaDB 一起关），或启动器的 ··· 菜单 |
 | 该不该编译？ | `./do.sh status`（或菜单里的提示） |
 | 拉代码后重新编译 | `./do.sh build`，再 `./do.sh setup`（补数据库迁移） |
 | 改了服务端设置 | 改 `config/mangosd.overrides.conf`，然后 `./do.sh config`，重启服务器 |
 | 更新插件 | 拉代码后 `./do.sh addons`，然后**完全重启**客户端（`/reload` 不会加载新插件） |
 | 原版 / HD 模型 | 选项 → 图形 →「怪物模型」，或 `./do.sh visual`；重启生效；见下文「客户端外观」 |
 
-关掉客户端后服务器会继续运行。服务器的输出在 `server/logs/mangosd.out`，Soloroth.app 的输出在 `server/logs/launcher.log`。
+关掉客户端后服务器会继续运行。服务器的输出在 `server/logs/mangosd.out`，Soloroth.app 和启动器的输出在 `server/logs/launcher.log`。
 
----
-
-## 客户端外观（原版 / HD 怪物模型）
+### 客户端外观（原版 / HD 怪物模型）
 
 默认是 **原版** 1.12 模型。想用更精细的怪物，下载社区补丁（Project Reforged）后在游戏里切换，不用改服务端。
 
@@ -124,7 +144,7 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B�
 
 - **游戏里切换**：选项 → 图形 → 最下面的「怪物模型」，或 `/visual` / `/waiguan`。还没下载的方案是灰色，标「未安装」。选好后**完全退出再开**才会换模型；没重启前这一行旁边会提示「重启后生效」。
 - 方案：「原版」「高清怪物（Reforged）」只换生物；「高清合集（Reforged 全套）」在下载了 `--hd` 后多出环境和物品；「Improved Models」要自己把 MPQ 放进 `../wow-data/visual-patches/improved-models/`（见那里的 README.txt）。
-- 选择写在 `config.toml` 的 `solorothVisual`，`play.sh` 启动前按它把补丁链接进 `Data/`。命令行也能切：`tools/macos/apply-visual.sh hd` / `vanilla` / `--list`。
+- 选择写在 `config.toml` 的 `solorothVisual`，每次启动前按它把补丁链接进 `Data/`。命令行也能切：`tools/macos/apply-visual.sh hd` / `vanilla` / `--list`。
 - 下载器按 10 MB 分块并行下载，并用服务器的校验值核对整个文件；文件不完整时，怪物会隐形或变成方块。
 - 原版 Windows 客户端要的 VanillaHelpers / DXVK，benilla **用不上**。
 
@@ -177,7 +197,7 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B�
 - **ESC 菜单和「选项」窗口**：换成 pfUI 的样式；去掉客户端里还没有功能的「编辑模式」按钮和「插件」页，以及 SuperMacro 挂在菜单边上的「宏命令」按钮（它的编辑器用 `/supermacro` 打开）。界面文字是中文。
 - **其他窗口也换成 pfUI 的样式**（作为 pfUI 皮肤注册，在 pfUI 设置里可以单独关掉，插件源码不改）：Atlas 地图（AtlasLoot 面板贴在下方，AtlasQuest 贴在旁边）、AtlasLoot、SuperMacro 编辑器和图标选择、ShaguNotify 的提示条、脚本错误日志（`/errors`），以及这些插件的设置窗口。原版窗口由 pfUI 自己的皮肤负责；Bagshui 自带 pfUI 皮肤。
 
-登录、角色选择和角色创建界面不归插件管，它们的 pfUI 样式由 `tools/glue-skin/SoloGlueSkin.lua` 实现：`play.sh` 每次启动时从客户端 MPQ 里读出原版 `GlueXML.toc`，加上这个文件，打包成 `Data/patch-S.MPQ`。用 `WOW_STOCK_UI=1` 启动就会去掉它，恢复原版界面。
+登录、角色选择和角色创建界面不归插件管，它们也是 pfUI 样式（见 [BUILDING.md](BUILDING.md)）。用 `WOW_STOCK_UI=1 ./do.sh play` 启动就会恢复原版界面。
 
 进世界、切地图和坐船时，客户端不显示原版的地图插画，只有黑底、底部一条细进度条和小提示，等地图加载好就消失。
 
@@ -203,15 +223,13 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B�
 - **探索**：探索每个区域（世界地图上被遮住的每一块都算一项），探索东部王国、卡利姆多，世界探索者。
 - **地下城与团队副本**：每个经典副本的最终首领，和机器人一起打也算；经典地下城大师、经典团队副本攻略者。
 
-等级、任务和探索是登录时从角色身上重新数的，所以老角色一登录就能拿到已经做到的；首领击杀从开始有成就系统时算起。分阵营的成就（各区域任务、博学者）只显示本阵营的那一份。
+等级、任务和探索按角色当前的进度判定，首领击杀在打倒首领时记录。分阵营的成就（各区域任务、博学者）只显示本阵营的那一份。
 
 | 命令 | 作用 |
 |---|---|
 | `.achievement` | 已获得的成就数和点数 |
 | `.achievement add\|remove <id>` | GM：给选中的角色发放 / 收回一个成就（还满足条件的会马上回来） |
 | `.achievement reset` | GM：清空选中角色的成就，按角色现状重新数（首领击杀会清掉） |
-
-成就的定义由 `tools/achievements/gen-achievements.py` 从世界数据库和客户端数据生成，一次写出服务端的迁移和插件的 `Data.lua`，要改就改这个脚本。
 
 ### GMBox 的其他页
 
@@ -221,52 +239,55 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B�
 
 ---
 
-## 目录
-
-| 位置 | 内容 |
-|---|---|
-| `server/core` | 服务端（子模块 [soloroth-server](https://github.com/vvenv/soloroth-server)）：原版 vmangos 加上 macOS 修复、副本机器人 `src/game/PlayerBots/DungeonBotMgr.*` 和成就 `src/game/AchievementMgr.*` |
-| `client` | 客户端（子模块 [soloroth-client](https://github.com/vvenv/soloroth-client)）：[benilla](https://github.com/samwhosung/benilla)，用 Rust 从零写的 1.12 客户端，加上少量修复 |
-| `Interface/AddOns` | 整套插件：GMBox、成就窗口 `Achievements`、单人设置插件 `!Solo`（名字以 `!` 开头，保证比其他插件先加载），和第三方的 pfUI、pfQuest、Atlas 三件套、Bagshui 等（原样收录，各自的作者和许可见 THIRD-PARTY-NOTICES.md） |
-| `config/` | 服务端配置改动（`*.overrides.conf`）和 MariaDB 配置 |
-| `tools/macos/` | 构建、安装、启动脚本 |
-| `tools/achievements/` | 成就定义的生成脚本 |
-| `tools/glue-skin/` | 登录和角色界面的 pfUI 样式，和把它打包成 `Data/patch-S.MPQ` 的脚本 |
-| `tools/lib/` | `do.sh` 用的交互菜单和日志库 |
-| `do.sh` | 根目录交互入口（第一次安装、开玩、编译、外观等） |
-| `benilla-config/` | 客户端设置、插件（`AddOns/`）和插件存档（`saved/`），不进 git |
-| `Data/` | 指向客户端 MPQ 和登录条款 HTML 的链接，不进 git |
-| `server/run`、`server/data`、`server/logs` | 服务端运行目录、地图数据、日志，不进 git |
-
-服务端完全是 vmangos 原版加我们自己的少量提交，跟进上游很直接：
-
-```sh
-cd server/core
-git remote add upstream https://github.com/vmangos/core.git   # 只需第一次
-git fetch upstream
-git merge upstream/development
-cd ../.. && tools/macos/build-classic.sh server && tools/macos/setup-classic.sh
-```
-
-新增数据库迁移文件（`server/core/sql/migrations`）之后要重新编译服务端，因为 `mangosd` 会把迁移列表编进程序。数据库缺迁移时它会拒绝启动。
-
----
-
 ## 常见问题
 
-**客户端进游戏后十几秒自己退出了。**
+<details>
+<summary><b>客户端进游戏后十几秒自己退出了。</b></summary>
+
 插件超过了 1.12 默认的 48 MB 脚本内存上限。`setup-classic.sh` 会在 `benilla-config/config.toml` 里设置 `scriptMemory = "0"`（不限），重新运行一遍即可。
+</details>
 
-**服务器重启后，原来在副本里下线的角色出现在副本门口外面。**
+<details>
+<summary><b>启动器一直显示「正在启动服务器…」，或者「服务器启动失败」。</b></summary>
+
+第一次开服要加载地图数据，会慢一些。失败时底栏会显示日志最后一行，完整输出在 `server/logs/launcher.log` 和 `server/logs/mangosd.out`（··· →「打开日志文件夹」）。修好后点「重试」。
+</details>
+
+<details>
+<summary><b>不想每次都看到启动器。</b></summary>
+
+··· →「编辑启动器设置」，写上 `"skip": true`。以后双击 app 直接开服进游戏。
+</details>
+
+<details>
+<summary><b>服务器重启后，原来在副本里下线的角色出现在副本门口外面。</b></summary>
+
 这是原版机制：重启后副本实例没了，角色会被放到门口。走进传送门就会照常补 bot。
+</details>
 
-**GM 命令没反应，提示“您无法使用此命令”。**
+<details>
+<summary><b>GM 命令没反应，提示“您无法使用此命令”。</b></summary>
+
 GM 权限读的是 `classic_realmd.account_access` 表，不是 `account.gmlevel`。用 `tools/macos/create-account.sh 账号 密码 gm` 建账号，或者在服务器控制台执行 `account set gmlevel 账号 6`。
+</details>
 
-**bot 太弱或者太强。**
+<details>
+<summary><b>bot 太弱或者太强。</b></summary>
+
 副本难度还没调，这是下一步要做的。
+</details>
+
+<details>
+<summary><b>会改我原来的魔兽世界吗？</b></summary>
+
+不会。Soloroth 用自己的客户端（benilla），只从你的 1.12.1 `Data` 文件夹读模型、地图和声音；生成的补丁和设置都在这个仓库的 `Data/`、`benilla-config/` 里。
+</details>
 
 ---
+
+## 开发者
+
+脚本具体做了什么、启动器怎么改、仓库目录和跟进 vmangos 上游的方法，见 [BUILDING.md](BUILDING.md)。发现问题请开 [issue](https://github.com/vvenv/soloroth/issues)，附上 `server/logs/` 里的日志。
 
 ## 致谢
 
@@ -277,7 +298,7 @@ GM 权限读的是 `classic_realmd.account_access` 表，不是 `account.gmlevel
 
 ## 关于
 
-非官方的爱好者项目，与 Blizzard Entertainment 无关。仓库和构建产物里不含任何游戏本身的文件：模型、贴图、声音、地图和游戏数据都来自你自己的 1.12.1 客户端。
+非官方的爱好者项目，与 Blizzard Entertainment 无关。仓库和构建产物里不含任何游戏本身的文件：模型、贴图、声音、地图和游戏数据都来自你自己的 1.12.1 客户端。启动器的背景插画（`tools/macos/launcher/hero.jpg`）是为本项目生成的原创图，图标也是本项目画的。
 
 World of Warcraft 和 Blizzard Entertainment 是 Blizzard Entertainment, Inc. 的商标或注册商标。
 
