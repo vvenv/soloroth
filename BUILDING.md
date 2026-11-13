@@ -61,7 +61,7 @@ tools/macos/make-app.sh                              # 生成 /Applications/Solo
 | `Data/` | 指向客户端 MPQ 和登录条款 HTML 的链接，不进 git |
 | `server/run`、`server/data`、`server/logs` | 服务端运行目录、地图数据、日志，不进 git |
 
-登录、角色选择和角色创建界面的 pfUI 样式由 `tools/glue-skin/SoloGlueSkin.lua` 实现：`play.sh` 每次启动时从客户端 MPQ 里读出原版 `GlueXML.toc`，加上这个文件，打包成 `Data/patch-S.MPQ`。客户端只从 MPQ 读 GlueXML，不读松散文件。
+登录、角色选择和角色创建界面的 pfUI 样式由 `tools/glue-skin/SoloGlueSkin.lua` 实现：`play.sh` 每次启动时从客户端 MPQ 里读出原版 `GlueXML.toc`，加上这个文件，打包成 `Data/patch-S.MPQ`。客户端只从 MPQ 读 GlueXML，不读松散文件。有 `login.env` 时补丁默认隐藏原生账号密码框（`--hide-login-ui`）；没有该文件、或设了 `WOW_SHOW_LOGIN_UI=1` 时用 `--show-login-ui` 保留。
 
 成就的定义由 `tools/achievements/gen-achievements.py` 从世界数据库和客户端数据生成，一次写出服务端的迁移和插件的 `Data.lua`，要改就改这个脚本。
 

@@ -7,7 +7,14 @@ glue API alone.
 GlueXML runs off the patch chain, never loose files, so this file reaches the
 client in a generated patch-S.MPQ beside a copy of the stock GlueXML.toc with
 this file appended (tools/glue-skin/build-patch.py).
+
+build-patch.py may prepend `SoloShowLoginUI = true|false`. Default false: hide
+the stock account/password boxes (Soloroth logs in from login.env). play.sh
+passes --show-login-ui when there is no login.env, or when WOW_SHOW_LOGIN_UI=1.
 ----------------------------------------------------------------------------]]
+
+-- Prepended by build-patch.py; nil means hide (same as false).
+if SoloShowLoginUI == nil then SoloShowLoginUI = false end
 
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 local BACKDROP = {
@@ -115,9 +122,50 @@ local function EditBox(box)
   if bd then box:SetTextInsets(14, 8, 0, 4) end
 end
 
+-- Account name, password, Login, and "remember name": the rest of AccountLogin
+-- (quit, TOS, realmlist, …) stays.
+local function LoginFormFrames()
+  return { AccountLoginAccountEdit, AccountLoginPasswordEdit,
+           AccountLoginLoginButton, AccountLoginSaveAccountName }
+end
+
+local function HideLoginForm()
+  for _, f in ipairs(LoginFormFrames()) do
+    if f then f:Hide() end
+  end
+end
+
 local function SkinLogin()
-  EditBox(AccountLoginAccountEdit)
-  EditBox(AccountLoginPasswordEdit)
+  if SoloShowLoginUI then
+    EditBox(AccountLoginAccountEdit)
+    EditBox(AccountLoginPasswordEdit)
+  else
+    HideLoginForm()
+    -- OnShow focuses a box and ENTER calls AccountLogin_Login; both must no-op
+    -- while the form is gone, or an empty typed submit fights the env fast path.
+    local stockOnShow = AccountLogin_OnShow
+    function AccountLogin_OnShow()
+      stockOnShow()
+      HideLoginForm()
+      if AccountLoginAccountEdit then AccountLoginAccountEdit:ClearFocus() end
+      if AccountLoginPasswordEdit then AccountLoginPasswordEdit:ClearFocus() end
+    end
+    local stockLogin = AccountLogin_Login
+    function AccountLogin_Login()
+      if not SoloShowLoginUI then return end
+      return stockLogin()
+    end
+    local stockFocusPassword = AccountLogin_FocusPassword
+    function AccountLogin_FocusPassword()
+      if not SoloShowLoginUI then return end
+      return stockFocusPassword()
+    end
+    local stockFocusAccount = AccountLogin_FocusAccountName
+    function AccountLogin_FocusAccountName()
+      if not SoloShowLoginUI then return end
+      return stockFocusAccount()
+    end
+  end
   Panel(ServerAlertFrame, 6, 6, 6, 6)
   Panel(VirtualKeypadFrame, 6, 6, 6, 6)
 end

@@ -3,11 +3,15 @@
 and that file, so the glue loads the skin after its own files.
 
     tools/glue-skin/build-patch.py [DATA_DIR] [--remove]
+    tools/glue-skin/build-patch.py [DATA_DIR] [--show-login-ui|--hide-login-ui]
 
 The toc is read from the highest archive in DATA_DIR that holds it, as the client
 resolves it (patch-?.MPQ by letter, then patch.MPQ, then interface.MPQ), never
 from patch-S.MPQ itself. Nothing from the install is kept in the repo: the toc
 is copied at build time.
+
+--hide-login-ui (default) prepends SoloShowLoginUI = false so the skin hides the
+stock account/password boxes; --show-login-ui keeps them.
 """
 import os
 import struct
@@ -160,14 +164,18 @@ def write_mpq(path, files):
 
 
 def main():
+    flags = [a for a in sys.argv[1:] if a.startswith("--")]
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     data_dir = args[0] if args else os.path.join(ROOT, "Data")
     out = os.path.join(data_dir, PATCH)
-    if "--remove" in sys.argv:
+    if "--remove" in flags:
         if os.path.exists(out):
             os.remove(out)
             print("removed %s" % out)
         return
+    if "--show-login-ui" in flags and "--hide-login-ui" in flags:
+        sys.exit("use only one of --show-login-ui / --hide-login-ui")
+    show_login_ui = "--show-login-ui" in flags
     toc = None
     for archive in chain_order(data_dir):
         toc = read_file(archive, TOC)
@@ -180,9 +188,11 @@ def main():
         toc = toc.rstrip(b"\r\n") + b"\r\n" + SKIN.encode() + b"\r\n"
     with open(os.path.join(HERE, SKIN), "rb") as f:
         skin = f.read()
+    # Glue Lua cannot read the process env; bake the choice in at patch time.
+    skin = ("SoloShowLoginUI = %s\r\n" % ("true" if show_login_ui else "false")).encode() + skin
     listfile = ("%s\r\nInterface\\GlueXML\\%s\r\n" % (TOC, SKIN)).encode()
     write_mpq(out, [(TOC, toc), ("Interface\\GlueXML\\" + SKIN, skin), ("(listfile)", listfile)])
-    print("glue skin: %s" % out)
+    print("glue skin: %s (login ui %s)" % (out, "shown" if show_login_ui else "hidden"))
 
 
 if __name__ == "__main__":

@@ -11,7 +11,9 @@
 # as that character). Without the file, the first launch asks for the account
 # once (a dialog when there is no terminal, as from Soloroth.app), checks it
 # against the server and saves it; with no account on the server yet it
-# creates one (PLAYER, with GM rights). Cancelling shows the login screen.
+# creates one (PLAYER, with GM rights). Cancelling leaves no login.env, so the
+# stock account/password boxes stay visible. With login.env they are hidden
+# unless WOW_SHOW_LOGIN_UI=1 (in the env or in login.env).
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 bash "$root/tools/macos/start-server.sh"
@@ -43,8 +45,36 @@ EOF
 
 save_login() {
     mkdir -p "$BENILLA_HOME"
-    ( umask 077; printf 'WOW_USER=%s\nWOW_PASS=%s\n# WOW_CHAR=角色名  (进游戏时跳过角色选择)\n' "$1" "$2" > "$login" )
+    ( umask 077; printf '%s\n' \
+        "WOW_USER=$1" \
+        "WOW_PASS=$2" \
+        "# WOW_CHAR=角色名  (进游戏时跳过角色选择)" \
+        "# WOW_SHOW_LOGIN_UI=1  (显示游戏内账号密码框；默认隐藏)" \
+        > "$login" )
     echo "saved the login to $login"
+}
+
+# WOW_SHOW_LOGIN_UI=1 force show, =0 force hide; unset + no login.env → show
+# so a cancelled first-launch dialog can still type into the stock boxes.
+login_ui_patch_args() {
+    local key value show=""
+    if [ -f "$login" ]; then
+        while IFS='=' read -r key value; do
+            case "$key" in WOW_SHOW_LOGIN_UI) show="$value" ;; esac
+        done < "$login"
+    fi
+    show="${WOW_SHOW_LOGIN_UI:-$show}"
+    case "$show" in
+        1|true|yes) printf '%s\n' --show-login-ui ;;
+        0|false|no) printf '%s\n' --hide-login-ui ;;
+        *)
+            if [ ! -f "$login" ]; then
+                printf '%s\n' --show-login-ui
+            else
+                printf '%s\n' --hide-login-ui
+            fi
+            ;;
+    esac
 }
 
 first_login() {
@@ -77,10 +107,12 @@ first_login() {
 bash "$root/tools/macos/apply-visual.sh"
 # pfUI-style login / character screens: Data/patch-S.MPQ, rebuilt off the
 # stock GlueXML.toc each launch; WOW_STOCK_UI=1 drops it with benilla's layer.
+# The patch also bakes whether the stock account/password boxes are shown.
 if [ "${WOW_STOCK_UI:-}" = 1 ]; then
     python3 "$root/tools/glue-skin/build-patch.py" "$root/Data" --remove
 else
-    python3 "$root/tools/glue-skin/build-patch.py" "$root/Data"
+    # shellcheck disable=SC2046
+    python3 "$root/tools/glue-skin/build-patch.py" "$root/Data" $(login_ui_patch_args)
 fi
 # shellcheck source=bundle.sh
 source "$root/tools/macos/bundle.sh"
