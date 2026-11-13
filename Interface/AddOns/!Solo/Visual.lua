@@ -1,29 +1,41 @@
 --[[--------------------------------------------------------------------------
 Model / visual profile switcher for Soloroth.
 
-Lives on the Options → Graphics page. Choice is a RegisterCVar
-(solorothVisual) so it lands in benilla-config/config.toml; play.sh /
-apply-visual.sh remount the matching patch-?.MPQ overlays on the next
-launch. Mid-session swaps are impossible: the MPQ chain is fixed at boot.
+A native row on Options → Graphics (BenillaOptionsDropdownRowTemplate, listed in
+BENILLA_OPTIONS_PAGE_ROWS.Graphics), so the page's own layout, search, Defaults
+and PfuiSkin's dropdown skin all apply. The choice is the solorothVisual CVar
+in benilla-config/config.toml; play.sh / apply-visual.sh mount the matching
+patch-?.MPQ overlays on the next launch, since the MPQ chain is fixed at boot.
 
-Buttons are skinned through SoloSkin (pfUI) once pfUI has loaded.
+apply-visual.sh also writes solorothVisualReady (profiles with an MPQ on disk)
+and solorothVisualActive (what this launch mounted).
 ----------------------------------------------------------------------------]]
 
 local CVAR = "solorothVisual"
 local DEFAULT = "vanilla"
+local ROW_KEY = "RowSoloVisual"
+local ROW_NAME = "BenillaOptionsFrameContainerBodyGraphics" .. ROW_KEY
 
 -- id = folder under ../wow-data/visual-patches/ (or "vanilla")
--- Reforged full packs ship DBC overrides that break benilla (ErrorCube /
--- "pillar" mobs). Use reforged-creatures only after strip-mpq-dbc, or vanilla.
 local PROFILES = {
-  { id = "vanilla",             en = "Vanilla (original)",           zh = "原版（默认）" },
-  { id = "reforged-creatures",  en = "HD creatures (models only)",   zh = "高清怪物（仅模型）" },
-  { id = "improved-models",     en = "Improved Models",              zh = "Improved Models" },
-  { id = "hd",                  en = "HD pack (multi-patch)",        zh = "高清合集" },
+  { id = "vanilla",            en = "Vanilla",                  zh = "原版" },
+  { id = "reforged-creatures", en = "HD creatures (Reforged)",  zh = "高清怪物（Reforged）" },
+  { id = "improved-models",    en = "Improved Models",          zh = "Improved Models" },
+  { id = "hd",                 en = "HD pack (Reforged, all)",  zh = "高清合集（Reforged 全套）" },
 }
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end
+
+RegisterCVar(CVAR, DEFAULT)
+RegisterCVar("solorothVisualReady", "")
+RegisterCVar("solorothVisualActive", "")
+
+local function Current()
+  local v = GetCVar(CVAR)
+  if not v or v == "" then return DEFAULT end
+  return v
+end
 
 local function LabelOf(id)
   for i = 1, table.getn(PROFILES) do
@@ -32,164 +44,130 @@ local function LabelOf(id)
   return id
 end
 
-RegisterCVar(CVAR, DEFAULT)
-
-local function Current()
-  local v = GetCVar(CVAR)
-  if not v or v == "" then return DEFAULT end
-  return v
+-- Before apply-visual.sh has run once, nothing is known to be missing.
+local function IsReady(id)
+  if id == "vanilla" then return true end
+  local ready = GetCVar("solorothVisualReady")
+  if not ready or ready == "" then return true end
+  return strfind(" " .. ready .. " ", " " .. id .. " ", 1, true) ~= nil
 end
 
-local ui = { buttons = {} }
+SOLOROTH_TOOLTIP_VISUAL = L(
+  "Swaps creature and world models for a high-detail pack.\n\n"
+    .. "Takes effect the next time Soloroth starts (quit fully, then launch again). "
+    .. "Greyed entries are not downloaded yet: run tools/macos/fetch-visual-patches.sh.",
+  "把怪物和世界模型换成高清包。\n\n"
+    .. "下次启动 Soloroth 时生效（完全退出后重新打开）。"
+    .. "灰色的选项还没下载，运行 tools/macos/fetch-visual-patches.sh 即可。"
+)
 
-local function RefreshMarks()
+local function Status(row)
+  local hint = row.soloHint
+  if not hint then return end
+  local cur, active = Current(), GetCVar("solorothVisualActive")
+  if active and active ~= "" and active ~= cur then
+    hint:SetText(L("Restart to apply", "重启后生效"))
+    hint:Show()
+  else
+    hint:Hide()
+  end
+end
+
+-- The page's own InitMenu, plus disabled entries for packs not on disk.
+local function InitMenu()
+  local dd = getglobal(UIDROPDOWNMENU_INIT_MENU)
+  local row = dd:GetParent()
   local cur = Current()
-  for i = 1, table.getn(ui.buttons) do
-    local b = ui.buttons[i]
-    if b.id == cur then
-      b:SetText("|cff44ddff> " .. b.label .. "|r")
+  for i = 1, table.getn(row.entries) do
+    local e = row.entries[i]
+    local info = {}
+    info.text = e.text
+    info.value = e.value
+    info.checked = (e.value == cur) and 1 or nil
+    if IsReady(e.value) then
+      info.func = BenillaOptionsDropdownEntry_OnClick
     else
-      b:SetText(b.label)
+      info.text = e.text .. L(" (not installed)", "（未安装）")
+      info.disabled = 1
     end
-  end
-  if ui.hint then
-    ui.hint:SetText(L(
-      "Applies on next full launch. Current: " .. LabelOf(cur),
-      "下次完全启动后生效。当前：" .. LabelOf(cur)
-    ))
-  end
-end
-
-local function Choose(id)
-  if id == Current() then
-    DEFAULT_CHAT_FRAME:AddMessage("|cff44ddffSolo|r: " .. L(
-      "already using " .. LabelOf(id),
-      "已经是「" .. LabelOf(id) .. "」"
-    ))
-    return
-  end
-  SetCVar(CVAR, id)
-  RefreshMarks()
-  DEFAULT_CHAT_FRAME:AddMessage("|cff44ddffSolo|r: " .. L(
-    "visual profile → " .. LabelOf(id) .. ". Quit fully, then start Soloroth again.",
-    "外观已选「" .. LabelOf(id) .. "」。请完全退出，再打开 Soloroth。"
-  ))
-end
-
-local function SkinButtons()
-  if not (pfUI and pfUI.api and pfUI.api.SkinButton) then return end
-  for i = 1, table.getn(ui.buttons) do
-    local b = ui.buttons[i]
-    if b and not b.soloSkinned then
-      b.soloSkinned = true
-      pfUI.api.SkinButton(b)
-    end
+    UIDropDownMenu_AddButton(info)
   end
 end
 
 local function Build()
-  if ui.root then
-    SkinButtons()
-    RefreshMarks()
-    return
-  end
   local graphics = BenillaOptionsFrameContainerBodyGraphics
-  local anchor = BenillaOptionsFrameContainerBodyGraphicsRowRenderScale
-  if not graphics or not anchor then return end
+  if getglobal(ROW_NAME) or not graphics or not BENILLA_OPTIONS_PAGE_ROWS then return end
 
-  local root = CreateFrame("Frame", "SoloVisualOptions", graphics)
-  root:SetHeight(120)
-  root:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -16)
-  root:SetPoint("TOPRIGHT", anchor, "BOTTOMRIGHT", 0, -16)
-  ui.root = root
-
-  local title = root:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-  title:SetPoint("TOPLEFT", root, "TOPLEFT", 0, 0)
-  title:SetText(L("Creature / world models", "怪物 / 世界模型"))
-  ui.title = title
-
-  local hint = root:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-  hint:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
-  hint:SetPoint("RIGHT", root, "RIGHT", 0, 0)
-  hint:SetJustifyH("LEFT")
-  ui.hint = hint
-
-  local y = -36
+  local row = CreateFrame("Frame", ROW_NAME, graphics, "BenillaOptionsDropdownRowTemplate")
+  BenillaOptionsRow_OnLoad(row, CVAR, L("Creature Models", "怪物模型"), "SOLOROTH_TOOLTIP_VISUAL")
+  local entries = {}
   for i = 1, table.getn(PROFILES) do
-    local p = PROFILES[i]
-    local b = CreateFrame("Button", "SoloVisualBtn" .. i, root, "UIPanelButtonTemplate")
-    b:SetWidth(200)
-    b:SetHeight(22)
-    local col = (i - 1) - math.floor((i - 1) / 2) * 2
-    local row = math.floor((i - 1) / 2)
-    b:SetPoint("TOPLEFT", root, "TOPLEFT", col * 210, y - row * 26)
-    b.id = p.id
-    b.label = L(p.en, p.zh)
-    b:SetText(b.label)
-    b:SetScript("OnClick", function() Choose(this.id) end)
-    b:SetScript("OnEnter", function()
-      GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
-      GameTooltip:AddLine(this.label)
-      GameTooltip:AddLine(L(
-        "Needs wow-data/visual-patches/<id>/patch-?.MPQ. Vanilla needs nothing. Raw Reforged DBCs break models in benilla.",
-        "需要 wow-data/visual-patches/<id>/ 下的 patch。原版不用文件。未处理的 Reforged DBC 会在 benilla 里把怪变成方块。"
-      ), 1, 1, 1, 1)
-      GameTooltip:Show()
-    end)
-    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    ui.buttons[i] = b
+    entries[i] = { text = L(PROFILES[i].en, PROFILES[i].zh), value = PROFILES[i].id }
+  end
+  BenillaOptionsDropdownRow_Setup(row, entries)
+  UIDropDownMenu_Initialize(getglobal(ROW_NAME .. "Dropdown"), InitMenu)
+
+  local hint = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+  hint:SetPoint("LEFT", getglobal(ROW_NAME .. "Dropdown"), "RIGHT", -6, 2)
+  hint:Hide()
+  row.soloHint = hint
+
+  row.afterSet = function()
+    Status(row)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff44ddffSolo|r: " .. L(
+      "creature models → " .. LabelOf(Current()) .. ". Quit fully and start Soloroth again to apply.",
+      "怪物模型已选「" .. LabelOf(Current()) .. "」，完全退出后重新打开 Soloroth 生效。"
+    ))
   end
 
-  SkinButtons()
-  RefreshMarks()
-end
+  table.insert(BENILLA_OPTIONS_PAGE_ROWS.Graphics, ROW_KEY)
+  BenillaOptionsPage_Layout("Graphics")
+  BenillaOptionsDropdown_ShowValue(row)
+  Status(row)
 
--- pfUI skins run after earlier addons; register so we re-skin when it lands.
-if SoloSkin and SoloSkin.Register then
-  SoloSkin.Register("SoloVisual", function()
-    Build()
-    SkinButtons()
+  local prev = graphics:GetScript("OnShow")
+  graphics:SetScript("OnShow", function()
+    if prev then prev() end
+    Status(row)
   end)
 end
 
-local ev = CreateFrame("Frame")
-ev:RegisterEvent("PLAYER_LOGIN")
-ev:SetScript("OnEvent", function()
-  Build()
-  local graphics = BenillaOptionsFrameContainerBodyGraphics
-  if graphics then
-    local prev = graphics:GetScript("OnShow")
-    graphics:SetScript("OnShow", function()
-      if prev then prev() end
-      SkinButtons()
-      RefreshMarks()
-    end)
-  end
-end)
+-- Built at load, before pfUI's Benilla skin walks the options window once.
+Build()
 
 SLASH_SOLOVISUAL1 = "/visual"
 SLASH_SOLOVISUAL2 = "/waiguan"
 SlashCmdList["SOLOVISUAL"] = function(msg)
   msg = string.gsub(msg or "", "^%s*(.-)%s*$", "%1")
+  local cur = Current()
   if msg == "" or msg == "list" then
-    local cur = Current()
-    DEFAULT_CHAT_FRAME:AddMessage("|cff44ddffSolo|r: " .. L("visual profiles:", "外观方案："))
+    DEFAULT_CHAT_FRAME:AddMessage("|cff44ddffSolo|r: " .. L("creature model packs:", "怪物模型方案："))
     for i = 1, table.getn(PROFILES) do
       local p = PROFILES[i]
       local mark = (p.id == cur) and " *" or ""
+      if not IsReady(p.id) then mark = mark .. L(" (not installed)", "（未安装）") end
       DEFAULT_CHAT_FRAME:AddMessage("  " .. p.id .. " — " .. L(p.en, p.zh) .. mark)
     end
-    DEFAULT_CHAT_FRAME:AddMessage(L("Usage: /visual <id>   or Options → Graphics",
+    DEFAULT_CHAT_FRAME:AddMessage(L("Usage: /visual <id>, or Options → Graphics",
       "用法：/visual <id>，或 选项 → 图形"))
     return
   end
-  local ok
+  local known
   for i = 1, table.getn(PROFILES) do
-    if PROFILES[i].id == msg then ok = true break end
+    if PROFILES[i].id == msg then known = true break end
   end
-  if not ok then
+  if not known then
     DEFAULT_CHAT_FRAME:AddMessage("|cff44ddffSolo|r: " .. L("unknown profile", "未知方案") .. " " .. msg)
     return
   end
-  Choose(msg)
+  if not IsReady(msg) then
+    DEFAULT_CHAT_FRAME:AddMessage("|cff44ddffSolo|r: " .. LabelOf(msg) .. L(" is not installed.", " 还没安装。"))
+    return
+  end
+  SetCVar(CVAR, msg)
+  local row = getglobal(ROW_NAME)
+  if row then
+    BenillaOptionsDropdown_ShowValue(row)
+    row.afterSet()
+  end
 end

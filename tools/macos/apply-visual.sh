@@ -108,22 +108,52 @@ save_profile() {
     else
         printf 'VISUAL_PROFILE=%s\n' "$profile" > "$env_file"
     fi
-    # Keep the in-game Options CVar in sync (RegisterCVar solorothVisual).
-    if [ -f "$toml" ]; then
-        python3 - "$toml" "$profile" <<'PY'
-import re, sys
-path, value = sys.argv[1], sys.argv[2]
-text = open(path, encoding="utf-8").read()
-line = 'solorothVisual = "%s"' % value
-if re.search(r'^solorothVisual\s*=', text, re.M):
-    text = re.sub(r'^solorothVisual\s*=.*$', line, text, count=1, flags=re.M)
-elif "[cvars]" in text:
+    set_cvar solorothVisual "$profile"
+}
+
+# set_cvar <name> <value>: writes into config.toml's [cvars], which the client
+# reads at launch (the !Solo addon registers these CVars).
+set_cvar() {
+    mkdir -p "$home"
+    python3 - "$toml" "$1" "$2" <<'PY'
+import os, re, sys
+path, name, value = sys.argv[1:4]
+text = open(path, encoding="utf-8").read() if os.path.exists(path) else ""
+line = '%s = "%s"' % (name, value)
+pat = r'^%s\s*=.*$' % re.escape(name)
+if re.search(pat, text, re.M):
+    text = re.sub(pat, line, text, count=1, flags=re.M)
+elif "[cvars]\n" in text:
     text = text.replace("[cvars]\n", "[cvars]\n" + line + "\n", 1)
 else:
     text = "[cvars]\n" + line + "\n" + text
 open(path, "w", encoding="utf-8").write(text)
 PY
-    fi
+}
+
+# Profiles with at least one patch-?.MPQ on disk, space-separated, vanilla first.
+ready_profiles() {
+    local out="vanilla" d f
+    [ -d "$patches_root" ] || { printf '%s' "$out"; return; }
+    for d in "$patches_root"/*/; do
+        [ -d "$d" ] || continue
+        [ "$(basename "$d")" = "_cache" ] && continue
+        for f in "$d"*; do
+            [ -e "$f" ] || continue
+            if is_patch_glob "$f"; then
+                out="$out $(basename "$d")"
+                break
+            fi
+        done
+    done
+    printf '%s' "$out"
+}
+
+# What the options page shows: which profiles can be picked, and which one is
+# actually mounted this launch (a missing pick falls back to vanilla).
+publish_state() {
+    set_cvar solorothVisualReady "$(ready_profiles)"
+    set_cvar solorothVisualActive "$1"
 }
 
 list_profiles() {
@@ -145,6 +175,12 @@ list_profiles() {
 }
 
 apply_profile() {
+    local mounted
+    mounted="$(mount_profile "$1" | tee /dev/stderr | sed -n 's/^visual profile: \([^ ]*\).*/\1/p')"
+    publish_state "${mounted:-vanilla}"
+}
+
+mount_profile() {
     local profile="$1" dir f name target dest any
     ensure_base_data
     clear_managed
