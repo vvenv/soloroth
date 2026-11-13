@@ -261,12 +261,6 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B�
 ## 常见问题
 
 <details>
-<summary><b>客户端进游戏后十几秒自己退出了。</b></summary>
-
-插件超过了 1.12 默认的 48 MB 脚本内存上限。`setup-classic.sh` 会在 `benilla-config/config.toml` 里设置 `scriptMemory = "0"`（不限），重新运行一遍即可。
-</details>
-
-<details>
 <summary><b>启动器一直显示「正在启动服务器…」，或者「服务器启动失败」。</b></summary>
 
 第一次开服要加载地图数据，会慢一些。失败时底栏会显示日志最后一行，完整输出在 `server/logs/launcher.log` 和 `server/logs/mangosd.out`（··· →「打开日志文件夹」）。修好后点「重试」。
@@ -276,30 +270,6 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B�
 <summary><b>不想每次都看到启动器。</b></summary>
 
 ··· →「编辑启动器设置」，写上 `"skip": true`。以后双击 app 直接开服进游戏。
-</details>
-
-<details>
-<summary><b>服务器重启后，原来在副本里下线的角色出现在副本门口外面。</b></summary>
-
-这是原版机制：重启后副本实例没了，角色会被放到门口。走进传送门就会照常补 bot。
-</details>
-
-<details>
-<summary><b>GM 命令没反应，提示“您无法使用此命令”。</b></summary>
-
-GM 权限读的是 `classic_realmd.account_access` 表，不是 `account.gmlevel`。用 `tools/macos/create-account.sh 账号 密码 gm` 建账号，或者在服务器控制台执行 `account set gmlevel 账号 6`。
-</details>
-
-<details>
-<summary><b>bot 太弱或者太强。</b></summary>
-
-副本难度还没调，这是下一步要做的。
-</details>
-
-<details>
-<summary><b>会改我原来的魔兽世界吗？</b></summary>
-
-不会。Soloroth 用自己的客户端（benilla），只从你的 1.12.1 `Data` 文件夹读模型、地图和声音；生成的补丁和设置都在这个仓库的 `Data/`、`benilla-config/` 里。
 </details>
 
 ---
