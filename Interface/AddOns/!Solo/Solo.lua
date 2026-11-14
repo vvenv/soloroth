@@ -162,6 +162,18 @@ local function EnableCombatText()
   end
 end
 
+-- ----------------------------------------------------------- overhead names --
+
+-- Every character gets a home guild ("<name>之家"), so the "<Guild>" line under
+-- player names is noise. Off once per account; Options → 姓名板 → 玩家公会名称
+-- stays the player's afterwards. (pfUI nameplates already default showguildname off.)
+local function HideGuildUnderNames()
+  if type(Solo_State) ~= "table" then Solo_State = {} end
+  if Solo_State.noguildnames then return end
+  Solo_State.noguildnames = true
+  SetCVar("UnitNamePlayerGuild", "0")
+end
+
 -- ------------------------------------------------------------------ events --
 
 local ev = CreateFrame("Frame")
@@ -177,6 +189,7 @@ ev:SetScript("OnEvent", function()
     end
   elseif event == "VARIABLES_LOADED" then
     EnableCombatText()
+    HideGuildUnderNames()
   elseif event == "PLAYER_ENTERING_WORLD" then
     QuietChat()
   end
