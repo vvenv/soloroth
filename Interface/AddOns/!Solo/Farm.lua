@@ -47,7 +47,7 @@ local MODE_NAME = {
 
 local panel = CreateFrame("Frame", "SoloFarmPanel", UIParent)
 panel:SetFrameStrata("MEDIUM")
-panel:SetWidth(240) panel:SetHeight(60)
+panel:SetWidth(270) panel:SetHeight(60)
 panel:SetPoint("TOP", UIParent, "TOP", 0, -110)
 panel:SetBackdrop({
   bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
