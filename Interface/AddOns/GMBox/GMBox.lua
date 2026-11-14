@@ -587,6 +587,57 @@ local TOOLROWS = {
 }
 
 local toolY = -4
+
+-- Experience: `.xprate` scales the server's rate for this character and the
+-- server keeps it. Quest experience turned down is paid in gold.
+local xp = { known = false, personal = 1, server = 2, buttons = {} }
+local XPSTEPS = { { 1, "All", "全部" }, { 0.5, "Half", "一半" }, { 0, "Off", "停止" } }
+Label(tools, L("Experience", "经验"), "GameFontNormalSmall", "TOPLEFT", tools, "TOPLEFT", 2, toolY)
+for c = 1, table.getn(XPSTEPS) do
+  local s = XPSTEPS[c]
+  local b = Button(tools, 104, 20, L(s[2], s[3]), "TOPLEFT", tools, "TOPLEFT", 96 + (c - 1) * 108, toolY + 3)
+  b.rate = s[1]
+  b:SetScript("OnClick", function() Cmd(".xprate " .. this.rate) end)
+  b:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
+    if this.rate == 0 then
+      GameTooltip:AddLine(L("Gain no experience; quests pay it in gold", "不再获得经验，任务经验折成金币"))
+    else
+      GameTooltip:AddLine(L("Experience rate ", "经验倍率 ") .. (xp.server * this.rate) .. L("x", " 倍"))
+      if this.rate < 1 then
+        GameTooltip:AddLine(L("The quest experience not taken is paid in gold", "少拿的任务经验折成金币"), 0.8, 0.8, 0.8)
+      end
+    end
+    GameTooltip:Show()
+  end)
+  b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  xp.buttons[c] = b
+end
+xp.status = Label(tools, "", "GameFontHighlightSmall", "TOPLEFT", tools, "TOPLEFT", 96 + 3 * 108 + 4, toolY)
+toolY = toolY - 32
+
+local function XpRefresh()
+  for c = 1, table.getn(XPSTEPS) do
+    MarkCurrent(xp.buttons[c], xp.known and math.abs(XPSTEPS[c][1] - xp.personal) < 0.01)
+  end
+  if not xp.known then
+    xp.status:SetText("")
+  elseif xp.personal <= 0 then
+    xp.status:SetText(L("now: off", "当前：停止"))
+  else
+    xp.status:SetText(L("now: ", "当前：") .. (xp.server * xp.personal) .. L("x", " 倍"))
+  end
+end
+
+-- `.xprate` answers with a machine line first: "[xp] personal=1 server=2 max=1".
+local function ParseXpLine(text)
+  local _, _, personal, server = string.find(text, "^%[xp%] personal=([%d%.]+) server=([%d%.]+)")
+  if not personal then return false end
+  xp.personal, xp.server, xp.known = tonumber(personal), tonumber(server), true
+  XpRefresh()
+  return true
+end
+
 for r = 1, table.getn(TOOLROWS) do
   local sect = TOOLROWS[r]
   Label(tools, sect[1], "GameFontNormalSmall", "TOPLEFT", tools, "TOPLEFT", 2, toolY)
@@ -647,33 +698,33 @@ Label(tools, L("(leading dot optional, Enter sends)", "(开头的点可省，回
 -- five-player dungeon (DungeonBotMgr), and `.bots` sets the player's role.
 
 local DUNGEONS = {
-  -- { english, chinese, min, max, map, x, y, z, o, note }
-  { "Ragefire Chasm",             "怒焰裂谷",           13, 18, 389,     0.8,    -8.2,  -15.5, 4.71 },
-  { "Wailing Caverns",            "哀嚎洞穴",           17, 24,  43,  -158.4,   131.6,  -74.3, 5.85 },
-  { "The Deadmines",              "死亡矿井",           17, 26,  36,   -14.6,  -385.5,   62.5, 1.57 },
-  { "Shadowfang Keep",            "影牙城堡",           22, 30,  33,  -228.2,  2111.4,   76.9, 1.22 },
-  { "Blackfathom Deeps",          "黑暗深渊",           24, 32,  48,  -150.2,   106.6,  -39.8, 4.45 },
-  { "The Stockade",               "暴风城监狱",         24, 32,  34,    49.0,     0.5,  -16.4, 6.28 },
-  { "Scarlet Monastery: Graveyard", "血色修道院：墓地",   26, 36, 189,  1687.3,  1050.1,   18.7, 1.57 },
-  { "Gnomeregan",                 "诺莫瑞根",           29, 38,  90,  -329.1,    -3.2, -152.9, 2.97 },
-  { "Razorfen Kraul",             "剃刀沼泽",           29, 38,  47,  1942.3,  1544.2,   83.3, 1.31 },
-  { "Scarlet Monastery: Library", "血色修道院：图书馆", 29, 39, 189,   253.7,  -206.6,   18.7, 4.71 },
-  { "Scarlet Monastery: Armory",  "血色修道院：军械库", 32, 42, 189,  1608.1,  -318.9,   18.7, 4.71 },
-  { "Scarlet Monastery: Cathedral", "血色修道院：大教堂", 35, 45, 189,   853.2,  1319.2,   18.7, 1.57 },
-  { "Razorfen Downs",             "剃刀高地",           37, 46, 129,  2593.7,  1111.2,   51.0, 4.71 },
-  { "Uldaman",                    "奥达曼",             41, 51,  70,  -228.9,    46.1,  -46.0, 1.57 },
-  { "Zul'Farrak",                 "祖尔法拉克",         42, 54, 209,  1212.7,   842.0,    8.9, 6.28 },
-  { "Maraudon: Orange",           "玛拉顿：橙色入口",   46, 55, 349,  1016.8,  -458.5,  -43.5, 6.28 },
-  { "Maraudon: Purple",           "玛拉顿：紫色入口",   46, 55, 349,   755.1,  -617.7,  -32.9, 1.57 },
-  { "Sunken Temple",              "沉没的神庙",         50, 60, 109,  -315.9,   100.2, -131.8, 3.14 },
-  { "Blackrock Depths",           "黑石深渊",           52, 60, 230,   456.9,    34.1,  -68.1, 4.71 },
-  { "Lower Blackrock Spire",      "黑石塔下层",         55, 60, 229,    78.4,  -226.8,   49.8, 4.71 },
-  { "Dire Maul: East",            "厄运之槌：东",       55, 60, 429,  -203.2,  -323.0,   -2.7, 4.71 },
-  { "Dire Maul: West",            "厄运之槌：西",       57, 60, 429,   -65.7,   159.6,   -3.5, 2.36 },
-  { "Dire Maul: North",           "厄运之槌：北",       57, 60, 429,   254.9,   -19.5,   -2.6, 5.50 },
-  { "Scholomance",                "通灵学院",           58, 60, 289,   190.8,   126.3,  137.2, 6.28 },
-  { "Stratholme: Main Gate",      "斯坦索姆：正门",     58, 60, 329,  3392.9, -3395.0,  143.1, 1.57 },
-  { "Stratholme: Service Gate",   "斯坦索姆：后门",     58, 60, 329,  3590.9, -3643.2,  138.5, 5.50 },
+  -- { english, chinese, min, max, map, x, y, z, o, quest-log zone (.dungeonquests) }
+  { "Ragefire Chasm",             "怒焰裂谷",           13, 18, 389,     0.8,    -8.2,  -15.5, 4.71, 2437 },
+  { "Wailing Caverns",            "哀嚎洞穴",           17, 24,  43,  -158.4,   131.6,  -74.3, 5.85, 718 },
+  { "The Deadmines",              "死亡矿井",           17, 26,  36,   -14.6,  -385.5,   62.5, 1.57, 1581 },
+  { "Shadowfang Keep",            "影牙城堡",           22, 30,  33,  -228.2,  2111.4,   76.9, 1.22, 209 },
+  { "Blackfathom Deeps",          "黑暗深渊",           24, 32,  48,  -150.2,   106.6,  -39.8, 4.45, 719 },
+  { "The Stockade",               "暴风城监狱",         24, 32,  34,    49.0,     0.5,  -16.4, 6.28, 717 },
+  { "Scarlet Monastery: Graveyard", "血色修道院：墓地",   26, 36, 189,  1687.3,  1050.1,   18.7, 1.57, 796 },
+  { "Gnomeregan",                 "诺莫瑞根",           29, 38,  90,  -329.1,    -3.2, -152.9, 2.97, 133 },
+  { "Razorfen Kraul",             "剃刀沼泽",           29, 38,  47,  1942.3,  1544.2,   83.3, 1.31, 1717 },
+  { "Scarlet Monastery: Library", "血色修道院：图书馆", 29, 39, 189,   253.7,  -206.6,   18.7, 4.71, 796 },
+  { "Scarlet Monastery: Armory",  "血色修道院：军械库", 32, 42, 189,  1608.1,  -318.9,   18.7, 4.71, 796 },
+  { "Scarlet Monastery: Cathedral", "血色修道院：大教堂", 35, 45, 189,   853.2,  1319.2,   18.7, 1.57, 796 },
+  { "Razorfen Downs",             "剃刀高地",           37, 46, 129,  2593.7,  1111.2,   51.0, 4.71, 722 },
+  { "Uldaman",                    "奥达曼",             41, 51,  70,  -228.9,    46.1,  -46.0, 1.57, 1517 },
+  { "Zul'Farrak",                 "祖尔法拉克",         42, 54, 209,  1212.7,   842.0,    8.9, 6.28, 978 },
+  { "Maraudon: Orange",           "玛拉顿：橙色入口",   46, 55, 349,  1016.8,  -458.5,  -43.5, 6.28, 2100 },
+  { "Maraudon: Purple",           "玛拉顿：紫色入口",   46, 55, 349,   755.1,  -617.7,  -32.9, 1.57, 2100 },
+  { "Sunken Temple",              "沉没的神庙",         50, 60, 109,  -315.9,   100.2, -131.8, 3.14, 1417 },
+  { "Blackrock Depths",           "黑石深渊",           52, 60, 230,   456.9,    34.1,  -68.1, 4.71, 1584 },
+  { "Lower Blackrock Spire",      "黑石塔下层",         55, 60, 229,    78.4,  -226.8,   49.8, 4.71, 1583 },
+  { "Dire Maul: East",            "厄运之槌：东",       55, 60, 429,  -203.2,  -323.0,   -2.7, 4.71, 2557 },
+  { "Dire Maul: West",            "厄运之槌：西",       57, 60, 429,   -65.7,   159.6,   -3.5, 2.36, 2557 },
+  { "Dire Maul: North",           "厄运之槌：北",       57, 60, 429,   254.9,   -19.5,   -2.6, 5.50, 2557 },
+  { "Scholomance",                "通灵学院",           58, 60, 289,   190.8,   126.3,  137.2, 6.28, 2057 },
+  { "Stratholme: Main Gate",      "斯坦索姆：正门",     58, 60, 329,  3392.9, -3395.0,  143.1, 1.57, 2017 },
+  { "Stratholme: Service Gate",   "斯坦索姆：后门",     58, 60, 329,  3590.9, -3643.2,  138.5, 5.50, 2017 },
 }
 
 -- What the server last said about this character's bots (`.bots status`).
@@ -749,6 +800,28 @@ dui.dismiss:SetScript("OnClick", function() Cmd(".bots dismiss") end)
 Label(dung, L("Dungeon (click to go inside)", "副本（点击直接传送进去）"), "GameFontNormalSmall",
       "TOPLEFT", dung, "TOPLEFT", 2, -58)
 Label(dung, L("Level", "等级"), "GameFontNormalSmall", "TOPRIGHT", dung, "TOPRIGHT", -8, -58)
+Label(dung, L("Quests", "任务"), "GameFontNormalSmall", "TOPRIGHT", dung, "TOPRIGHT", -76, -58)
+
+-- `.dungeonquests quiet` answers a line per dungeon:
+-- "[dq] 1581 done=2 log=1 open=1 later=1", by the quest-log zone.
+local dq = {}
+local dqAsked = 0
+
+local function DungeonQuestText(d)
+  local q = dq[d[10]]
+  if not q then return "", 0.5, 0.5, 0.5 end
+  local total = q.done + q.log + q.open + q.later
+  if total == 0 then return "-", 0.5, 0.5, 0.5 end
+  local text = q.done .. "/" .. total
+  if q.open > 0 then return text .. " +" .. q.open, 1, 0.82, 0 end    -- yellow: some to pick up
+  if q.done == total then return text, 0.25, 0.75, 0.25 end         -- green: all done
+  return text, 0.8, 0.8, 0.8
+end
+
+local function AskDungeonQuests()
+  dqAsked = GetTime()
+  Cmd(".dungeonquests quiet")
+end
 
 local function DungeonRefresh()
   local n = table.getn(DUNGEONS)
@@ -761,6 +834,9 @@ local function DungeonRefresh()
       b.text:SetText(ZH and d[2] or d[1])
       b.text:SetTextColor(DungeonColor(d))
       b.info:SetText(d[3] .. "-" .. d[4])
+      local qt, r, g, bl = DungeonQuestText(d)
+      b.quests:SetText(qt)
+      b.quests:SetTextColor(r, g, bl)
       b:Show()
     else
       b:Hide()
@@ -799,7 +875,14 @@ for i = 1, DROWS do
   b.info = b:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
   b.info:SetPoint("RIGHT", b, "RIGHT", -4, 0)
   b.info:SetJustifyH("RIGHT")
-  b:SetScript("OnClick", function() if this.d then DungeonGo(this.d) end end)
+  b.quests = b:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+  b.quests:SetPoint("RIGHT", b, "RIGHT", -72, 0)
+  b.quests:SetJustifyH("RIGHT")
+  b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  b:SetScript("OnClick", function()
+    if not this.d then return end
+    if arg1 == "RightButton" then Cmd(".dungeonquests " .. this.d[10]) else DungeonGo(this.d) end
+  end)
   b:SetScript("OnEnter", function()
     local d = this.d
     if not d then return end
@@ -807,8 +890,16 @@ for i = 1, DROWS do
     GameTooltip:AddLine(ZH and d[2] or d[1])
     if ZH then GameTooltip:AddLine(d[1], 0.8, 0.8, 0.8) end
     GameTooltip:AddLine(L("Recommended level ", "推荐等级 ") .. d[3] .. "-" .. d[4], 0.8, 0.8, 0.8)
+    local q = dq[d[10]]
+    if q then
+      GameTooltip:AddLine(string.format(L("Quests: %d done, %d in the log, %d to pick up now, %d not yet",
+                                          "任务：完成 %d，日志里 %d，现在能接 %d，还不能接 %d"),
+                                        q.done, q.log, q.open, q.later), 1, 0.82, 0)
+    end
     GameTooltip:AddLine(L("Click: teleport inside. Bots join three seconds later.",
                           "点击传送进副本，3 秒后机器人自动入队。"), 0.4, 0.8, 1)
+    GameTooltip:AddLine(L("Right click: list its quests and where to pick them up",
+                          "右键：在聊天框列出它的任务和接任务的地方"), 0.4, 0.8, 1)
     GameTooltip:Show()
   end)
   b:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -861,9 +952,21 @@ local function ParseBotsLine(text)
   return true
 end
 
+local function ParseDungeonQuestLine(text)
+  local _, _, zone, done, log, open, later =
+    string.find(text, "^%[dq%] (%d+) done=(%d+) log=(%d+) open=(%d+) later=(%d+)")
+  if not zone then return false end
+  dq[tonumber(zone)] = { done = tonumber(done), log = tonumber(log), open = tonumber(open), later = tonumber(later) }
+  if dung:IsVisible() then DungeonRefresh() end
+  return true
+end
+
 local origChatEvent = ChatFrame_OnEvent
 function ChatFrame_OnEvent(event)
-  if event == "CHAT_MSG_SYSTEM" and arg1 and string.find(arg1, "^%[bots%]") then return end
+  if event == "CHAT_MSG_SYSTEM" and arg1 and (string.find(arg1, "^%[bots%]") or string.find(arg1, "^%[xp%]")
+      or string.find(arg1, "^%[dq%]")) then
+    return
+  end
   return origChatEvent(event)
 end
 
@@ -1039,12 +1142,15 @@ function SetTab(i)
   panel:Hide() tools:Hide() dung:Hide()
   if i == 4 then
     tools:Show()
+    XpRefresh()
+    Cmd(".xprate quiet")
     return
   end
   if i == 3 then
     dung:Show()
     DungeonRefresh()
     Cmd(".bots status quiet")
+    AskDungeonQuests()
     return
   end
   panel:Show()
@@ -1229,6 +1335,7 @@ ev:RegisterEvent("VARIABLES_LOADED")
 ev:RegisterEvent("PLAYER_LOGIN")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:RegisterEvent("CHAT_MSG_SYSTEM")
+ev:RegisterEvent("QUEST_LOG_UPDATE")
 ev:SetScript("OnEvent", function()
   if event == "VARIABLES_LOADED" then
     InitDB()
@@ -1240,7 +1347,11 @@ ev:SetScript("OnEvent", function()
     PlaceMinimapButton()
     f:Hide()
   elseif event == "CHAT_MSG_SYSTEM" then
-    ParseBotsLine(arg1 or "")
+    local text = arg1 or ""
+    if not ParseBotsLine(text) and not ParseXpLine(text) then ParseDungeonQuestLine(text) end
+  elseif event == "QUEST_LOG_UPDATE" then
+    -- Fires in bursts; one question every few seconds while the page is open.
+    if dung:IsVisible() and GetTime() - dqAsked > 3 then AskDungeonQuests() end
   elseif event == "PLAYER_ENTERING_WORLD" then
     if not bots.known then Cmd(".bots status quiet") end
   elseif event == "PLAYER_LOGIN" then

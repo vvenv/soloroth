@@ -61,6 +61,38 @@ CATEGORIES = [
     (41, 4, "Classic Dungeons", "经典地下城"),
     (42, 4, "Classic Raids", "经典团队副本"),
     (5, 0, "Feats", "轶事"),
+    (6, 0, "Journeys", "旅程"),
+]
+
+# The old world as four chapters of one journey, in the order the stories run
+# and the levels rise: (id, en, zh, description en, zh, icon, zones, dungeons
+# by faction). A chapter asks for the zone quest achievements its faction has
+# there and the dungeon achievements on the way.
+CHAPTERS = [
+    (1601, "Chapter I: Homelands", "第一章：家园",
+     "Complete the quest achievements of the homelands and the dungeons on the way.",
+     "完成家园各区域的任务成就，并打通沿途的副本。",
+     "Ability_Townwatch",
+     [12, 40, 44, 10, 1, 38, 11, 141, 148, 331, 14, 215, 17, 406, 85, 130],
+     {1: [1303, 1302, 1304, 1305, 1306, 1307, 1308, 1310], 2: [1301, 1302, 1304, 1305, 1308, 1310]}),
+    (1603, "Chapter II: Shadows of the Seven Kingdoms", "第二章：七大王国的残影",
+     "Complete the quest achievements of the old human kingdoms' lands and the Scarlet Monastery.",
+     "完成旧人类王国土地上的任务成就，并打通血色修道院。",
+     "INV_BannerPVP_01",
+     [267, 36, 45, 15],
+     {1: [1309], 2: [1309]}),
+    (1605, "Chapter III: Gods and Demigods", "第三章：神与半神",
+     "Complete the quest achievements around the titans' vaults and the trolls' temples, and their dungeons.",
+     "完成泰坦宝库和巨魔神庙周边的任务成就，并打通奥达曼、玛拉顿、祖尔法拉克和沉没的神庙。",
+     "INV_Misc_Idol_02",
+     [400, 33, 3, 405, 440, 8, 47, 357],
+     {1: [1311, 1313, 1312, 1314], 2: [1311, 1313, 1312, 1314]}),
+    (1607, "Chapter IV: Embers of the Old World", "第四章：旧世界的余烬",
+     "Complete the quest achievements of Blackrock, the Plaguelands and the far corners of both continents, and their dungeons.",
+     "完成黑石山、瘟疫之地和两块大陆边陲的任务成就，并打通沿途的副本。",
+     "INV_Misc_Head_Dragon_Black",
+     [51, 46, 139, 28, 4, 16, 490, 361, 618, 1377],
+     {1: [1315, 1316, 1317, 1318, 1319, 1320], 2: [1315, 1316, 1317, 1318, 1319, 1320]}),
 ]
 
 CITIES = {1519, 1537, 1657, 1637, 1638, 1497}
@@ -253,6 +285,7 @@ def build(tmp):
     zones.sort(key=lambda z: (z[0], areas_en[z[1]]))
 
     lore = {(0, ALLIANCE): [], (0, HORDE): [], (1, ALLIANCE): [], (1, HORDE): []}
+    zone_ach = {}
     for mapid, zone, ovs in zones:
         cat = 21 if mapid == 0 else 22
         for team in (ALLIANCE, HORDE):
@@ -265,6 +298,7 @@ def build(tmp):
             a.add(QUESTS_IN_ZONE, n, [zone])
             out.append(a)
             lore[(mapid, team)].append(a)
+            zone_ach[(zone, team)] = a
 
     explore = {0: [], 1: []}
     for mapid, zone, ovs in zones:
@@ -409,6 +443,20 @@ def build(tmp):
     quest(1522, "For All To See", "万人敬仰",
           'Complete the quest "For All To See".', "完成任务「万人敬仰」。",
           "INV_Misc_Head_Dragon_Black", 7491, faction=HORDE)
+
+    # Journeys: the chapters, then the whole journey, per faction.
+    by_id = {a.id: a for a in dungeons}
+    for team in (ALLIANCE, HORDE):
+        chapters = []
+        for id, en, zh, den, dzh, icon, zone_ids, dungeon_ids in CHAPTERS:
+            parts = [zone_ach[(z, team)] for z in zone_ids if (z, team) in zone_ach]
+            parts += [by_id[d] for d in dungeon_ids[team]]
+            chapters.append(meta(id + team - 1, 6, en, zh,
+                                 den, dzh,
+                                 icon, parts, points=25, faction=team))
+        meta(1609 + team - 1, 6, "Journey Through the Old World", "旧世界的旅程",
+             "Complete the four chapters of the journey.", "完成旅程的四个章节。",
+             "INV_Misc_Book_10", chapters, points=50, faction=team)
 
     for a in out:
         if not icon_exists(a.icon):
