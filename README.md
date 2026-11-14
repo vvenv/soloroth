@@ -34,7 +34,7 @@
 ## 特色
 
 - **原版内容**：服务端是原版 [vmangos](https://github.com/vmangos/core)，世界数据、任务、刷怪都是 1.12 原样。
-- **机器人组队**：进入五人副本 3 秒后，队伍自动补满 5 人。缺坦克就补坦克，缺治疗就补治疗，其余补不同职业的输出。bot 和你同级、装备匹配等级，掷骰全部放弃。活着离开副本时 bot 自动解散。
+- **机器人组队**：进入五人副本 3 秒后，队伍自动补满 5 人。缺坦克就补坦克，缺治疗就补治疗，其余补不同职业的输出，来的总是同一批有名有姓的固定队友。bot 和你同级、装备匹配等级，掷骰全部放弃。活着离开副本时 bot 自动解散。
 - **中文**：用简体中文 1.12 客户端的数据，界面、任务、NPC、物品都是中文。
 - **单人化**：没有聊天频道，聊天框只当消息记录用（系统、拾取、经验、任务和 NPC 说话）。
 - **插件**：pfUI、pfQuest、Atlas 三件套、Bagshui 等一套 1.12 插件，已经按单人旅行做任务配好，不弹首次设置向导。另有 GMBox 2.0（副本与机器人面板、传送、物品、GM 工具），界面和 pfUI 风格一致。
@@ -146,6 +146,9 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套
 - 进五人副本 3 秒后自动补满队伍。登录时就在副本里也算进入。
 - 活着离开副本，副本里补的 bot 会解散；死了跑尸的路上不会解散。
 - 团队副本不会自动补。在野外想带 bot 做精英任务，用「补满队伍」或 `.bots fill`。
+- bot 是一批固定的队友：每个阵营每个职业的每个天赋各一人，名字、种族、性别、长相每次都一样。补位时按缺的职责从他们里挑（坦克优先战士，治疗优先牧师，输出尽量不同职业），聊天框会报出谁来了，例如「Tahomak（防护战士）、Elspeth（神圣牧师）」。
+  - 联盟：战士 Aldric（武器）、Brannoc（狂怒）、Durgan（防护）；圣骑士 Elenya（神圣）、Hamrik（防护）、Cedric（惩戒）；猎人 Sylvaine（野兽控制）、Gundrik（射击）、Faelan（生存）；盗贼 Vesper（刺杀）、Fizzwick（战斗）、Nyssa（敏锐）；牧师 Brenna（戒律）、Lucienne（神圣）、Mordecai（暗影）；法师 Tinkara（奥术）、Corvin（火焰）、Isolde（冰霜）；术士 Malachar（痛苦）、Nixwick（恶魔学识）、Seraphine（毁灭）；德鲁伊 Aerwynn（平衡）、Thalor（野性）、Nerwen（恢复）。
+  - 部落：战士 Grukash（武器）、Rakzan（狂怒）、Tahomak（防护）；萨满 Shakara（元素）、Durgash（增强）、Halona（恢复）；猎人 Grashnak（野兽控制）、Zanjira（射击）、Kotori（生存）；盗贼 Morwenna（刺杀）、Skarn（战斗）、Vexjin（敏锐）；牧师 Zalaya（戒律）、Elspeth（神圣）、Vorlath（暗影）；法师 Ashveld（奥术）、Yenjala（火焰）、Halvrik（冰霜）；术士 Morthis（痛苦）、Grishna（恶魔学识）、Cindrel（毁灭）；德鲁伊 Aponi（平衡）、Hoketah（野性）、Mahala（恢复）。
 
 **GMBox 的「副本」页**：输入 `/gd`，或者右键小地图上的 GMBox 按钮打开。
 
