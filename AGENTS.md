@@ -2,7 +2,7 @@
 
 WoW 1.12.1 classic for one player on an Apple Silicon Mac: a vmangos server, the benilla
 client, and a vetted 1.12 addon set tuned for solo play. README.md (Chinese) is the user
-guide; keep it in step with any player-visible change. BUILDING.md (Chinese) holds what
+guide; keep it in step with any player-visible change. DEVELOP.md (Chinese) holds what
 each script does, the directory table and upstream merging.
 
 ## Layout and who owns what
