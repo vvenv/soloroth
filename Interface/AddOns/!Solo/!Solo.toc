@@ -5,6 +5,7 @@
 ## Version: 1.0.0
 ## SavedVariables: Solo_State
 Solo.lua
+NoQuest.lua
 BenillaOptions_zhCN.lua
 AddOns_zhCN.lua
 PfuiSkin.lua

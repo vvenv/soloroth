@@ -638,6 +638,53 @@ local function ParseXpLine(text)
   return true
 end
 
+-- No-quest mode: no quests offered or shown; kill XP gets Rate.XP.NoQuest.Kill.
+local nq = { known = false, on = false, buttons = {} }
+Label(tools, L("No-quest", "打怪模式"), "GameFontNormalSmall", "TOPLEFT", tools, "TOPLEFT", 2, toolY)
+do
+  local opts = { { true, "On", "开" }, { false, "Off", "关" } }
+  for c = 1, table.getn(opts) do
+    local o = opts[c]
+    local b = Button(tools, 104, 20, L(o[2], o[3]), "TOPLEFT", tools, "TOPLEFT", 96 + (c - 1) * 108, toolY + 3)
+    b.on = o[1]
+    b:SetScript("OnClick", function() Cmd(".noquest " .. (this.on and "on" or "off")) end)
+    b:SetScript("OnEnter", function()
+      GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
+      if this.on then
+        GameTooltip:AddLine(L("No quests: NPC marks and offers go away; what killing completes pays out on its own",
+          "不接任务：NPC 不再提任务；靠打怪能完成的奖励会在完成时直接给你"))
+      else
+        GameTooltip:AddLine(L("Quests as usual", "任务照常接交"))
+      end
+      GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    nq.buttons[c] = b
+  end
+  nq.status = Label(tools, "", "GameFontHighlightSmall", "TOPLEFT", tools, "TOPLEFT", 96 + 2 * 108 + 4, toolY)
+end
+toolY = toolY - 32
+
+local function NqRefresh()
+  for c = 1, table.getn(nq.buttons) do
+    MarkCurrent(nq.buttons[c], nq.known and nq.buttons[c].on == nq.on)
+  end
+  if not nq.known then
+    nq.status:SetText("")
+  else
+    nq.status:SetText(nq.on and L("now: on", "当前：开") or L("now: off", "当前：关"))
+  end
+end
+
+local function ParseNoQuestLine(text)
+  local _, _, flag = string.find(text, "^%[noquest%] on=(%d)")
+  if not flag then return false end
+  nq.on, nq.known = (flag == "1"), true
+  NqRefresh()
+  if Solo_NoQuest and Solo_NoQuest.ParseLine then Solo_NoQuest.ParseLine(text) end
+  return true
+end
+
 for r = 1, table.getn(TOOLROWS) do
   local sect = TOOLROWS[r]
   Label(tools, sect[1], "GameFontNormalSmall", "TOPLEFT", tools, "TOPLEFT", 2, toolY)
@@ -964,7 +1011,7 @@ end
 local origChatEvent = ChatFrame_OnEvent
 function ChatFrame_OnEvent(event)
   if event == "CHAT_MSG_SYSTEM" and arg1 and (string.find(arg1, "^%[bots%]") or string.find(arg1, "^%[xp%]")
-      or string.find(arg1, "^%[dq%]")) then
+      or string.find(arg1, "^%[dq%]") or string.find(arg1, "^%[noquest%]")) then
     return
   end
   return origChatEvent(event)
@@ -1143,7 +1190,9 @@ function SetTab(i)
   if i == 4 then
     tools:Show()
     XpRefresh()
+    NqRefresh()
     Cmd(".xprate quiet")
+    Cmd(".noquest quiet")
     return
   end
   if i == 3 then
@@ -1348,7 +1397,9 @@ ev:SetScript("OnEvent", function()
     f:Hide()
   elseif event == "CHAT_MSG_SYSTEM" then
     local text = arg1 or ""
-    if not ParseBotsLine(text) and not ParseXpLine(text) then ParseDungeonQuestLine(text) end
+    if not ParseBotsLine(text) and not ParseXpLine(text) and not ParseNoQuestLine(text) then
+      ParseDungeonQuestLine(text)
+    end
   elseif event == "QUEST_LOG_UPDATE" then
     -- Fires in bursts; one question every few seconds while the page is open.
     if dung:IsVisible() and GetTime() - dqAsked > 3 then AskDungeonQuests() end
