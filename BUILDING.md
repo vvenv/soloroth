@@ -32,14 +32,23 @@ tools/macos/make-app.sh                              # 生成 /Applications/Solo
 
 - `Launcher.swift` 是单文件的 AppKit 程序，`make-app.sh` 用 Xcode 命令行工具里的 `swiftc` 把它编进 `Soloroth.app/Contents/MacOS/Launcher`。编译失败时 app 照样能用，只是不弹窗口，直接进游戏。
 - 窗口一打开就在后台运行 `play.sh --no-client`（开服、外观补丁、登录界面补丁），底栏显示进度。点「开始游戏」时窗口以退出码 0 结束，app 的启动脚本接着启动客户端；客户端退出后再打开启动器（`skip` / `SOLOROTH_SKIP_LAUNCHER=1` 时不弹窗，跟客户端一起结束）。关掉启动器窗口或按 ⌘Q 是退出码 1，离开 app。
-- 窗口上除了底栏不放文字。内容来自 `tools/macos/launcher/launcher.json`：`hero`（背景插画，按窗口铺满、保留右边缘，默认是同目录的 `hero.jpg`；不填就画图标的剑和环）、`links`（底栏链接）、`promo`（左下角推广位，`title` 和 `text` 都为空时不显示；`url` 是点击后打开的网址，`image` 是图片路径，相对仓库根目录）。`benilla-config/launcher.json` 里写的顶层键会整个替换掉仓库里的同名键。
+- 窗口上除了 Logo、标语和底栏不放文字。内容来自 `tools/macos/launcher/launcher.json`，路径都相对仓库根目录：
+  - `heroes`：背景插画列表，每次打开窗口随机挑一张。每项的 `image` 按窗口铺满、保留右边缘（不填就画图标的剑和环）；`logo` 和 `slogan` 是这张图上 Logo 和标语的中心点 `{ "x", "y" }`，单位是窗口的点（960×600，从左上角算起）。不写 `logo` 用默认位置，不写 `slogan` 就放在 Logo 正下方。换图时按画面的空处调这两个点，让文字和画面主体错开。
+  - `logo`：`image` 是 Logo 图片，`width` 是显示宽度（高度按比例）。默认的 `logo.png` 由 `swift tools/macos/launcher/render-logo.swift tools/macos/launcher/logo.png` 画出来：Hoefler Text Black 的 SOLOROTH，第一个 O 换成图标的环和剑，透明底、3 倍分辨率，四周留了阴影的边。改了脚本要重新运行它再提交 PNG。
+  - `slogan`：`text` 是标语（空就不显示），`size` 是字号，`rule` 是两侧渐隐金线的长度（0 不画）。
+  - `links`（底栏链接）、`promo`（左下角推广位，`title` 和 `text` 都为空时不显示；`url` 是点击后打开的网址，`image` 是图片路径）。
+  
+  `benilla-config/launcher.json` 里写的顶层键会整个替换掉仓库里的同名键。
 - 出一张截图，不开窗口：
 
   ```sh
   swiftc -O -o /tmp/Launcher tools/macos/launcher/Launcher.swift
   /tmp/Launcher --root "$PWD" --snapshot /tmp/launcher.png                    # 仓库默认内容
   /tmp/Launcher --root "$PWD" --config promo.json --snapshot /tmp/promo.png   # 叠加一份测试配置
+  /tmp/Launcher --root "$PWD" --hero 1 --snapshot /tmp/hero1.png              # 指定 heroes 里的第 2 张
   ```
+
+  截图不随机，不加 `--hero` 时取第一张。
 
   README 顶部的 `.github/images/launcher.jpg` 就是这样生成的。
 

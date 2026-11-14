@@ -1,6 +1,13 @@
 {
   "skip": false,
-  "hero": "tools/macos/launcher/hero.jpg",
+  "heroes": [
+    {
+      "image": "tools/macos/launcher/hero.jpg",
+      "logo": { "x": 310, "y": 210 }
+    }
+  ],
+  "logo": { "image": "tools/macos/launcher/logo.png", "width": 460 },
+  "slogan": { "text": "一个人的经典旧世", "size": 13, "rule": 120 },
   "links": [
     { "title": "GitHub", "url": "https://github.com/vvenv/soloroth" },
     { "title": "问题反馈", "url": "https://github.com/vvenv/soloroth/issues" }

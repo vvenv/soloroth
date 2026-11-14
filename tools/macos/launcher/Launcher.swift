@@ -6,6 +6,7 @@
 //   Launcher --root <checkout>                         the window
 //   Launcher --root <checkout> --snapshot out.png      render it to a PNG and exit
 //            [--config extra.json]                     with extra keys on top
+//            [--hero N]                                show heroes[N], not a random one
 //
 // Exit codes: 0 play (the server is up), 1 the player closed the window,
 // 2 skipped ("skip": true in the config), 64 bad arguments. The launch script
@@ -14,15 +15,23 @@
 //
 // Content comes from tools/macos/launcher/launcher.json; benilla-config/launcher.json
 // replaces any of its top-level keys. The promo shows only when it has a title or text.
-// "hero" is the background art (filled, right edge kept); without it the window
-// draws the icon's sword and ring on a night field.
+// Each opening picks one of "heroes" (a snapshot takes the first): its image is the
+// background art (filled, right edge kept), and its "logo" and "slogan" say where
+// the centers of those go, in window points from the top left. Without heroes the
+// window draws the icon's sword and ring on a night field.
 import AppKit
 
 struct Link: Codable { var title: String?; var url: String? }
 struct Promo: Codable { var title: String?; var text: String?; var url: String?; var image: String? }
+struct Place: Codable { var x: CGFloat?; var y: CGFloat? }
+struct Hero: Codable { var image: String?; var logo: Place?; var slogan: Place? }
+struct LogoStyle: Codable { var image: String?; var width: CGFloat? }
+struct SloganStyle: Codable { var text: String?; var size: CGFloat?; var rule: CGFloat? }
 struct Config: Codable {
     var skip: Bool?
-    var hero: String?
+    var heroes: [Hero]?
+    var logo: LogoStyle?
+    var slogan: SloganStyle?
     var links: [Link]?
     var promo: Promo?
 }
@@ -49,6 +58,7 @@ let barHeight: CGFloat = 84
 var root = FileManager.default.currentDirectoryPath
 var snapshotPath: String?
 var extraConfigs: [String] = []
+var heroIndex: Int?
 do {
     var args = CommandLine.arguments.dropFirst().makeIterator()
     while let a = args.next() {
@@ -56,11 +66,16 @@ do {
         case "--root": root = args.next() ?? root
         case "--snapshot": snapshotPath = args.next()
         case "--config": if let p = args.next() { extraConfigs.append(p) }
+        case "--hero":
+            guard let n = args.next().flatMap({ Int($0) }) else { fallthrough }
+            heroIndex = n
         default:
-            fputs("usage: Launcher --root <checkout> [--snapshot out.png] [--config extra.json]\n", stderr)
+            fputs("usage: Launcher --root <checkout> [--snapshot out.png] [--config extra.json] [--hero N]\n",
+                  stderr)
             exit(64)
         }
     }
+    if snapshotPath != nil, heroIndex == nil { heroIndex = 0 }
 }
 
 func jsonObject(_ path: String) -> [String: Any] {
@@ -210,39 +225,118 @@ final class Bar: NSView {
     }
 }
 
-// Drawn inset so its glow stays inside the frame.
+// Raised: lit from above, standing on a darker lip that it sinks onto when
+// pressed. NSButton is flipped, so gradient angle 90 runs top to bottom. Drawn
+// inset so its glow and shadow stay inside the frame.
 final class PlayButton: NSButton {
     static let glowInset: CGFloat = 8
+    static let lip: CGFloat = 3
 
     override func draw(_ dirty: NSRect) {
-        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: Self.glowInset, dy: Self.glowInset),
-                                xRadius: 6, yRadius: 6)
+        let frame = bounds.insetBy(dx: Self.glowInset, dy: Self.glowInset)
+        let pressed = isEnabled && isHighlighted
+        let drop = pressed ? Self.lip - 1 : 0
+        var face = frame
+        face.size.height -= Self.lip
+        face.origin.y += drop
+        let base = NSBezierPath(roundedRect: frame, xRadius: 7, yRadius: 7)
+        let top = NSBezierPath(roundedRect: face, xRadius: 7, yRadius: 7)
+
         if isEnabled {
-            let pressed = isHighlighted
             NSGraphicsContext.saveGraphicsState()
             let glow = NSShadow()
-            glow.shadowColor = srgb(0.99, 0.80, 0.35, pressed ? 0.3 : 0.55)
-            glow.shadowBlurRadius = 10
+            glow.shadowColor = srgb(0.99, 0.80, 0.35, pressed ? 0.22 : 0.4)
+            glow.shadowBlurRadius = 12
             glow.set()
-            gold.setFill()
-            path.fill()
+            srgb(0.36, 0.23, 0.07).setFill()
+            base.fill()
             NSGraphicsContext.restoreGraphicsState()
-            NSGradient(colorsAndLocations: (pressed ? gold : goldLight, 0), (gold, 0.55), (goldDeep, 1))?
-                .draw(in: path, angle: -90)
+
+            NSGraphicsContext.saveGraphicsState()
+            let shadow = NSShadow()
+            shadow.shadowColor = srgb(0, 0, 0, pressed ? 0.35 : 0.6)
+            shadow.shadowOffset = NSSize(width: 0, height: pressed ? -1 : -3)
+            shadow.shadowBlurRadius = pressed ? 2 : 5
+            shadow.set()
+            srgb(0.36, 0.23, 0.07).setFill()
+            base.fill()
+            NSGraphicsContext.restoreGraphicsState()
+
+            let light = pressed ? gold : goldLight
+            NSGradient(colorsAndLocations: (light, 0), (gold, 0.5), (srgb(0.80, 0.60, 0.26), 1))?
+                .draw(in: top, angle: 90)
+            NSGraphicsContext.saveGraphicsState()
+            top.addClip()
+            srgb(1, 0.97, 0.85, pressed ? 0.3 : 0.75).setFill()
+            NSRect(x: face.minX + 6, y: face.minY + 1, width: face.width - 12, height: 1).fill()
+            NSGraphicsContext.restoreGraphicsState()
+            srgb(0.30, 0.19, 0.05, 0.8).setStroke()
+            let rim = NSBezierPath(roundedRect: face.insetBy(dx: 0.5, dy: 0.5), xRadius: 6.5, yRadius: 6.5)
+            rim.lineWidth = 1
+            rim.stroke()
         } else {
+            srgb(0.15, 0.15, 0.17).setFill()
+            base.fill()
             srgb(0.25, 0.25, 0.28).setFill()
-            path.fill()
+            top.fill()
         }
+
         let style = NSMutableParagraphStyle()
         style.alignment = .center
-        let attrs: [NSAttributedString.Key: Any] = [
+        var attrs: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 17, weight: .bold),
-            .foregroundColor: isEnabled ? srgb(0.16, 0.10, 0.03) : muted,
+            .foregroundColor: isEnabled ? srgb(0.20, 0.12, 0.03) : muted,
             .paragraphStyle: style,
         ]
+        if isEnabled {
+            let emboss = NSShadow()
+            emboss.shadowColor = srgb(1, 0.95, 0.80, 0.5)
+            emboss.shadowOffset = NSSize(width: 0, height: -1)
+            attrs[.shadow] = emboss
+        }
         let text = NSAttributedString(string: title, attributes: attrs)
         let h = text.size().height
-        text.draw(in: NSRect(x: 0, y: (bounds.height - h) / 2 - 1, width: bounds.width, height: h))
+        text.draw(in: NSRect(x: 0, y: face.midY - h / 2, width: bounds.width, height: h))
+    }
+}
+
+// The slogan: letter-spaced text between two gold rules that fade outward.
+final class Slogan: Flipped {
+    static let ruleGap: CGFloat = 16
+    let text: NSAttributedString
+    let rule: CGFloat
+
+    init(_ string: String, size: CGFloat, rule: CGFloat) {
+        let kern = (size * 0.4).rounded()
+        let shadow = NSShadow()
+        shadow.shadowColor = srgb(0, 0, 0, 0.8)
+        shadow.shadowBlurRadius = 4
+        text = NSAttributedString(string: string, attributes: [
+            .font: NSFont.systemFont(ofSize: size, weight: .medium),
+            .foregroundColor: srgb(0.95, 0.91, 0.82, 0.92),
+            .kern: kern,
+            .shadow: shadow,
+        ])
+        self.rule = rule
+        let t = text.size()
+        let side = rule > 0 ? rule + Self.ruleGap : 0
+        super.init(frame: NSRect(x: 0, y: 0, width: ceil(t.width + side * 2), height: ceil(t.height) + 8))
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func draw(_ dirty: NSRect) {
+        let t = text.size()
+        let side = rule > 0 ? rule + Self.ruleGap : 0
+        // Core Text kerns after the last glyph too; leave that out of the centering.
+        let kern = text.attribute(.kern, at: 0, effectiveRange: nil) as? CGFloat ?? 0
+        text.draw(at: NSPoint(x: side + kern / 2, y: (bounds.height - t.height) / 2))
+        guard rule > 0 else { return }
+        let fade = srgb(0.93, 0.76, 0.40, 0), line = srgb(0.93, 0.76, 0.40, 0.8)
+        let y = (bounds.height / 2).rounded()
+        NSGradient(colors: [fade, line])!.draw(in: NSRect(x: 0, y: y, width: rule, height: 1), angle: 0)
+        NSGradient(colors: [line, fade])!
+            .draw(in: NSRect(x: bounds.width - rule, y: y, width: rule, height: 1), angle: 0)
     }
 }
 
@@ -298,17 +392,46 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.delegate = self
         window.contentView = content
 
+        let heroes = config.heroes ?? []
+        let hero = heroes.isEmpty ? Hero()
+            : heroes[heroIndex.map { min(max($0, 0), heroes.count - 1) } ?? Int.random(in: heroes.indices)]
         let backdrop = Backdrop(frame: content.bounds)
-        if let path = nonEmpty(config.hero) { backdrop.hero = NSImage(contentsOfFile: resolve(path)) }
+        if let path = nonEmpty(hero.image) { backdrop.hero = NSImage(contentsOfFile: resolve(path)) }
         content.addSubview(backdrop)
 
+        buildLogo(hero)
         buildPromo()
         buildBar()
     }
 
     func resolve(_ path: String) -> String { path.hasPrefix("/") ? path : "\(root)/\(path)" }
 
-    // The promo above the bar, the only thing drawn over the art.
+    // The logo image and the slogan, centered where the hero puts them; a slogan
+    // with no place of its own sits under the logo.
+    func buildLogo(_ hero: Hero) {
+        var logoBottom = CGFloat(140)
+        let logoX = hero.logo?.x ?? 300, logoY = hero.logo?.y ?? 130
+        if let path = nonEmpty(config.logo?.image), let image = NSImage(contentsOfFile: resolve(path)),
+           let rep = image.representations.first, rep.pixelsWide > 0 {
+            let width = config.logo?.width ?? 460
+            let height = width * CGFloat(rep.pixelsHigh) / CGFloat(rep.pixelsWide)
+            let view = NSImageView(frame: NSRect(x: logoX - width / 2, y: logoY - height / 2,
+                                                 width: width, height: height))
+            view.image = image
+            view.imageScaling = .scaleAxesIndependently
+            content.addSubview(view)
+            // The image keeps room for its shadow under the pommel; tuck the slogan into it.
+            logoBottom = view.frame.maxY - height * 0.06
+        }
+        guard let text = nonEmpty(config.slogan?.text) else { return }
+        let slogan = Slogan(text, size: config.slogan?.size ?? 13, rule: config.slogan?.rule ?? 120)
+        let size = slogan.frame.size
+        let x = hero.slogan?.x ?? logoX, y = hero.slogan?.y ?? logoBottom + size.height / 2
+        slogan.setFrameOrigin(NSPoint(x: (x - size.width / 2).rounded(), y: (y - size.height / 2).rounded()))
+        content.addSubview(slogan)
+    }
+
+    // The promo above the bar; with the logo and slogan, the only things drawn over the art.
     func buildPromo() {
         let promo = config.promo
         let title = nonEmpty(promo?.title), text = nonEmpty(promo?.text)

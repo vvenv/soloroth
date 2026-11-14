@@ -99,7 +99,7 @@
 - **底栏链接**：GitHub 和问题反馈。**···** 菜单里可以打开日志文件夹、插件文件夹、编辑启动器设置、关服务器。
 - **关掉启动器窗口**（或 ⌘Q）才真正离开 app；服务器如果已经开了，会继续运行。
 
-想换背景图、底栏链接，或者不想看到启动器：点 ··· →「编辑启动器设置」，会打开 `benilla-config/launcher.json`（第一次打开时新建，里面只有 `"skip": false`）。把它改成 `true` 就跳过窗口，双击 app 直接进游戏；只想临时跳过一次，用 `open --env SOLOROTH_SKIP_LAUNCHER=1 -a Soloroth`。这个文件里还可以写仓库 `tools/macos/launcher/launcher.json` 里的任何一项（背景图 `hero`、链接、推广位），写了的整项替换掉仓库的。改完下次启动生效。
+想换背景图、底栏链接，或者不想看到启动器：点 ··· →「编辑启动器设置」，会打开 `benilla-config/launcher.json`（第一次打开时新建，里面只有 `"skip": false`）。把它改成 `true` 就跳过窗口，双击 app 直接进游戏；只想临时跳过一次，用 `open --env SOLOROTH_SKIP_LAUNCHER=1 -a Soloroth`。这个文件里还可以写仓库 `tools/macos/launcher/launcher.json` 里的任何一项（背景图 `heroes`，可以放好几张、每次随机显示一张；Logo、标语、链接、推广位），写了的整项替换掉仓库的。改完下次启动生效。
 
 ### 自动登录
 
@@ -289,7 +289,7 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套（B�
 
 ## 关于
 
-非官方的爱好者项目，与 Blizzard Entertainment 无关。仓库和构建产物里不含任何游戏本身的文件：模型、贴图、声音、地图和游戏数据都来自你自己的 1.12.1 客户端。启动器的背景插画（`tools/macos/launcher/hero.jpg`）是为本项目生成的原创图，图标也是本项目画的。
+非官方的爱好者项目，与 Blizzard Entertainment 无关。仓库和构建产物里不含任何游戏本身的文件：模型、贴图、声音、地图和游戏数据都来自你自己的 1.12.1 客户端。启动器的背景插画（`tools/macos/launcher/hero.jpg`）是为本项目生成的原创图，图标和 Logo 也是本项目画的。
 
 World of Warcraft 和 Blizzard Entertainment 是 Blizzard Entertainment, Inc. 的商标或注册商标。
 
