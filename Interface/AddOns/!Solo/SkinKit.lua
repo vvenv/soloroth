@@ -1,6 +1,6 @@
 --[[--------------------------------------------------------------------------
-What the pfUI skins of the third-party addons share (SkinAtlas.lua,
-SkinShaguNotify.lua): their registration with pfUI, so
+What the pfUI skins of the third-party addons share (SkinAtlas.lua):
+their registration with pfUI, so
 pfUI's "disable skin" setting covers each, and a walk that gives every stock
 control under a frame pfUI's look, found by what it is:
 

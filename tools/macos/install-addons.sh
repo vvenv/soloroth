@@ -3,10 +3,9 @@
 # the client's addon folder (benilla-config/AddOns): GMBox, !Solo and
 # Achievements (the dungeon and bot panel, the single-player defaults, and
 # the achievement window) and the vetted
-# third-party addons (pfUI, Atlas, AtlasLoot, Bagshui,
-# ShaguKill, ShaguNotify; see THIRD-PARTY-NOTICES.md).
-# localize-addons.py then adds Chinese where an addon lacks it, on the
-# installed copies.
+# third-party addons (pfUI, Atlas, AtlasLoot, Bagshui;
+# see THIRD-PARTY-NOTICES.md). localize-addons.py then adds Chinese
+# where an addon lacks it, on the installed copies.
 #
 # The first run also copies saved settings (Bagshui's excepted) from an old
 # 1.12 zhCN client (../wow-data/client-zhCN/WTF/Account/ADMIN/SavedVariables,

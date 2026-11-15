@@ -7,11 +7,9 @@
 Solo.lua
 NoQuest.lua
 BenillaOptions_zhCN.lua
-AddOns_zhCN.lua
 PfuiSkin.lua
 SkinKit.lua
 Visual.lua
 AutoLoot.lua
 Farm.lua
 SkinAtlas.lua
-SkinShaguNotify.lua
