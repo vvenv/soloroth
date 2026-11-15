@@ -4,12 +4,16 @@ the client still paints: pfQuest nodes and tracker, the stock quest watch,
 and the quest-log hotkey's window is left alone (empty after the server
 clears the log). Third-party sources are not edited; pfQuest_config is
 rewritten from here and nodes are redrawn.
+
+`allquestgivers` is the yellow "!" on the minimap and world map. Turning off
+spawn points does not hide it: those pins carry their own texture, and the
+minimap only drops untextured spawn dots when `showspawnmini` is "0".
 ----------------------------------------------------------------------------]]
 
 local KEYS = {
   "showspawn", "showspawnmini", "showcluster", "showclustermini",
-  "currentquestgivers", "trackingicons", "showtracker", "questlogbuttons",
-  "arrow", "routestarter", "routeender",
+  "allquestgivers", "currentquestgivers", "trackingicons", "showtracker",
+  "questlogbuttons", "arrow", "routestarter", "routeender",
 }
 
 local saved = nil   -- values before no-quest, so turning off restores them
