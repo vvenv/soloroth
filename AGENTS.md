@@ -14,7 +14,7 @@ each script does, the directory table and upstream merging.
   MPQ under `Data/` (see `tools/glue-skin/`), not in the client.
 - `server/core` — submodule soloroth-server (vmangos plus bots and achievements).
 - `Interface/AddOns/` — the addon set. Third-party addons (pfUI, Atlas, AtlasLoot, Bagshui,
-  Shagu*, SuperMacro, CleverMacro) are kept as shipped: never edit their sources. Change
+  Shagu*) are kept as shipped: never edit their sources. Change
   their defaults or looks from `!Solo` (see its `AGENTS.md`).
 - `tools/macos/` — build, install, run scripts. `tools/macos/launcher/` — Soloroth.app's
  launcher window (AppKit, built by `make-app.sh`): the art with no text over it but the

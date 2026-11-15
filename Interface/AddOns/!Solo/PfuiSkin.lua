@@ -2,9 +2,8 @@
 benilla's own ESC menu rungs and options window in pfUI's look, registered as
 a pfUI skin (so pfUI's "disable skin" setting covers it too):
 
-  * the ESC menu: no Edit Mode rung (benilla has nothing behind it), no
-    SuperMacro side tab (its editor stays on /supermacro), Help in pfUI's
-    button style;
+  * the ESC menu: no Edit Mode rung (benilla has nothing behind it), Help
+    in pfUI's button style;
   * the options window: no Game/AddOns tabs (AddOns has nothing behind it,
     Game alone is the whole window), and pfUI's backdrops, buttons,
     checkboxes, sliders, dropdowns, scroll bars and search box;
@@ -28,12 +27,6 @@ local function SkinGameMenu()
     GameMenuFrame:SetHeight(GameMenuFrame:GetHeight() - editMode:GetHeight())
     SkinButton(support)
   end
-  -- SuperMacro loads after pfUI has run its skins: hide its tab at each open.
-  local show = GameMenuFrame:GetScript("OnShow")
-  GameMenuFrame:SetScript("OnShow", function()
-    if show then show() end
-    if GameMenuButtonSuperMacro then GameMenuButtonSuperMacro:Hide() end
-  end)
 end
 
 -- The page body is a scroll child, where benilla draws a child frame over its

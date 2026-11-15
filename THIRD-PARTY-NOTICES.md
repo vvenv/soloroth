@@ -25,8 +25,6 @@ It is not affiliated with or endorsed by Blizzard Entertainment and ships no gam
 | ShaguNotify | 0.1 | Shagu | none shipped | https://github.com/shagu/ShaguNotify |
 | Atlas | 1.12.0 | Dan Gilbert | none shipped | http://www.atlasmod.com |
 | AtlasLoot | 4.06.06 | Daviesh | none shipped | AtlasLoot Enhanced for 1.12 |
-| SuperMacro | 3.18.1 | unnamed | none shipped | SuperMacro for 1.12 |
-| CleverMacro | 1.2 | _brain | none shipped | https://github.com/DanielAdolfsson/CleverMacro |
 
 GMBox and !Solo in the same folder are this project's own, under its GPL-3.0.
 

@@ -14,5 +14,4 @@ Visual.lua
 AutoLoot.lua
 Farm.lua
 SkinAtlas.lua
-SkinSuperMacro.lua
 SkinShaguNotify.lua

@@ -4,7 +4,7 @@
 # Achievements (the dungeon and bot panel, the single-player defaults, and
 # the achievement window) and the vetted
 # third-party addons (pfUI, Atlas, AtlasLoot, Bagshui,
-# ShaguKill, ShaguNotify, SuperMacro, CleverMacro; see THIRD-PARTY-NOTICES.md).
+# ShaguKill, ShaguNotify; see THIRD-PARTY-NOTICES.md).
 # localize-addons.py then adds Chinese where an addon lacks it, on the
 # installed copies.
 #
