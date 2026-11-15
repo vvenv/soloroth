@@ -3,16 +3,15 @@ Solo -- single-player defaults for this realm (WoW 1.12.1, Lua 5.0).
 
 The realm is one player and their bots, so:
 
-  * chat is a message log: system, loot, experience, quests and what NPCs
+  * chat is a message log: system, loot, experience and what NPCs
     say stay; say, yell, whispers, party/guild talk and channels go. (The
     server refuses every channel join anyway: Channel.Disable.)
-  * pfUI and pfQuest skip their first-run wizards and start from settings
-    made for travelling and questing alone (the "travel preset" of the old
-    local realm), on every character, every login.
+  * pfUI skips its first-run wizard and starts from settings made for
+    travelling alone, on every character, every login.
 
 The folder starts with "!" so it loads before every other addon: its
-ADDON_LOADED handler then runs before pfUI's and pfQuest's own, at the moment
-their per-character saved variables are loaded but not read yet.
+ADDON_LOADED handler then runs before pfUI's own, at the moment pfUI's
+per-character saved variables are loaded but not read yet.
 ----------------------------------------------------------------------------]]
 
 -- ---------------------------------------------------------------- helpers --
@@ -51,8 +50,6 @@ local PFUI = {
   { { "appearance", "minimap", "zonetext" }, "on" },
   { { "appearance", "minimap", "coordstext" }, "on" },
   { { "appearance", "border", "shadow" }, "1" },
-  -- Quest levels in the quest log.
-  { { "questlog", "showQuestLevels" }, "1" },
   -- Info panels: no guild or friends to count.
   { { "panel", "left", "left" }, "exp" },
   { { "panel", "left", "right" }, "bagspace" },
@@ -69,7 +66,7 @@ local PFUI = {
   { { "screenshot", "loot" }, "4" },
   { { "screenshot", "caption" }, "1" },
   { { "screenshot", "hideui" }, "1" },
-  -- An item's tooltip (quest rewards, loot, vendors) always shows the
+  -- An item's tooltip (loot, vendors) always shows the
   -- equipped item beside it, without holding Shift.
   { { "tooltip", "compare", "showalways" }, "1" },
   -- Grey items sell themselves at a vendor.
@@ -106,27 +103,11 @@ local function PreparePfUI()
   end
 end
 
--- ----------------------------------------------------------------- pfQuest --
-
--- Only for a character that has not been through pfQuest's welcome screen:
--- its "combined" mode (spawn points and icons on the world map, spawn points
--- on the minimap) with the arrow on. pfQuest fills in the rest itself.
-local function PreparePfQuest()
-  if type(pfQuest_config) ~= "table" then pfQuest_config = {} end
-  if pfQuest_config["welcome"] == "1" then return end
-  pfQuest_config["showspawn"] = "1"
-  pfQuest_config["showspawnmini"] = "1"
-  pfQuest_config["showcluster"] = "1"
-  pfQuest_config["showclustermini"] = "0"
-  pfQuest_config["arrow"] = "1"
-  pfQuest_config["welcome"] = "1"
-end
-
 -- -------------------------------------------------------------------- chat --
 
 -- Message groups the chat windows stop showing: other people talking.
 -- What stays: system and error messages, loot, money, experience,
--- reputation, skills, quest and NPC speech, combat log.
+-- reputation, skills, NPC speech, combat log.
 local CHATTER = {
   "SAY", "YELL", "EMOTE", "WHISPER", "PARTY", "RAID", "RAID_LEADER", "RAID_WARNING",
   "GUILD", "OFFICER", "AFK", "DND", "IGNORED", "CHANNEL",
@@ -184,8 +165,6 @@ ev:SetScript("OnEvent", function()
   if event == "ADDON_LOADED" then
     if arg1 == "pfUI" then
       PreparePfUI()
-    elseif arg1 == "pfQuest" then
-      PreparePfQuest()
     end
   elseif event == "VARIABLES_LOADED" then
     EnableCombatText()

@@ -1,98 +1,82 @@
 --[[--------------------------------------------------------------------------
-NoQuest -- when `.noquest on` is set for this character, hide every quest UI
-the client still paints: pfQuest nodes and tracker, the stock quest watch,
-and the quest-log hotkey's window is left alone (empty after the server
-clears the log). Third-party sources are not edited; pfQuest_config is
-rewritten from here and nodes are redrawn.
+No quests. The server never offers one, so the stock quest log, its tracker
+and the quest-accept window stay shut. The micro-bar button goes too.
 
-`allquestgivers` is the yellow "!" on the minimap and world map. Turning off
-spawn points does not hide it: those pins carry their own texture, and the
-minimap only drops untextured spawn dots when `showspawnmini` is "0".
+pfUI lays that bar out from its own MICRO_BUTTONS while it loads (a copy,
+not the global). This file loads first, so the button is taken out of the
+global list, then the bar is chained again once pfUI has placed it.
 ----------------------------------------------------------------------------]]
 
-local KEYS = {
-  "showspawn", "showspawnmini", "showcluster", "showclustermini",
-  "allquestgivers", "currentquestgivers", "trackingicons", "showtracker",
-  "questlogbuttons", "arrow", "routestarter", "routeender",
+local function DropMicro(name)
+  if type(MICRO_BUTTONS) ~= "table" then return end
+  local keep, i, n = {}, 1, table.getn(MICRO_BUTTONS)
+  for i = 1, n do
+    if MICRO_BUTTONS[i] ~= name then
+      table.insert(keep, MICRO_BUTTONS[i])
+      MICRO_BUTTONS[i] = nil
+    else
+      MICRO_BUTTONS[i] = nil
+    end
+  end
+  for i = 1, table.getn(keep) do
+    MICRO_BUTTONS[i] = keep[i]
+  end
+  if table.setn then table.setn(MICRO_BUTTONS, table.getn(keep)) end
+end
+
+DropMicro("QuestLogMicroButton")
+
+-- The keybind calls this global by name.
+ToggleQuestLog = function() end
+
+local function Shut(frame)
+  if not frame or frame.soloQuestShut then return end
+  frame.soloQuestShut = true
+  frame:Hide()
+  frame.Show = function() end
+end
+
+local MICRO = {
+  "CharacterMicroButton", "SpellbookMicroButton", "TalentMicroButton",
+  "SocialsMicroButton", "WorldMapMicroButton", "MainMenuMicroButton", "HelpMicroButton",
 }
 
-local saved = nil   -- values before no-quest, so turning off restores them
-local on = false
-
-local function ApplyPfQuest(hide)
-  if type(pfQuest_config) ~= "table" then return end
-  if hide then
-    if not saved then
-      saved = {}
-      for i = 1, table.getn(KEYS) do
-        local k = KEYS[i]
-        saved[k] = pfQuest_config[k]
+local function RelayoutMicro()
+  if QuestLogMicroButton then
+    QuestLogMicroButton:Hide()
+    QuestLogMicroButton:ClearAllPoints()
+  end
+  local parent = pfUI and pfUI.panel and pfUI.panel.microbutton
+  if not parent then return end
+  local prev, i, button
+  for i = 1, table.getn(MICRO) do
+    button = getglobal(MICRO[i])
+    if button then
+      button:ClearAllPoints()
+      if not prev then
+        button:SetPoint("LEFT", parent, "LEFT", 1, 10)
+      else
+        button:SetPoint("TOPLEFT", prev, "TOPRIGHT", 1, 0)
       end
-    end
-    for i = 1, table.getn(KEYS) do
-      pfQuest_config[KEYS[i]] = "0"
-    end
-  elseif saved then
-    for i = 1, table.getn(KEYS) do
-      local k = KEYS[i]
-      if saved[k] ~= nil then pfQuest_config[k] = saved[k] end
-    end
-    saved = nil
-  end
-  if pfQuest and pfQuest.ResetAll then
-    pfQuest:ResetAll()
-  elseif pfMap and pfMap.UpdateNodes then
-    pfMap:UpdateNodes()
-  end
-end
-
-local function ApplyWatch(hide)
-  if not QuestWatchFrame then return end
-  if hide then
-    QuestWatchFrame:Hide()
-    -- Stop the stock frame from showing itself again on QUEST_LOG_UPDATE.
-    if not QuestWatchFrame.soloNoQuestHooked then
-      QuestWatchFrame.soloNoQuestHooked = true
-      local orig = QuestWatchFrame.Show
-      QuestWatchFrame.Show = function(self)
-        if on then return end
-        return orig(self)
-      end
+      prev = button
     end
   end
+  -- pfUI sizes the bar for eight buttons. One less, a little shorter.
+  parent:SetWidth(127)
 end
 
-local function SetNoQuest(want)
-  if on == want then return end
-  on = want
-  ApplyPfQuest(want)
-  ApplyWatch(want)
+local function Apply()
+  Shut(QuestWatchFrame)
+  Shut(QuestTimerFrame)
+  Shut(QuestLogFrame)
+  Shut(QuestFrame)
+  RelayoutMicro()
 end
 
--- The server answers `.noquest` / `.noquest quiet` with "[noquest] on=1 kill=2".
-local function ParseLine(text)
-  local _, _, flag = string.find(text, "^%[noquest%] on=(%d)")
-  if not flag then return false end
-  SetNoQuest(flag == "1")
-  return true
-end
-
-local asked = false
 local ev = CreateFrame("Frame")
+ev:RegisterEvent("ADDON_LOADED")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
-ev:RegisterEvent("CHAT_MSG_SYSTEM")
 ev:SetScript("OnEvent", function()
-  if event == "PLAYER_ENTERING_WORLD" then
-    if asked then return end
-    asked = true
-    -- Ask once per login; GMBox may also ask when its tools tab opens.
-    SendChatMessage(".noquest quiet", "SAY")
-  elseif event == "CHAT_MSG_SYSTEM" then
-    ParseLine(arg1 or "")
-  end
+  if event == "ADDON_LOADED" and arg1 ~= "pfUI" then return end
+  Apply()
 end)
-
--- Other addons (GMBox) may want to know without parsing chat themselves.
-Solo_NoQuest = Solo_NoQuest or {}
-Solo_NoQuest.IsOn = function() return on end
-Solo_NoQuest.ParseLine = ParseLine

@@ -22,8 +22,7 @@ local VERSION = "2.0.0"
 
 -- The realm's world DB carries Simplified Chinese for ~89% of items, so on a
 -- zhCN client the addon searches and shows Chinese names and labels. The 1.12
--- Chinese client reads UTF-8 (verified against pfQuest's own zhCN data), which
--- is what Data_Items.lua is written in.
+-- Chinese client reads UTF-8, which is what Data_Items.lua is written in.
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end
 
@@ -638,53 +637,6 @@ local function ParseXpLine(text)
   return true
 end
 
--- No-quest mode: no quests offered or shown; kill XP gets Rate.XP.NoQuest.Kill.
-local nq = { known = false, on = false, buttons = {} }
-Label(tools, L("No-quest", "打怪模式"), "GameFontNormalSmall", "TOPLEFT", tools, "TOPLEFT", 2, toolY)
-do
-  local opts = { { true, "On", "开" }, { false, "Off", "关" } }
-  for c = 1, table.getn(opts) do
-    local o = opts[c]
-    local b = Button(tools, 104, 20, L(o[2], o[3]), "TOPLEFT", tools, "TOPLEFT", 96 + (c - 1) * 108, toolY + 3)
-    b.on = o[1]
-    b:SetScript("OnClick", function() Cmd(".noquest " .. (this.on and "on" or "off")) end)
-    b:SetScript("OnEnter", function()
-      GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
-      if this.on then
-        GameTooltip:AddLine(L("No quests: NPC marks and offers go away; what killing completes pays out on its own",
-          "不接任务：NPC 不再提任务；靠打怪能完成的奖励会在完成时直接给你"))
-      else
-        GameTooltip:AddLine(L("Quests as usual", "任务照常接交"))
-      end
-      GameTooltip:Show()
-    end)
-    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    nq.buttons[c] = b
-  end
-  nq.status = Label(tools, "", "GameFontHighlightSmall", "TOPLEFT", tools, "TOPLEFT", 96 + 2 * 108 + 4, toolY)
-end
-toolY = toolY - 32
-
-local function NqRefresh()
-  for c = 1, table.getn(nq.buttons) do
-    MarkCurrent(nq.buttons[c], nq.known and nq.buttons[c].on == nq.on)
-  end
-  if not nq.known then
-    nq.status:SetText("")
-  else
-    nq.status:SetText(nq.on and L("now: on", "当前：开") or L("now: off", "当前：关"))
-  end
-end
-
-local function ParseNoQuestLine(text)
-  local _, _, flag = string.find(text, "^%[noquest%] on=(%d)")
-  if not flag then return false end
-  nq.on, nq.known = (flag == "1"), true
-  NqRefresh()
-  if Solo_NoQuest and Solo_NoQuest.ParseLine then Solo_NoQuest.ParseLine(text) end
-  return true
-end
-
 for r = 1, table.getn(TOOLROWS) do
   local sect = TOOLROWS[r]
   Label(tools, sect[1], "GameFontNormalSmall", "TOPLEFT", tools, "TOPLEFT", 2, toolY)
@@ -745,7 +697,7 @@ Label(tools, L("(leading dot optional, Enter sends)", "(开头的点可省，回
 -- five-player dungeon (DungeonBotMgr), and `.bots` sets the player's role.
 
 local DUNGEONS = {
-  -- { english, chinese, min, max, map, x, y, z, o, quest-log zone (.dungeonquests) }
+  -- { english, chinese, min, max, map, x, y, z, o }
   { "Ragefire Chasm",             "怒焰裂谷",           13, 18, 389,     0.8,    -8.2,  -15.5, 4.71, 2437 },
   { "Wailing Caverns",            "哀嚎洞穴",           17, 24,  43,  -158.4,   131.6,  -74.3, 5.85, 718 },
   { "The Deadmines",              "死亡矿井",           17, 26,  36,   -14.6,  -385.5,   62.5, 1.57, 1581 },
@@ -792,7 +744,7 @@ local function RoleText(r)
   return r
 end
 
--- Quest-log colours by how the dungeon's range sits against my level.
+-- Colours by how the dungeon's range sits against my level.
 local function DungeonColor(d)
   local lvl = UnitLevel("player") or 1
   if lvl < d[3] - 2 then return 1, 0.1, 0.1 end        -- red: too low
@@ -847,28 +799,6 @@ dui.dismiss:SetScript("OnClick", function() Cmd(".bots dismiss") end)
 Label(dung, L("Dungeon (click to go inside)", "副本（点击直接传送进去）"), "GameFontNormalSmall",
       "TOPLEFT", dung, "TOPLEFT", 2, -58)
 Label(dung, L("Level", "等级"), "GameFontNormalSmall", "TOPRIGHT", dung, "TOPRIGHT", -8, -58)
-Label(dung, L("Quests", "任务"), "GameFontNormalSmall", "TOPRIGHT", dung, "TOPRIGHT", -76, -58)
-
--- `.dungeonquests quiet` answers a line per dungeon:
--- "[dq] 1581 done=2 log=1 open=1 later=1", by the quest-log zone.
-local dq = {}
-local dqAsked = 0
-
-local function DungeonQuestText(d)
-  local q = dq[d[10]]
-  if not q then return "", 0.5, 0.5, 0.5 end
-  local total = q.done + q.log + q.open + q.later
-  if total == 0 then return "-", 0.5, 0.5, 0.5 end
-  local text = q.done .. "/" .. total
-  if q.open > 0 then return text .. " +" .. q.open, 1, 0.82, 0 end    -- yellow: some to pick up
-  if q.done == total then return text, 0.25, 0.75, 0.25 end         -- green: all done
-  return text, 0.8, 0.8, 0.8
-end
-
-local function AskDungeonQuests()
-  dqAsked = GetTime()
-  Cmd(".dungeonquests quiet")
-end
 
 local function DungeonRefresh()
   local n = table.getn(DUNGEONS)
@@ -881,9 +811,6 @@ local function DungeonRefresh()
       b.text:SetText(ZH and d[2] or d[1])
       b.text:SetTextColor(DungeonColor(d))
       b.info:SetText(d[3] .. "-" .. d[4])
-      local qt, r, g, bl = DungeonQuestText(d)
-      b.quests:SetText(qt)
-      b.quests:SetTextColor(r, g, bl)
       b:Show()
     else
       b:Hide()
@@ -922,13 +849,9 @@ for i = 1, DROWS do
   b.info = b:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
   b.info:SetPoint("RIGHT", b, "RIGHT", -4, 0)
   b.info:SetJustifyH("RIGHT")
-  b.quests = b:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-  b.quests:SetPoint("RIGHT", b, "RIGHT", -72, 0)
-  b.quests:SetJustifyH("RIGHT")
-  b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  b:RegisterForClicks("LeftButtonUp")
   b:SetScript("OnClick", function()
-    if not this.d then return end
-    if arg1 == "RightButton" then Cmd(".dungeonquests " .. this.d[10]) else DungeonGo(this.d) end
+    if this.d then DungeonGo(this.d) end
   end)
   b:SetScript("OnEnter", function()
     local d = this.d
@@ -937,16 +860,8 @@ for i = 1, DROWS do
     GameTooltip:AddLine(ZH and d[2] or d[1])
     if ZH then GameTooltip:AddLine(d[1], 0.8, 0.8, 0.8) end
     GameTooltip:AddLine(L("Recommended level ", "推荐等级 ") .. d[3] .. "-" .. d[4], 0.8, 0.8, 0.8)
-    local q = dq[d[10]]
-    if q then
-      GameTooltip:AddLine(string.format(L("Quests: %d done, %d in the log, %d to pick up now, %d not yet",
-                                          "任务：完成 %d，日志里 %d，现在能接 %d，还不能接 %d"),
-                                        q.done, q.log, q.open, q.later), 1, 0.82, 0)
-    end
     GameTooltip:AddLine(L("Click: teleport inside. Bots join three seconds later.",
                           "点击传送进副本，3 秒后机器人自动入队。"), 0.4, 0.8, 1)
-    GameTooltip:AddLine(L("Right click: list its quests and where to pick them up",
-                          "右键：在聊天框列出它的任务和接任务的地方"), 0.4, 0.8, 1)
     GameTooltip:Show()
   end)
   b:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -999,19 +914,9 @@ local function ParseBotsLine(text)
   return true
 end
 
-local function ParseDungeonQuestLine(text)
-  local _, _, zone, done, log, open, later =
-    string.find(text, "^%[dq%] (%d+) done=(%d+) log=(%d+) open=(%d+) later=(%d+)")
-  if not zone then return false end
-  dq[tonumber(zone)] = { done = tonumber(done), log = tonumber(log), open = tonumber(open), later = tonumber(later) }
-  if dung:IsVisible() then DungeonRefresh() end
-  return true
-end
-
 local origChatEvent = ChatFrame_OnEvent
 function ChatFrame_OnEvent(event)
-  if event == "CHAT_MSG_SYSTEM" and arg1 and (string.find(arg1, "^%[bots%]") or string.find(arg1, "^%[xp%]")
-      or string.find(arg1, "^%[dq%]") or string.find(arg1, "^%[noquest%]")) then
+  if event == "CHAT_MSG_SYSTEM" and arg1 and (string.find(arg1, "^%[bots%]") or string.find(arg1, "^%[xp%]")) then
     return
   end
   return origChatEvent(event)
@@ -1190,16 +1095,13 @@ function SetTab(i)
   if i == 4 then
     tools:Show()
     XpRefresh()
-    NqRefresh()
     Cmd(".xprate quiet")
-    Cmd(".noquest quiet")
     return
   end
   if i == 3 then
     dung:Show()
     DungeonRefresh()
     Cmd(".bots status quiet")
-    AskDungeonQuests()
     return
   end
   panel:Show()
@@ -1384,7 +1286,6 @@ ev:RegisterEvent("VARIABLES_LOADED")
 ev:RegisterEvent("PLAYER_LOGIN")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:RegisterEvent("CHAT_MSG_SYSTEM")
-ev:RegisterEvent("QUEST_LOG_UPDATE")
 ev:SetScript("OnEvent", function()
   if event == "VARIABLES_LOADED" then
     InitDB()
@@ -1397,12 +1298,9 @@ ev:SetScript("OnEvent", function()
     f:Hide()
   elseif event == "CHAT_MSG_SYSTEM" then
     local text = arg1 or ""
-    if not ParseBotsLine(text) and not ParseXpLine(text) and not ParseNoQuestLine(text) then
-      ParseDungeonQuestLine(text)
+    if not ParseBotsLine(text) then
+      ParseXpLine(text)
     end
-  elseif event == "QUEST_LOG_UPDATE" then
-    -- Fires in bursts; one question every few seconds while the page is open.
-    if dung:IsVisible() and GetTime() - dqAsked > 3 then AskDungeonQuests() end
   elseif event == "PLAYER_ENTERING_WORLD" then
     if not bots.known then Cmd(".bots status quiet") end
   elseif event == "PLAYER_LOGIN" then

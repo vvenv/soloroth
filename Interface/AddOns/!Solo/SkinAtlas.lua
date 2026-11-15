@@ -1,15 +1,12 @@
 --[[--------------------------------------------------------------------------
-Atlas, AtlasLoot and AtlasQuest in pfUI's look. The three hang on one window:
-Atlas draws the map and the list beside it, AtlasLoot lays its loot table
-over the map and its button panel under the window, AtlasQuest opens a
-quest column beside it and its quest text over the map.
+Atlas and AtlasLoot in pfUI's look. They hang on one window: Atlas draws the
+map and the list beside it, AtlasLoot lays its loot table over the map and
+its button panel under the window.
 
   * Atlas: the parchment frame art goes for pfUI's backdrop, with a border
     round the map and a panel behind the zone text and list;
   * AtlasLoot: its panel docks under the window, its standalone window
-    (/atlasloot) and options get the same backdrop, its menus pfUI's colours;
-  * AtlasQuest: its column docks to the window's edge on the side it is set
-    to, instead of tucking under the old art's margin.
+    (/atlasloot) and options get the same backdrop, its menus pfUI's colours.
 ----------------------------------------------------------------------------]]
 
 local GAP = 4
@@ -122,36 +119,5 @@ SoloSkin.Register("AtlasLoot", function()
     SoloSkin.Controls(AtlasLootOptionsFrame)
 
     SoloSkin.Dewdrop()
-  end)
-end)
-
-SoloSkin.Register("AtlasQuest", function()
-  HookAddonOrVariable("AtlasQuest", function()
-    local column = AtlasQuestFrame
-    SoloSkin.Backdrop(column)
-    SoloSkin.Controls(column)
-
-    local function Dock()
-      if not AtlasFrame or column:GetParent() ~= AtlasFrame then return end
-      column:ClearAllPoints()
-      if AQ_ShownSide == "Right" then
-        column:SetPoint("TOPLEFT", AtlasFrame, "TOPRIGHT", GAP, 0)
-      else
-        column:SetPoint("TOPRIGHT", AtlasFrame, "TOPLEFT", -GAP, 0)
-      end
-      column:SetHeight(AtlasFrame:GetHeight())
-    end
-    -- pfUI keeps a hooked function under its hook's identity: one closure each.
-    hooksecurefunc("AQ_AtlasOrAlphamap", function() Dock() end)
-    hooksecurefunc("AQRIGHTOption_OnClick", function() Dock() end)
-    hooksecurefunc("AQLEFTOption_OnClick", function() Dock() end)
-    Dock()
-
-    SoloSkin.Frame(AtlasQuestInsideFrame, AtlasQuestInsideFrame)
-    SoloSkin.Controls(AtlasQuestInsideFrame)
-    SoloSkin.Controls(AtlasQuestButtonFrame)
-
-    SoloSkin.Backdrop(AtlasQuestOptionFrame)
-    SoloSkin.Controls(AtlasQuestOptionFrame)
   end)
 end)

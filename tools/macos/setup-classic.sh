@@ -130,7 +130,7 @@ for f in tos.html eula.html Credits.html connection-help.html; do
 done
 
 # The client's own settings: the classic realm, and no script memory cap
-# (pfQuest and AtlasLoot need more than 1.12's 48 MB; 0 = no limit).
+# (AtlasLoot needs more than 1.12's 48 MB; 0 = no limit).
 home="$root/benilla-config"
 mkdir -p "$home"
 if [ ! -f "$home/visual.env" ]; then

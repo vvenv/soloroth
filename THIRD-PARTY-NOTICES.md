@@ -20,14 +20,11 @@ It is not affiliated with or endorsed by Blizzard Entertainment and ships no gam
 | Addon | Version | Author | Licence | Source |
 | --- | --- | --- | --- | --- |
 | pfUI | 5.5.4 | Eric Mauser (Shagu) | MIT (`pfUI/LICENSE`) | https://github.com/shagu/pfUI |
-| pfQuest | 7.0.1 | Eric Mauser (Shagu) | MIT (`pfQuest/LICENSE`) | https://github.com/shagu/pfQuest |
-| pfQuest-icons | git | Eric Mauser (Shagu) | MIT (`pfQuest-icons/LICENSE`) | https://github.com/shagu/pfQuest-icons |
 | Bagshui | 1.0.5 | veechs | MIT (`Bagshui/LICENSE`) | Bagshui for 1.12 |
 | ShaguKill | 1.0 | Shagu | none shipped | https://github.com/shagu/ShaguKill |
 | ShaguNotify | 0.1 | Shagu | none shipped | https://github.com/shagu/ShaguNotify |
 | Atlas | 1.12.0 | Dan Gilbert | none shipped | http://www.atlasmod.com |
 | AtlasLoot | 4.06.06 | Daviesh | none shipped | AtlasLoot Enhanced for 1.12 |
-| AtlasQuest | 4.2 | Thandrenn | none shipped | http://www.atlasmod.com |
 | SuperMacro | 3.18.1 | unnamed | none shipped | SuperMacro for 1.12 |
 | CleverMacro | 1.2 | _brain | none shipped | https://github.com/DanielAdolfsson/CleverMacro |
 

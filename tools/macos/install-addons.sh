@@ -3,7 +3,7 @@
 # the client's addon folder (benilla-config/AddOns): GMBox, !Solo and
 # Achievements (the dungeon and bot panel, the single-player defaults, and
 # the achievement window) and the vetted
-# third-party addons (pfUI, pfQuest, Atlas, AtlasLoot, AtlasQuest, Bagshui,
+# third-party addons (pfUI, Atlas, AtlasLoot, Bagshui,
 # ShaguKill, ShaguNotify, SuperMacro, CleverMacro; see THIRD-PARTY-NOTICES.md).
 # localize-addons.py then adds Chinese where an addon lacks it, on the
 # installed copies.
@@ -27,6 +27,15 @@ for dir in "$root"/Interface/AddOns/*/; do
     name="$(basename "$dir")"
     rsync -a --delete "$dir" "$dest/$name/"
     echo "addon $name"
+done
+
+# A removed addon stays loaded until its folder is gone.
+for dir in "$dest"/*/; do
+    name="$(basename "$dir")"
+    if [ ! -d "$root/Interface/AddOns/$name" ]; then
+        rm -rf "$dir"
+        echo "removed $name"
+    fi
 done
 
 # Chinese for the addons that lack it, and two AtlasLoot zhCN fixes, on the

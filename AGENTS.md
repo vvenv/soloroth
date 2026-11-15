@@ -13,7 +13,7 @@ each script does, the directory table and upstream merging.
   from the MPQ patch chain, never loose files. Soloroth-only UI goes in addons or in a patch
   MPQ under `Data/` (see `tools/glue-skin/`), not in the client.
 - `server/core` — submodule soloroth-server (vmangos plus bots and achievements).
-- `Interface/AddOns/` — the addon set. Third-party addons (pfUI, pfQuest, Atlas*, Bagshui,
+- `Interface/AddOns/` — the addon set. Third-party addons (pfUI, Atlas, AtlasLoot, Bagshui,
   Shagu*, SuperMacro, CleverMacro) are kept as shipped: never edit their sources. Change
   their defaults or looks from `!Solo` (see its `AGENTS.md`).
 - `tools/macos/` — build, install, run scripts. `tools/macos/launcher/` — Soloroth.app's

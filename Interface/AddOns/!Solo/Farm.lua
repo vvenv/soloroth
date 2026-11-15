@@ -4,10 +4,9 @@ Auto farming for Soloroth, driven by the server.
   Short Chinese names (avoid /farm = pfUI farm map):
   * /dg [yards] (/grind): fight and loot around here (default 40).
   * /dy [yards] (/fish): fish around here (default 25).
-  * /cj [yards] (/cy, /gather): herb, mine, skin, and quest objects /
-    glowing chests around here (default 40).
-  * /gj [yards]: do whatever you can — fight, gather, fish schools,
-    quest objects (default 40). Bare /gj reports status; /gj stop ends it.
+  * /cj [yards] (/cy, /gather): herb, mine and skin around here (default 40).
+  * /gj [yards]: do whatever you can — fight, gather, fish schools
+    (default 40). Bare /gj reports status; /gj stop ends it.
   * /bzd (/assist): fight only. You walk; it does not wander. A movement
     key does not stop it (it does stop the modes above).
 
