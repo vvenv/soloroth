@@ -365,9 +365,9 @@ end
 local function RefreshInfo()
   if not state.mode then return end
   if state.mode == "fight" then
-    panel.info:SetText(string.format(L("You steer · %s", "你来走路 · 已运行 %s"), Clock(GetTime() - state.started)))
+    panel.info:SetText(string.format(L("Running %s", "运行 %s"), Clock(GetTime() - state.started)))
   else
-    panel.info:SetText(string.format(L("%d yd · %s", "%d 码 · 已运行 %s"), state.radius, Clock(GetTime() - state.started)))
+    panel.info:SetText(string.format(L("%d yd · Running %s", "%d 码 · 运行 %s"), state.radius, Clock(GetTime() - state.started)))
   end
   if not run then panel.stats:SetText("") return end
   local parts = {}
