@@ -47,11 +47,14 @@ local MODE_NAME = {
 }
 
 -- ------------------------------------------------------------------ panel --
+-- One line at the top of the screen (mode, range, time). A second line
+-- appears only while a run has something to report (kills, loot, money,
+-- skill gains). The stop button sits on the right of that strip.
 
 local panel = CreateFrame("Frame", "SoloFarmPanel", UIParent)
 panel:SetFrameStrata("MEDIUM")
-panel:SetWidth(270) panel:SetHeight(60)
-panel:SetPoint("TOP", UIParent, "TOP", 0, -110)
+panel:SetWidth(480) panel:SetHeight(28)
+panel:SetPoint("TOP", UIParent, "TOP", 0, -6)
 panel:SetBackdrop({
   bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
   edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -66,32 +69,18 @@ panel:SetScript("OnDragStart", function() this:StartMoving() end)
 panel:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
 panel:Hide()
 
-panel.title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-panel.title:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -8)
-panel.title:SetJustifyH("LEFT")
-
-panel.info = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-panel.info:SetPoint("TOPLEFT", panel.title, "BOTTOMLEFT", 0, -4)
-panel.info:SetJustifyH("LEFT")
-
-panel.stats = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-panel.stats:SetPoint("TOPLEFT", panel.info, "BOTTOMLEFT", 0, -3)
-panel.stats:SetJustifyH("LEFT")
-
-panel.skills = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-panel.skills:SetPoint("TOPLEFT", panel.stats, "BOTTOMLEFT", 0, -2)
-panel.skills:SetPoint("RIGHT", panel, "RIGHT", -10, 0)
-panel.skills:SetJustifyH("LEFT")
-panel.skills:SetText("")
-
 panel.stop = CreateFrame("Button", "SoloFarmPanelStop", panel, "UIPanelButtonTemplate")
-panel.stop:SetWidth(64) panel.stop:SetHeight(22)
--- Top-aligned so a skill line can extend the panel downward without
--- dragging the button onto the stat lines. At height 60 this is the
--- same place as a vertical center.
-panel.stop:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -10, -19)
+panel.stop:SetWidth(52) panel.stop:SetHeight(20)
+panel.stop:SetPoint("RIGHT", panel, "RIGHT", -8, 0)
 panel.stop:SetText(L("Stop", "停止"))
 panel.stop:SetScript("OnClick", function() SoloFarm_Stop() end)
+
+panel.line = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+panel.line:SetPoint("LEFT", panel, "LEFT", 10, 0)
+panel.line:SetWidth(400)
+panel.line:SetJustifyH("LEFT")
+panel.line:SetJustifyV("CENTER")
+panel.line:SetText("")
 
 local state = { mode = nil, radius = 0, started = 0 }
 
@@ -363,27 +352,36 @@ end
 
 local function RefreshInfo()
   if not state.mode then return end
+  local name = MODE_NAME[state.mode] or state.mode
+  local clock = Clock(GetTime() - state.started)
+  local head
   if state.mode == "fight" then
-    panel.info:SetText(string.format(L("Running %s", "运行 %s"), Clock(GetTime() - state.started)))
+    head = string.format("%s · %s", name, clock)
   else
-    panel.info:SetText(string.format(L("%d yd · Running %s", "%d 码 · 运行 %s"), state.radius, Clock(GetTime() - state.started)))
+    head = string.format(L("%s · %d yd · %s", "%s · %d码 · %s"), name, state.radius, clock)
   end
-  if not run then panel.stats:SetText("") return end
-  local parts = {}
-  if Fights(run.mode) then table.insert(parts, string.format(L("Kills %d", "击杀 %d"), run.kills)) end
-  table.insert(parts, string.format(L("Items %d", "物品 %d"), run.items))
-  table.insert(parts, Coins(Earned()))
-  panel.stats:SetText(table.concat(parts, " · "))
-  local _, brief = SkillTexts()
-  if brief then
-    panel.skills:SetText(brief)
-    panel.skills:Show()
-    panel:SetHeight(76)
+  local second = ""
+  if run then
+    local parts = {}
+    if Fights(run.mode) then table.insert(parts, string.format(L("Kills %d", "击杀 %d"), run.kills)) end
+    table.insert(parts, string.format(L("Items %d", "物品 %d"), run.items))
+    table.insert(parts, Coins(Earned()))
+    local _, brief = SkillTexts()
+    if brief then table.insert(parts, brief) end
+    second = table.concat(parts, " · ")
+  end
+  if second ~= "" then
+    panel.line:SetText("|cff44ddff" .. head .. "|r\n" .. second)
   else
-    panel.skills:SetText("")
-    panel.skills:Hide()
-    panel:SetHeight(60)
+    panel.line:SetText("|cff44ddff" .. head .. "|r")
   end
+  -- 1.12 font strings have GetHeight for the wrapped text, not GetStringHeight.
+  -- One line until a run has something to report; skill gains share that second line.
+  -- The border eats a few pixels, so the pad is larger than the text needs.
+  local h = panel.line:GetHeight()
+  if not h or h < 12 then h = second ~= "" and 26 or 14 end
+  if h + 20 < 32 then h = 12 end
+  panel:SetHeight(h + 20)
 end
 
 panel:SetScript("OnUpdate", function()
@@ -425,7 +423,6 @@ local function SetState(mode, radius)
   end
   state.mode, state.radius = mode, radius or 0
   if not mode then panel:Hide() return end
-  panel.title:SetText("|cff44ddff" .. (MODE_NAME[mode] or mode) .. "|r")
   RefreshInfo()
   panel:Show()
 end

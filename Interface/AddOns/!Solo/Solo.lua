@@ -65,17 +65,22 @@ local PFUI = {
   -- Info panels: no guild or friends to count.
   { { "panel", "left", "left" }, "exp" },
   { { "panel", "left", "right" }, "bagspace" },
-  -- The right panel stays on screen without the right chat: the length of the
-  -- current or last fight where the frame rate was, beside the time and gold.
+  -- The right info bar is the length of the current or last fight, beside
+  -- the time and gold. It sits in the bottom of the combat log (below).
   { { "panel", "right", "left" }, "combat" },
   -- Those bars take their width from the chat frames. Exp, armor, bags, the
   -- fight timer, the clock and gold are short; 380 leaves them mostly empty.
+  -- The two chats are the same size: the message log on the left, the
+  -- combat log on the right.
   { { "chat", "left", "width" }, "280" },
   { { "chat", "right", "width" }, "280" },
+  { { "chat", "left", "height" }, "180" },
+  { { "chat", "right", "height" }, "180" },
   -- The experience bar beside the chat stays visible, not only after a kill.
   { { "panel", "xp", "xp_always" }, "1" },
-  -- One chat window (the message log); the right one stays off.
-  { { "chat", "right", "enable" }, "0" },
+  -- Right chat on, so the combat log has the same frame as the message log.
+  -- pfUI would put ChatFrame3 there; PlaceCombatLog swaps in ChatFrame2.
+  { { "chat", "right", "enable" }, "1" },
   -- A travel journal: pfUI takes a screenshot on level up and on epic loot,
   -- without the interface and with the zone and time written on it.
   { { "screenshot", "levelup" }, "1" },
@@ -140,6 +145,117 @@ local function QuietChat()
   end
 end
 
+-- ------------------------------------------------------------- combat log --
+-- ChatFrame2 is the combat log (战斗记录). Stock UI docks it as a tab of
+-- ChatFrame1 (综合, bottom left). It belongs on the bottom right, in the
+-- frame pfUI already mirrors there. pfUI's own refresh puts ChatFrame3 in
+-- that frame and re-parents an undocked window to UIParent, so this runs
+-- again after every refresh. `guard` stops the undock's own save from
+-- re-entering while the points are still being set.
+
+local combatGuard, combatSeparated = 0, nil
+
+local function HideChatTextures(id)
+  if not CHAT_FRAME_TEXTURES then return end
+  for _, tex in pairs(CHAT_FRAME_TEXTURES) do
+    local texture = getglobal("ChatFrame" .. id .. tex)
+    if texture then
+      texture:SetTexture()
+      texture:Hide()
+    end
+  end
+end
+
+local function PlaceCombatLog()
+  if combatGuard > 0 then return end
+  if not (pfUI and pfUI.chat and pfUI.chat.right and ChatFrame1 and ChatFrame2) then return end
+  combatGuard = 1
+
+  local right = pfUI.chat.right
+  local frame = ChatFrame2
+  local tab = ChatFrame2Tab
+  if frame.isDocked and FCF_UnDockFrame then
+    FCF_UnDockFrame(frame)
+  end
+  if not combatSeparated then
+    combatSeparated = true
+    if FCF_SelectDockFrame then FCF_SelectDockFrame(ChatFrame1) end
+    if SetChatWindowShown then SetChatWindowShown(frame:GetID(), 1) end
+    if FCF_SetLocked then FCF_SetLocked(frame, 1) end
+  end
+
+  right:Show()
+  if ChatFrame3 then
+    ChatFrame3:Hide()
+    if ChatFrame3Tab then ChatFrame3Tab:Hide() end
+  end
+
+  if tab and right.panelTop then
+    tab:SetParent(right.panelTop)
+    tab:ClearAllPoints()
+    local src = ChatFrame1Tab
+    local leftTop = pfUI.chat.left and pfUI.chat.left.panelTop
+    local point, rel, relPoint, x, y
+    if src and src:GetNumPoints() > 0 then
+      point, rel, relPoint, x, y = src:GetPoint(1)
+    end
+    if point and (rel == leftTop or rel == pfUI.chat.left) then
+      tab:SetPoint(point, rel == leftTop and right.panelTop or right, relPoint, x or 0, y or 0)
+    else
+      tab:SetPoint("LEFT", right.panelTop, "LEFT", 4, 0)
+    end
+    tab:Show()
+  end
+
+  frame:SetParent(right)
+  frame:ClearAllPoints()
+  -- Match 综合's insets inside its frame. GetPoint's relative frame is not
+  -- the chat frame here, so the edges are copied instead: the combat log
+  -- then clears the info bar by the same amount the message log does.
+  local left = pfUI.chat.left
+  local sl, sb = ChatFrame1:GetLeft(), ChatFrame1:GetBottom()
+  local sr, st = ChatFrame1:GetRight(), ChatFrame1:GetTop()
+  local ol = left and left:GetLeft()
+  local ob = left and left:GetBottom()
+  local ox = left and left:GetRight()
+  local ot = left and left:GetTop()
+  if sl and ol and sb and ob and sr and ox and st and ot then
+    frame:SetPoint("TOPLEFT", right, "TOPLEFT", sl - ol, st - ot)
+    frame:SetPoint("BOTTOMRIGHT", right, "BOTTOMRIGHT", sr - ox, sb - ob)
+  else
+    frame:SetPoint("TOPLEFT", right, "TOPLEFT", 3, -24)
+    frame:SetPoint("BOTTOMRIGHT", right, "BOTTOMRIGHT", -3, 96)
+  end
+  HideChatTextures(frame:GetID())
+  frame:Show()
+  combatGuard = 0
+end
+
+local combatHooked
+local function InstallCombatLog()
+  if combatHooked or not (pfUI and pfUI.chat and pfUI.chat.RefreshChat) then return end
+  combatHooked = true
+  local refresh = pfUI.chat.RefreshChat
+  pfUI.chat.RefreshChat = function()
+    refresh()
+    PlaceCombatLog()
+  end
+  if FCF_SaveDock then
+    local save = FCF_SaveDock
+    FCF_SaveDock = function()
+      save()
+      PlaceCombatLog()
+    end
+  end
+  if FloatingChatFrame_Update then
+    local update = FloatingChatFrame_Update
+    FloatingChatFrame_Update = function(id, onUpdateEvent)
+      update(id, onUpdateEvent)
+      PlaceCombatLog()
+    end
+  end
+end
+
 -- ------------------------------------------------------------- combat text --
 
 -- Floating combat text ships off. Turned on once per account, with dodges,
@@ -187,5 +303,7 @@ ev:SetScript("OnEvent", function()
     HideGuildUnderNames()
   elseif event == "PLAYER_ENTERING_WORLD" then
     QuietChat()
+    InstallCombatLog()
+    PlaceCombatLog()
   end
 end)
