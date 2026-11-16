@@ -1,87 +1,71 @@
 --[[--------------------------------------------------------------------------
-Micro bar dock. pfUI kills the stock MainMenuBar and can put the micro
-buttons under the minimap. Addon minimap buttons (GMBox, farm, Atlas,
-AtlasLoot, …) are collected by pfUI's abuttons panel; keep that panel under
-the micro bar so the column reads as one dock, always open.
+Micro bar dock. pfUI kills the stock MainMenuBar and puts micro buttons under
+the minimap. Addon minimap buttons (GMBox, farm, Atlas, AtlasLoot, …) go into
+pfUI's abuttons strip under that.
+
+pfUI packs icons on a rowsize-wide grid. Solo sets rowsize to the live button
+count so the icons fill the strip evenly (centered as a group). This file only
+keeps the strip parked under the micro bar.
 ----------------------------------------------------------------------------]]
 
--- pfUI lays addon buttons on a full-minimap grid (rowsize 6), so four icons
--- sit in the left four cells. Shrink the strip to the icons and hang it from
--- the micro bar's center (TOP→BOTTOM is center-to-center).
+local function CenterMicroOnMinimap()
+  local micro = pfUI and pfUI.panel and pfUI.panel.microbutton
+  local map = pfUI and pfUI.minimap
+  if not micro or not map then return end
+  local zone = pfUI.panel and pfUI.panel.minimap
+  micro:ClearAllPoints()
+  if zone and zone:IsShown() then
+    micro:SetPoint("TOP", zone, "BOTTOM", 0, -2)
+  else
+    micro:SetPoint("TOP", map, "BOTTOM", 0, -2)
+  end
+end
+
+local function CountVisible(abs)
+  local n, i, btn = 0, 1
+  while abs.buttons and abs.buttons[i] do
+    btn = getglobal(abs.buttons[i])
+    if btn and btn:IsVisible() then n = n + 1 end
+    i = i + 1
+  end
+  return n
+end
+
 local function DockAddonButtons()
   local micro = pfUI and pfUI.panel and pfUI.panel.microbutton
   local abs = pfUI and pfUI.addonbuttons
-  if not micro or not abs or type(abs.buttons) ~= "table" then return end
+  local map = pfUI and pfUI.minimap
+  if not micro or not abs or not map then return end
 
-  local list, i, name, btn, dock = {}
-  for i = 1, table.getn(abs.buttons) do
-    name = abs.buttons[i]
-    btn = getglobal(name)
-    if btn and btn:IsVisible() then
-      dock = btn
-      while dock:GetParent() and dock:GetParent() ~= abs
-        and dock:GetParent() ~= UIParent
-        and dock:GetParent() ~= Minimap
-        and dock:GetParent() ~= MinimapBackdrop do
-        dock = dock:GetParent()
-      end
-      if dock:GetParent() ~= abs then dock = btn end
-      table.insert(list, { btn = btn, dock = dock })
-    end
-  end
-  local n = table.getn(list)
-  if n == 0 then
-    abs:ClearAllPoints()
-    abs:SetPoint("TOP", micro, "BOTTOM", 0, -4)
-    if abs.minimapbutton then abs.minimapbutton:Hide() end
-    return
-  end
-
-  local spacing = 4
-  local size = list[1].dock:GetWidth()
-  if not size or size < 1 then size = 28 end
-  local width = n * size + (n + 1) * spacing
-  local height = size + spacing * 2
-  abs:SetWidth(width)
-  abs:SetHeight(height)
+  CenterMicroOnMinimap()
   abs:ClearAllPoints()
+  abs:SetWidth(map:GetWidth() or 170)
   abs:SetPoint("TOP", micro, "BOTTOM", 0, -4)
   if abs.minimapbutton then abs.minimapbutton:Hide() end
-
-  for i = 1, n do
-    local x = spacing + (i - 1) * (size + spacing) + size / 2
-    local y = -(spacing + size / 2)
-    local entry = list[i]
-    entry.btn:ClearAllPoints()
-    entry.btn:SetPoint("CENTER", abs, "TOPLEFT", x, y)
-    if entry.dock ~= entry.btn then
-      entry.dock:ClearAllPoints()
-      entry.dock:SetPoint("CENTER", abs, "TOPLEFT", x, y)
-    end
-  end
+  if not abs:IsShown() then abs:Show() end
 end
 
 local function HookAddonButtons()
   local abs = pfUI and pfUI.addonbuttons
-  if not abs or abs.soloDocked then return end
-  abs.soloDocked = true
-  local old = abs.ProcessButtons
-  if type(old) == "function" then
+  if not abs or type(abs.ProcessButtons) ~= "function" then return end
+  if not abs.soloDocked then
+    abs.soloDocked = true
+    local old = abs.ProcessButtons
     abs.ProcessButtons = function(self)
+      -- Match columns to icons so pfUI's own grid fills evenly (no left gap).
+      if pfUI_config and pfUI_config.abuttons then
+        local n = CountVisible(self)
+        if n < 1 then n = table.getn(self.buttons or {}) end
+        if n < 1 then n = 4 end
+        pfUI_config.abuttons.rowsize = tostring(n)
+      end
       old(self)
       DockAddonButtons()
     end
   end
-  if abs:IsShown() then
-    DockAddonButtons()
-  else
-    abs:Show()
-    DockAddonButtons()
-  end
+  DockAddonButtons()
 end
 
--- Orphan binds from a removed addon stole N (talents). Put the stock key back
--- when the current action is empty or that dead name.
 local ORPHAN_N = {
   [""] = true,
   ["VANILLABONK_INSPECT"] = true,
@@ -105,15 +89,12 @@ ev:SetScript("OnEvent", function()
   HookAddonButtons()
   if event == "PLAYER_ENTERING_WORLD" then
     RestoreTalentKey()
-    -- Late-created minimap buttons (farm, GMBox) land after the first scan.
-    if this.soloMicroArmed then return end
-    this.soloMicroArmed = true
     this.soloMicroWait = 0
     this:SetScript("OnUpdate", function()
       this.soloMicroWait = this.soloMicroWait + arg1
-      if this.soloMicroWait < 2 then return end
-      this:SetScript("OnUpdate", nil)
       HookAddonButtons()
+      if this.soloMicroWait < 4 then return end
+      this:SetScript("OnUpdate", nil)
       if pfUI and pfUI.addonbuttons and pfUI.addonbuttons.ProcessButtons then
         pfUI.addonbuttons:ProcessButtons()
       end

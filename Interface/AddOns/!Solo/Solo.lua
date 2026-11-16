@@ -59,6 +59,9 @@ local PFUI = {
   { { "abuttons", "position" }, "bottom" },
   { { "abuttons", "showdefault" }, "1" },
   { { "abuttons", "hideincombat" }, "0" },
+  -- Four icons (GMBox / farm / Atlas / AtlasLoot); match columns so the
+  -- strip fills evenly instead of left-packing on a 6-wide grid.
+  { { "abuttons", "rowsize" }, "4" },
   -- Info panels: no guild or friends to count.
   { { "panel", "left", "left" }, "exp" },
   { { "panel", "left", "right" }, "bagspace" },
