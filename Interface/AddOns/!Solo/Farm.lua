@@ -659,8 +659,14 @@ if SoloSkin and SoloSkin.Register then
   SoloSkin.Register("SoloFarm", function()
     SoloSkin.Backdrop(panel)
     SoloSkin.Controls(panel)
+    SoloSkin.Button(panel.stop)
     SoloSkin.Backdrop(menu)
     SoloSkin.Controls(menu)
+    local i = 1
+    while menuBtns[i] do
+      SoloSkin.Button(menuBtns[i])
+      i = i + 1
+    end
   end)
 end
 

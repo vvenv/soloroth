@@ -103,6 +103,27 @@ local function Normalize(button)
   if button:GetHeight() > 24 then button:SetHeight(20) end
 end
 
+-- A button we built ourselves (the farming and party menus). The texture
+-- walk misses these: their face is a normal-texture slot, and once the walk
+-- has marked the button it will not try again, so the gold panel art stays.
+-- Hiding that slot and then using pfUI's button skin is the same look as
+-- the rest of the skinned windows.
+function SoloSkin.Button(button)
+  if not button or button.soloFlat then return end
+  button.soloFlat = true
+  local i, getters = 1, { "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture" }
+  while getters[i] do
+    local tex = button[getters[i]] and button[getters[i]](button)
+    if tex and tex.Hide then
+      tex:Hide()
+      tex:SetAlpha(0)
+    end
+    i = i + 1
+  end
+  pfUI.api.SkinButton(button)
+  Normalize(button)
+end
+
 -- UIPanelButtonTemplate2 draws its face with three region textures instead
 -- of a normal texture, and swaps their files on press, enable and show.
 local function PanelFace(button)

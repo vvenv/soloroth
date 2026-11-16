@@ -349,14 +349,37 @@ function ChatFrame_OnEvent(event)
   return origChatEvent(event)
 end
 
+-- pfUI loads before this addon (AtlasLoot pulls it in). !Solo only hands
+-- its skin list over on ADDON_LOADED "pfUI", which has already fired, so a
+-- Register here never reaches pfUI and the menu keeps the gold button art.
+local function SkinBots()
+  SoloSkin.Backdrop(menu)
+  SoloSkin.Controls(menu)
+  local i = 1
+  while menuBtns[i] do
+    SoloSkin.Button(menuBtns[i])
+    i = i + 1
+  end
+  SoloSkin.Backdrop(panel)
+  SoloSkin.Controls(panel)
+  SoloSkin.Button(close)
+  i = 1
+  while roleButtons[i] do
+    SoloSkin.Button(roleButtons[i])
+    i = i + 1
+  end
+  i = 1
+  while i <= table.getn(ORDERS) do
+    SoloSkin.Button(getglobal("BotsOrder" .. i))
+    i = i + 1
+  end
+end
+
 if SoloSkin and SoloSkin.Register then
-  SoloSkin.Register("Bots", function()
-    -- Menu first: it is the same control walk as the farming menu.
-    SoloSkin.Backdrop(menu)
-    SoloSkin.Controls(menu)
-    SoloSkin.Backdrop(panel)
-    SoloSkin.Controls(panel)
-  end)
+  SoloSkin.Register("Bots", SkinBots)
+end
+if pfUI and pfUI.RegisterSkin and not (pfUI.skin and pfUI.skin["Bots"]) then
+  pfUI:RegisterSkin("Bots", "vanilla", SkinBots)
 end
 
 local ev = CreateFrame("Frame")
