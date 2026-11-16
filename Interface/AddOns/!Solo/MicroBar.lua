@@ -5,14 +5,60 @@ AtlasLoot, …) are collected by pfUI's abuttons panel; keep that panel under
 the micro bar so the column reads as one dock, always open.
 ----------------------------------------------------------------------------]]
 
+-- pfUI lays addon buttons on a full-minimap grid (rowsize 6), so four icons
+-- sit in the left four cells. Shrink the strip to the icons and hang it from
+-- the micro bar's center (TOP→BOTTOM is center-to-center).
 local function DockAddonButtons()
   local micro = pfUI and pfUI.panel and pfUI.panel.microbutton
   local abs = pfUI and pfUI.addonbuttons
-  if not micro or not abs then return end
+  if not micro or not abs or type(abs.buttons) ~= "table" then return end
+
+  local list, i, name, btn, dock = {}
+  for i = 1, table.getn(abs.buttons) do
+    name = abs.buttons[i]
+    btn = getglobal(name)
+    if btn and btn:IsVisible() then
+      dock = btn
+      while dock:GetParent() and dock:GetParent() ~= abs
+        and dock:GetParent() ~= UIParent
+        and dock:GetParent() ~= Minimap
+        and dock:GetParent() ~= MinimapBackdrop do
+        dock = dock:GetParent()
+      end
+      if dock:GetParent() ~= abs then dock = btn end
+      table.insert(list, { btn = btn, dock = dock })
+    end
+  end
+  local n = table.getn(list)
+  if n == 0 then
+    abs:ClearAllPoints()
+    abs:SetPoint("TOP", micro, "BOTTOM", 0, -4)
+    if abs.minimapbutton then abs.minimapbutton:Hide() end
+    return
+  end
+
+  local spacing = 4
+  local size = list[1].dock:GetWidth()
+  if not size or size < 1 then size = 28 end
+  local width = n * size + (n + 1) * spacing
+  local height = size + spacing * 2
+  abs:SetWidth(width)
+  abs:SetHeight(height)
   abs:ClearAllPoints()
   abs:SetPoint("TOP", micro, "BOTTOM", 0, -4)
-  -- The arrow on the minimap is for collapsing; with showdefault on, hide it.
   if abs.minimapbutton then abs.minimapbutton:Hide() end
+
+  for i = 1, n do
+    local x = spacing + (i - 1) * (size + spacing) + size / 2
+    local y = -(spacing + size / 2)
+    local entry = list[i]
+    entry.btn:ClearAllPoints()
+    entry.btn:SetPoint("CENTER", abs, "TOPLEFT", x, y)
+    if entry.dock ~= entry.btn then
+      entry.dock:ClearAllPoints()
+      entry.dock:SetPoint("CENTER", abs, "TOPLEFT", x, y)
+    end
+  end
 end
 
 local function HookAddonButtons()
