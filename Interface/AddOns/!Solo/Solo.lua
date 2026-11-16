@@ -228,6 +228,13 @@ local function PlaceCombatLog()
   end
   HideChatTextures(frame:GetID())
   frame:Show()
+  -- The layout cache pins a moved window to a screen corner. That pin is
+  -- applied again when the window finishes opening, after the first place,
+  -- so the text sits outside the box until the next world entry. Dropping
+  -- the pin leaves the anchors above in charge.
+  frame:SetUserPlaced(false)
+  frame:SetMovable(false)
+  frame:SetResizable(false)
   combatGuard = 0
 end
 
@@ -254,6 +261,21 @@ local function InstallCombatLog()
       PlaceCombatLog()
     end
   end
+  -- The opening resize can put the saved screen position back after the
+  -- hooks above have run. Recheck until the text shares the right frame's
+  -- left edge.
+  local watch = CreateFrame("Frame")
+  watch:SetScript("OnUpdate", function()
+    this.t = (this.t or 0) + arg1
+    if this.t < 0.5 then return end
+    this.t = 0
+    if not (ChatFrame2 and pfUI and pfUI.chat and pfUI.chat.right) then return end
+    local right = pfUI.chat.right
+    local fl, rl = ChatFrame2:GetLeft(), right:GetLeft()
+    if ChatFrame2:GetParent() ~= right or not fl or not rl or math.abs(fl - rl) > 24 then
+      PlaceCombatLog()
+    end
+  end)
 end
 
 -- ------------------------------------------------------------- combat text --
