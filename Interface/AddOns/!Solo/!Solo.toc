@@ -6,6 +6,7 @@
 ## SavedVariables: Solo_State
 Solo.lua
 NoQuest.lua
+MicroBar.lua
 BenillaOptions_zhCN.lua
 PfuiSkin.lua
 SkinKit.lua

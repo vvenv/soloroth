@@ -53,6 +53,12 @@ local PFUI = {
   -- pfUI kills the stock MainMenuBar; without this the character / spellbook /
   -- talent / social micro buttons have nowhere to sit.
   { { "panel", "micro", "enable" }, "1" },
+  -- Addon minimap buttons (GMBox, farm, Atlas, …) sit in one strip under that
+  -- micro bar (MicroBar.lua docks the strip). Always shown, not combat-hidden.
+  { { "abuttons", "enable" }, "1" },
+  { { "abuttons", "position" }, "bottom" },
+  { { "abuttons", "showdefault" }, "1" },
+  { { "abuttons", "hideincombat" }, "0" },
   -- Info panels: no guild or friends to count.
   { { "panel", "left", "left" }, "exp" },
   { { "panel", "left", "right" }, "bagspace" },
