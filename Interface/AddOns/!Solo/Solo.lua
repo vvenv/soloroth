@@ -125,35 +125,72 @@ local function PreparePfUI()
 end
 
 -- -------------------------------------------------------------------- chat --
+-- Two panels only: 综合 bottom left, 战斗记录 bottom right. pfUI's wizard
+-- would open a third "拾取 & 聊天" window on the right; stock UI docks the
+-- combat log as a tab of 综合. Characters that already have that third
+-- window keep showing it until this rewrites the layout each login.
 
--- Message groups the chat windows stop showing: other people talking.
--- What stays: system and error messages, loot, money, experience,
--- reputation, skills, NPC speech, combat log.
+-- Message groups no window should show: other people talking.
 local CHATTER = {
   "SAY", "YELL", "EMOTE", "WHISPER", "PARTY", "RAID", "RAID_LEADER", "RAID_WARNING",
   "GUILD", "OFFICER", "AFK", "DND", "IGNORED", "CHANNEL",
+  "BATTLEGROUND", "BATTLEGROUND_LEADER",
 }
 
-local function QuietChat()
-  for i = 1, NUM_CHAT_WINDOWS or 7 do
+-- 综合: system, loot, skills, NPC speech.
+local LEFT_GROUPS = {
+  "SYSTEM", "SKILL", "LOOT",
+  "CREATURE", "MONSTER_SAY", "MONSTER_EMOTE", "MONSTER_YELL", "MONSTER_WHISPER",
+  "MONSTER_BOSS_EMOTE", "MONSTER_BOSS_WHISPER",
+}
+
+-- 战斗记录: combat hits plus money, experience and reputation.
+local RIGHT_EXTRA = {
+  "MONEY", "COMBAT_XP_GAIN", "COMBAT_HONOR_GAIN", "COMBAT_FACTION_CHANGE",
+}
+
+local function QuietFrame(frame)
+  if not frame then return end
+  for k = 1, table.getn(CHATTER) do
+    ChatFrame_RemoveMessageGroup(frame, CHATTER[k])
+  end
+  if ChatFrame_RemoveAllChannels then ChatFrame_RemoveAllChannels(frame) end
+end
+
+local function AssignChatGroups()
+  if not (ChatFrame1 and ChatFrame2) then return end
+  if ChatFrame_RemoveAllMessageGroups then
+    ChatFrame_RemoveAllMessageGroups(ChatFrame1)
+    ChatFrame_RemoveAllMessageGroups(ChatFrame2)
+  end
+  for i = 1, table.getn(LEFT_GROUPS) do
+    ChatFrame_AddMessageGroup(ChatFrame1, LEFT_GROUPS[i])
+  end
+  if ChatFrame_ActivateCombatMessages then
+    ChatFrame_ActivateCombatMessages(ChatFrame2)
+  end
+  for i = 1, table.getn(RIGHT_EXTRA) do
+    ChatFrame_AddMessageGroup(ChatFrame2, RIGHT_EXTRA[i])
+  end
+  QuietFrame(ChatFrame1)
+  QuietFrame(ChatFrame2)
+  for i = 3, NUM_CHAT_WINDOWS or 7 do
     local frame = getglobal("ChatFrame" .. i)
-    if frame then
-      for k = 1, table.getn(CHATTER) do
-        ChatFrame_RemoveMessageGroup(frame, CHATTER[k])
-      end
+    if frame and ChatFrame_RemoveAllMessageGroups then
+      ChatFrame_RemoveAllMessageGroups(frame)
+      QuietFrame(frame)
     end
   end
 end
 
--- ------------------------------------------------------------- combat log --
--- ChatFrame2 is the combat log (战斗记录). Stock UI docks it as a tab of
--- ChatFrame1 (综合, bottom left). It belongs on the bottom right, in the
--- frame pfUI already mirrors there. pfUI's own refresh puts ChatFrame3 in
--- that frame and re-parents an undocked window to UIParent, so this runs
--- again after every refresh. `guard` stops the undock's own save from
--- re-entering while the points are still being set.
+-- ------------------------------------------------------------- chat place --
+-- ChatFrame1 stays in pfUI's left frame. ChatFrame2 fills the right frame.
+-- ChatFrame3+ (拾取 & 聊天 and any extras) are closed. pfUI's own refresh
+-- puts ChatFrame3 back on the right whenever right chat is on, and re-parents
+-- an undocked window to UIParent, so this runs again after every refresh.
+-- `guard` stops the undock's own save from re-entering while points move.
 
-local combatGuard, combatSeparated = 0, nil
+local chatGuard = 0
 
 local function HideChatTextures(id)
   if not CHAT_FRAME_TEXTURES then return end
@@ -166,52 +203,27 @@ local function HideChatTextures(id)
   end
 end
 
-local function PlaceCombatLog()
-  if combatGuard > 0 then return end
-  if not (pfUI and pfUI.chat and pfUI.chat.right and ChatFrame1 and ChatFrame2) then return end
-  combatGuard = 1
-
-  local right = pfUI.chat.right
-  local frame = ChatFrame2
-  local tab = ChatFrame2Tab
-  if frame.isDocked and FCF_UnDockFrame then
-    FCF_UnDockFrame(frame)
-  end
-  if not combatSeparated then
-    combatSeparated = true
-    if FCF_SelectDockFrame then FCF_SelectDockFrame(ChatFrame1) end
-    if SetChatWindowShown then SetChatWindowShown(frame:GetID(), 1) end
-    if FCF_SetLocked then FCF_SetLocked(frame, 1) end
-  end
-
-  right:Show()
-  if ChatFrame3 then
-    ChatFrame3:Hide()
-    if ChatFrame3Tab then ChatFrame3Tab:Hide() end
-  end
-
-  if tab and right.panelTop then
-    tab:SetParent(right.panelTop)
-    tab:ClearAllPoints()
-    local src = ChatFrame1Tab
-    local leftTop = pfUI.chat.left and pfUI.chat.left.panelTop
-    local point, rel, relPoint, x, y
-    if src and src:GetNumPoints() > 0 then
-      point, rel, relPoint, x, y = src:GetPoint(1)
+local function CloseExtraChats()
+  for i = 3, NUM_CHAT_WINDOWS or 7 do
+    local frame = getglobal("ChatFrame" .. i)
+    if frame then
+      if frame.isDocked and FCF_UnDockFrame then FCF_UnDockFrame(frame) end
+      if SetChatWindowShown then SetChatWindowShown(i, 0) end
+      if FCF_Close then FCF_Close(frame) end
+      frame:Hide()
+      local tab = getglobal("ChatFrame" .. i .. "Tab")
+      if tab then tab:Hide() end
     end
-    if point and (rel == leftTop or rel == pfUI.chat.left) then
-      tab:SetPoint(point, rel == leftTop and right.panelTop or right, relPoint, x or 0, y or 0)
-    else
-      tab:SetPoint("LEFT", right.panelTop, "LEFT", 4, 0)
-    end
-    tab:Show()
   end
+end
 
-  frame:SetParent(right)
+local function PlaceChatIn(frame, tab, box, panelTop)
+  if not (frame and box) then return end
+  frame:SetParent(box)
   frame:ClearAllPoints()
-  -- Match 综合's insets inside its frame. GetPoint's relative frame is not
-  -- the chat frame here, so the edges are copied instead: the combat log
-  -- then clears the info bar by the same amount the message log does.
+  -- Match the insets ChatFrame1 ends up with inside the left box, so both
+  -- panels clear their bottom info bars by the same amount. Fall back to
+  -- pfUI's own padding when 综合 is not measured yet.
   local left = pfUI.chat.left
   local sl, sb = ChatFrame1:GetLeft(), ChatFrame1:GetBottom()
   local sr, st = ChatFrame1:GetRight(), ChatFrame1:GetTop()
@@ -219,62 +231,119 @@ local function PlaceCombatLog()
   local ob = left and left:GetBottom()
   local ox = left and left:GetRight()
   local ot = left and left:GetTop()
-  if sl and ol and sb and ob and sr and ox and st and ot then
-    frame:SetPoint("TOPLEFT", right, "TOPLEFT", sl - ol, st - ot)
-    frame:SetPoint("BOTTOMRIGHT", right, "BOTTOMRIGHT", sr - ox, sb - ob)
+  if frame ~= ChatFrame1 and sl and ol and sb and ob and sr and ox and st and ot then
+    frame:SetPoint("TOPLEFT", box, "TOPLEFT", sl - ol, st - ot)
+    frame:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", sr - ox, sb - ob)
   else
-    frame:SetPoint("TOPLEFT", right, "TOPLEFT", 3, -24)
-    frame:SetPoint("BOTTOMRIGHT", right, "BOTTOMRIGHT", -3, 96)
+    frame:SetPoint("TOPLEFT", box, "TOPLEFT", 5, -25)
+    frame:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", -5, 25)
   end
   HideChatTextures(frame:GetID())
   frame:Show()
-  -- The layout cache pins a moved window to a screen corner. That pin is
-  -- applied again when the window finishes opening, after the first place,
-  -- so the text sits outside the box until the next world entry. Dropping
-  -- the pin leaves the anchors above in charge.
+  -- SetUserPlaced needs a movable frame; FCF_SetLocked may already have
+  -- cleared that, and a script error here would leave chatGuard stuck and
+  -- the third (拾取) window still open.
+  frame:SetMovable(true)
+  frame:SetResizable(true)
   frame:SetUserPlaced(false)
   frame:SetMovable(false)
   frame:SetResizable(false)
-  combatGuard = 0
+  if tab and panelTop then
+    tab:SetParent(panelTop)
+    tab:ClearAllPoints()
+    tab:SetPoint("LEFT", panelTop, "LEFT", 4, 0)
+    tab:Show()
+  end
 end
 
-local combatHooked
-local function InstallCombatLog()
-  if combatHooked or not (pfUI and pfUI.chat and pfUI.chat.RefreshChat) then return end
-  combatHooked = true
+local function PlaceSoloChats()
+  if chatGuard > 0 then return end
+  if not (pfUI and pfUI.chat and pfUI.chat.left and pfUI.chat.right
+      and ChatFrame1 and ChatFrame2) then
+    return
+  end
+  chatGuard = 1
+
+  local left, right = pfUI.chat.left, pfUI.chat.right
+  right:Show()
+  -- Drop 拾取 first so a later error cannot leave three windows up.
+  CloseExtraChats()
+
+  -- 综合 belongs in the left dock. Characters that ran pfUI's position step
+  -- have it undocked; RefreshChat then leaves it on UIParent.
+  if not ChatFrame1.isDocked and FCF_DockFrame then
+    FCF_DockFrame(ChatFrame1)
+  end
+  if FCF_SelectDockFrame then FCF_SelectDockFrame(ChatFrame1) end
+  if SetChatWindowShown then SetChatWindowShown(1, 1) end
+  if FCF_SetWindowName and GENERAL then FCF_SetWindowName(ChatFrame1, GENERAL) end
+  -- Leave a correctly docked 综合 alone so pfUI's own padding (above the
+  -- info bar) stays; only pull it back when RefreshChat parked it elsewhere.
+  if ChatFrame1:GetParent() ~= left then
+    PlaceChatIn(ChatFrame1, ChatFrame1Tab, left, left.panelTop)
+  else
+    ChatFrame1:Show()
+    if ChatFrame1Tab then
+      ChatFrame1Tab:SetParent(left.panelTop or left)
+      ChatFrame1Tab:Show()
+    end
+  end
+  if FCF_SetLocked then FCF_SetLocked(ChatFrame1, 1) end
+
+  -- 战斗记录 leaves the left dock and fills the right frame alone.
+  if ChatFrame2.isDocked and FCF_UnDockFrame then
+    FCF_UnDockFrame(ChatFrame2)
+  end
+  if SetChatWindowShown then SetChatWindowShown(2, 1) end
+  if FCF_SetWindowName and COMBAT_LOG then FCF_SetWindowName(ChatFrame2, COMBAT_LOG) end
+  PlaceChatIn(ChatFrame2, ChatFrame2Tab, right, right.panelTop)
+  if FCF_SetLocked then FCF_SetLocked(ChatFrame2, 1) end
+
+  CloseExtraChats()
+  chatGuard = 0
+end
+
+local chatHooked
+local function InstallSoloChats()
+  if chatHooked or not (pfUI and pfUI.chat and pfUI.chat.RefreshChat) then return end
+  chatHooked = true
   local refresh = pfUI.chat.RefreshChat
   pfUI.chat.RefreshChat = function()
     refresh()
-    PlaceCombatLog()
+    PlaceSoloChats()
   end
   if FCF_SaveDock then
     local save = FCF_SaveDock
     FCF_SaveDock = function()
       save()
-      PlaceCombatLog()
+      PlaceSoloChats()
     end
   end
   if FloatingChatFrame_Update then
     local update = FloatingChatFrame_Update
     FloatingChatFrame_Update = function(id, onUpdateEvent)
       update(id, onUpdateEvent)
-      PlaceCombatLog()
+      PlaceSoloChats()
     end
   end
-  -- The opening resize can put the saved screen position back after the
-  -- hooks above have run. Recheck until the text shares the right frame's
-  -- left edge.
+  -- The opening resize can put a saved screen position back after the hooks
+  -- above have run. Recheck until both windows sit in their pfUI frames.
   local watch = CreateFrame("Frame")
   watch:SetScript("OnUpdate", function()
     this.t = (this.t or 0) + arg1
     if this.t < 0.5 then return end
     this.t = 0
-    if not (ChatFrame2 and pfUI and pfUI.chat and pfUI.chat.right) then return end
-    local right = pfUI.chat.right
-    local fl, rl = ChatFrame2:GetLeft(), right:GetLeft()
-    if ChatFrame2:GetParent() ~= right or not fl or not rl or math.abs(fl - rl) > 24 then
-      PlaceCombatLog()
+    if not (ChatFrame1 and ChatFrame2 and pfUI and pfUI.chat
+        and pfUI.chat.left and pfUI.chat.right) then
+      return
     end
+    local left, right = pfUI.chat.left, pfUI.chat.right
+    local badLeft = ChatFrame1:GetParent() ~= left
+    local fl, rl = ChatFrame2:GetLeft(), right:GetLeft()
+    local badRight = ChatFrame2:GetParent() ~= right
+        or not fl or not rl or math.abs(fl - rl) > 24
+    local extra = ChatFrame3 and ChatFrame3:IsShown()
+    if badLeft or badRight or extra then PlaceSoloChats() end
   end)
 end
 
@@ -324,8 +393,8 @@ ev:SetScript("OnEvent", function()
     EnableCombatText()
     HideGuildUnderNames()
   elseif event == "PLAYER_ENTERING_WORLD" then
-    QuietChat()
-    InstallCombatLog()
-    PlaceCombatLog()
+    AssignChatGroups()
+    InstallSoloChats()
+    PlaceSoloChats()
   end
 end)
