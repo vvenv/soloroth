@@ -68,6 +68,10 @@ local PFUI = {
   -- The right panel stays on screen without the right chat: the length of the
   -- current or last fight where the frame rate was, beside the time and gold.
   { { "panel", "right", "left" }, "combat" },
+  -- Those bars take their width from the chat frames. Exp, armor, bags, the
+  -- fight timer, the clock and gold are short; 380 leaves them mostly empty.
+  { { "chat", "left", "width" }, "280" },
+  { { "chat", "right", "width" }, "280" },
   -- The experience bar beside the chat stays visible, not only after a kill.
   { { "panel", "xp", "xp_always" }, "1" },
   -- One chat window (the message log); the right one stays off.
