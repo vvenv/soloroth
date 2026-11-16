@@ -693,8 +693,8 @@ Label(tools, L("(leading dot optional, Enter sends)", "(开头的点可省，回
 -- ---------------------------------------------------------- dungeons tab ---
 -- Five-player dungeons with the spot just inside their entrance (the
 -- areatrigger_teleport targets), so one click lands the party inside. The
--- server fills the party with bots three seconds after a player enters a
--- five-player dungeon (DungeonBotMgr), and `.bots` sets the player's role.
+-- server still fills the party three seconds later; the party button under
+-- the minimap (the Bots addon) chooses how many and gives the orders.
 
 local DUNGEONS = {
   -- { english, chinese, min, max, map, x, y, z, o }
@@ -726,24 +726,6 @@ local DUNGEONS = {
   { "Stratholme: Service Gate",   "斯坦索姆：后门",     58, 60, 329,  3590.9, -3643.2,  138.5, 5.50, 2017 },
 }
 
--- What the server last said about this character's bots (`.bots status`).
-local bots = { role = "auto", playing = nil, auto = true, known = false }
-
-local ROLES = {
-  { key = "auto",   en = "Auto",   zh = "自动" },
-  { key = "tank",   en = "Tank",   zh = "坦克" },
-  { key = "healer", en = "Healer", zh = "治疗" },
-  { key = "dps",    en = "DPS",    zh = "输出" },
-}
-local ROLE_ZH = { tank = "坦克", healer = "治疗", ["melee dps"] = "近战输出",
-                  ["ranged dps"] = "远程输出", auto = "自动" }
-
-local function RoleText(r)
-  if not r then return "?" end
-  if ZH then return ROLE_ZH[r] or r end
-  return r
-end
-
 -- Colours by how the dungeon's range sits against my level.
 local function DungeonColor(d)
   local lvl = UnitLevel("player") or 1
@@ -759,46 +741,12 @@ dung:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -62)
 dung:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -16, 16)
 dung:Hide()
 
-local dui = { roleButtons = {}, rows = {}, offset = 0 }
-local DROWS = 13
-
-Label(dung, L("I play", "我的职责"), "GameFontNormalSmall", "TOPLEFT", dung, "TOPLEFT", 2, -6)
-for i = 1, table.getn(ROLES) do
-  local r = ROLES[i]
-  local b = Button(dung, 62, 20, L(r.en, r.zh), "TOPLEFT", dung, "TOPLEFT", 70 + (i - 1) * 66, -2)
-  b.role = r.key
-  b:SetScript("OnClick", function() Cmd(".bots role " .. this.role) end)
-  b:SetScript("OnEnter", function()
-    GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
-    if this.role == "auto" then
-      GameTooltip:AddLine(L("Guess from class, talents and shield", "按职业、天赋和是否带盾自动判断"))
-    else
-      GameTooltip:AddLine(L("Bots fill the other roles around you", "机器人会补齐你之外的职责"))
-    end
-    GameTooltip:Show()
-  end)
-  b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-  dui.roleButtons[i] = b
-end
-
-dui.auto = CreateFrame("CheckButton", "GMBoxBotsAuto", dung, "UICheckButtonTemplate")
-table.insert(skin.checks, dui.auto)
-dui.auto:SetWidth(22) dui.auto:SetHeight(22)
-dui.auto:SetPoint("TOPLEFT", dung, "TOPLEFT", 340, -1)
-dui.auto:SetScript("OnClick", function()
-  Cmd(".bots auto " .. (this:GetChecked() and "on" or "off"))
-end)
-Label(dung, L("Bots join in dungeons", "进副本自动补机器人"), "GameFontNormalSmall", "LEFT", dui.auto, "RIGHT", 0, 0)
-
-dui.status = Label(dung, "", "GameFontHighlightSmall", "TOPLEFT", dung, "TOPLEFT", 2, -32)
-dui.fill = Button(dung, 96, 20, L("Fill party", "补满队伍"), "TOPRIGHT", dung, "TOPRIGHT", -104, -28)
-dui.fill:SetScript("OnClick", function() Cmd(".bots fill") end)
-dui.dismiss = Button(dung, 96, 20, L("Dismiss bots", "解散机器人"), "TOPRIGHT", dung, "TOPRIGHT", -2, -28)
-dui.dismiss:SetScript("OnClick", function() Cmd(".bots dismiss") end)
+local dui = { rows = {}, offset = 0 }
+local DROWS = 20
 
 Label(dung, L("Dungeon (click to go inside)", "副本（点击直接传送进去）"), "GameFontNormalSmall",
-      "TOPLEFT", dung, "TOPLEFT", 2, -58)
-Label(dung, L("Level", "等级"), "GameFontNormalSmall", "TOPRIGHT", dung, "TOPRIGHT", -8, -58)
+      "TOPLEFT", dung, "TOPLEFT", 2, -2)
+Label(dung, L("Level", "等级"), "GameFontNormalSmall", "TOPRIGHT", dung, "TOPRIGHT", -8, -2)
 
 local function DungeonRefresh()
   local n = table.getn(DUNGEONS)
@@ -816,17 +764,6 @@ local function DungeonRefresh()
       b:Hide()
     end
   end
-  for i = 1, table.getn(ROLES) do
-    MarkCurrent(dui.roleButtons[i], ROLES[i].key == bots.role)
-  end
-  dui.auto:SetChecked(bots.auto and 1 or nil)
-  if bots.known then
-    local guessed = (bots.role == "auto") and L(" (guessed)", "（自动判断）") or ""
-    dui.status:SetText(L("You play ", "你是") .. RoleText(bots.playing) .. guessed ..
-      L(". Bots take the other roles.", "，机器人会补齐其余职责。"))
-  else
-    dui.status:SetText(L("Asking the server...", "正在向服务器查询..."))
-  end
 end
 
 local function DungeonGo(d)
@@ -838,7 +775,7 @@ end
 for i = 1, DROWS do
   local b = CreateFrame("Button", "GMBoxDungeonRow" .. i, dung)
   b:SetWidth(558) b:SetHeight(ROW_H)
-  if i == 1 then b:SetPoint("TOPLEFT", dung, "TOPLEFT", 2, -74)
+  if i == 1 then b:SetPoint("TOPLEFT", dung, "TOPLEFT", 2, -18)
   else b:SetPoint("TOPLEFT", dui.rows[i - 1], "BOTTOMLEFT", 0, -1) end
   b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
   table.insert(skin.rows, b)
@@ -874,49 +811,10 @@ dung:SetScript("OnMouseWheel", function()
   DungeonRefresh()
 end)
 
--- Orders for the bots in the party (vmangos .partybot commands).
-local BOTCMDS = {
-  { L("Come to me", "到我身边"), ".partybot cometome",
-    L("Every bot runs to you", "所有机器人跑到你身边") },
-  { L("Attack target", "集火目标"), ".partybot attackstart",
-    L("Every bot attacks your target", "所有机器人攻击你的目标") },
-  { L("Stop", "停手"), ".partybot attackstop",
-    L("Every bot stops attacking", "所有机器人停止攻击") },
-  { L("Tank pulls", "坦克拉怪"), ".partybot pull",
-    L("The tank bot pulls your target; damage bots wait 10 s", "坦克机器人去拉你的目标，输出机器人等 10 秒再动手") },
-  { L("Hold", "原地待命"), ".partybot pause",
-    L("Bots stop and wait (target one bot to hold only it)", "机器人原地待命（选中某个机器人则只对它）") },
-  { L("Resume", "继续"), ".partybot unpause",
-    L("Bots act again", "机器人恢复行动") },
-}
-Label(dung, L("Orders", "指挥"), "GameFontNormalSmall", "BOTTOMLEFT", dung, "BOTTOMLEFT", 2, 10)
-for i = 1, table.getn(BOTCMDS) do
-  local c = BOTCMDS[i]
-  local b = Button(dung, 80, 20, c[1], "BOTTOMLEFT", dung, "BOTTOMLEFT", 44 + (i - 1) * 84, 4)
-  b.cmd, b.tip = c[2], c[3]
-  b:SetScript("OnClick", function() Cmd(this.cmd) end)
-  b:SetScript("OnEnter", function()
-    GameTooltip:SetOwner(this, "ANCHOR_TOP")
-    GameTooltip:AddLine(this.tip)
-    GameTooltip:Show()
-  end)
-  b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-end
-
--- `.bots` answers with a machine line first: "[bots] role=tank playing=tank auto=1".
--- It feeds the panel and never reaches the chat window.
-local function ParseBotsLine(text)
-  local _, _, role, playing, auto = string.find(text, "^%[bots%] role=(.-) playing=(.-) auto=(%d)")
-  if not role then return false end
-  if role == "melee dps" or role == "ranged dps" then role = "dps" end
-  bots.role, bots.playing, bots.auto, bots.known = role, playing, auto == "1", true
-  if dung:IsVisible() then DungeonRefresh() end
-  return true
-end
-
+-- `[xp]` is the tools page talking to itself. `[bots]` is hidden by the Bots addon.
 local origChatEvent = ChatFrame_OnEvent
 function ChatFrame_OnEvent(event)
-  if event == "CHAT_MSG_SYSTEM" and arg1 and (string.find(arg1, "^%[bots%]") or string.find(arg1, "^%[xp%]")) then
+  if event == "CHAT_MSG_SYSTEM" and arg1 and string.find(arg1, "^%[xp%]") then
     return
   end
   return origChatEvent(event)
@@ -960,7 +858,7 @@ mm:SetScript("OnEnter", function()
   GameTooltip:SetOwner(this, "ANCHOR_LEFT")
   GameTooltip:AddLine("GM Box")
   GameTooltip:AddLine(L("Left click: open or close", "左键：打开/关闭"), 0.8, 0.8, 0.8)
-  GameTooltip:AddLine(L("Right click: dungeons and bots", "右键：副本与机器人"), 0.8, 0.8, 0.8)
+  GameTooltip:AddLine(L("Right click: dungeon list", "右键：副本列表"), 0.8, 0.8, 0.8)
   GameTooltip:AddLine(L("Drag: move around the minimap", "拖动：沿小地图移动"), 0.8, 0.8, 0.8)
   GameTooltip:Show()
 end)
@@ -1101,7 +999,6 @@ function SetTab(i)
   if i == 3 then
     dung:Show()
     DungeonRefresh()
-    Cmd(".bots status quiet")
     return
   end
   panel:Show()
@@ -1193,7 +1090,7 @@ local function Help()
   if ZH then
     msg("命令:")
     msg("  /gm            开关窗口（小地图上也有按钮）")
-    msg("  /gd            副本与机器人队友")
+    msg("  /gd            副本列表")
     msg("  /gt <文字>     传送: 唯一匹配直接过去，多个就开列表")
     msg("  /gi <文字|id> [数量]   物品: 同上，唯一匹配直接进包（中英文名都能搜）")
     msg("列表里: 左键执行，右键收藏，")
@@ -1201,7 +1098,7 @@ local function Help()
   else
     msg("commands:")
     msg("  /gm            open or close the window (or the minimap button)")
-    msg("  /gd            dungeons and bot party members")
+    msg("  /gd            dungeon list")
     msg("  /gt <text>     teleport: one match goes instantly, otherwise the list opens")
     msg("  /gi <text|id> [count]   item: same idea, adds it straight to your bags")
     msg("in the list: left click = do it, right click = favourite,")
@@ -1214,7 +1111,7 @@ SLASH_GMBOX2 = "/gmbox"
 SlashCmdList["GMBOX"] = function(a)
   a = a or ""
   if a == "help" or a == "?" then Help() return end
-  if a == "dungeon" or a == "dungeons" or a == "bots" or a == "fb" then Toggle(3) return end
+  if a == "dungeon" or a == "dungeons" or a == "fb" then Toggle(3) return end
   if a ~= "" then Toggle(nil, a) else Toggle() end
 end
 
@@ -1284,7 +1181,6 @@ end
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("VARIABLES_LOADED")
 ev:RegisterEvent("PLAYER_LOGIN")
-ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:RegisterEvent("CHAT_MSG_SYSTEM")
 ev:SetScript("OnEvent", function()
   if event == "VARIABLES_LOADED" then
@@ -1297,12 +1193,7 @@ ev:SetScript("OnEvent", function()
     PlaceMinimapButton()
     f:Hide()
   elseif event == "CHAT_MSG_SYSTEM" then
-    local text = arg1 or ""
-    if not ParseBotsLine(text) then
-      ParseXpLine(text)
-    end
-  elseif event == "PLAYER_ENTERING_WORLD" then
-    if not bots.known then Cmd(".bots status quiet") end
+    ParseXpLine(arg1 or "")
   elseif event == "PLAYER_LOGIN" then
     SkinWithPfUI()
     if ZH then
