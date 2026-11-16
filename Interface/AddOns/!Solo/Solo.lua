@@ -50,6 +50,9 @@ local PFUI = {
   { { "appearance", "minimap", "zonetext" }, "on" },
   { { "appearance", "minimap", "coordstext" }, "on" },
   { { "appearance", "border", "shadow" }, "1" },
+  -- pfUI kills the stock MainMenuBar; without this the character / spellbook /
+  -- talent / social micro buttons have nowhere to sit.
+  { { "panel", "micro", "enable" }, "1" },
   -- Info panels: no guild or friends to count.
   { { "panel", "left", "left" }, "exp" },
   { { "panel", "left", "right" }, "bagspace" },

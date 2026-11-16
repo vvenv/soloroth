@@ -63,6 +63,8 @@ local function RelayoutMicro()
   end
   -- pfUI sizes the bar for eight buttons. One less, a little shorter.
   parent:SetWidth(127)
+  -- Stock UpdateTalentButton still gates the talent button on level 10.
+  if UpdateTalentButton then UpdateTalentButton() end
 end
 
 local function Apply()
