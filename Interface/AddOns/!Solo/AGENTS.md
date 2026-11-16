@@ -9,8 +9,11 @@ edited; anything they should do differently is done from here. Bagshui's
 ## pfUI skins
 
 - Each window set is one pfUI skin, so pfUI's "disable skin" setting covers it:
-  `SoloSkin.Register(name, func)` in `SkinKit.lua`; the loader registers them when pfUI loads
-  (pfUI loads last). `PfuiSkin.lua` registers benilla's own windows ("Benilla").
+  `SoloSkin.Register(name, func)` in `SkinKit.lua`. The loader hands that list to pfUI on
+  `ADDON_LOADED "pfUI"`. pfUI is not last: AtlasLoot loads it first, before Bagshui, Bots and
+  GMBox. An addon that loads after that event must also call `pfUI:RegisterSkin` itself when
+  `pfUI` is already there, or the skin never runs and stock buttons stay gold.
+  `PfuiSkin.lua` registers benilla's own windows ("Benilla").
 - A skin body runs in pfUI's environment, so `CreateBackdrop`, `SkinButton`, … are globals
   there. A file-scope local function is not: call `pfUI.api.X` in helpers, or `setfenv` them
   as `PfuiSkin.lua` does.
@@ -32,4 +35,6 @@ edited; anything they should do differently is done from here. Bagshui's
 
 Run `tools/macos/install-addons.sh` into a scratch `BENILLA_HOME`, open each window from
 `WOW_PROBE_LUA` and screenshot it (see the root `AGENTS.md`). Note in README.md which
-windows are skinned.
+windows are skinned. A window that is still the stock art after `/reload` is a fact to
+read out of `server/logs/launcher.log` (which file ran, in which order, and any script
+error), not a cause to guess.
