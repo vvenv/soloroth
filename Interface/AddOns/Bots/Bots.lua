@@ -199,19 +199,15 @@ menu:EnableMouse(true)
 menu:Hide()
 
 local menuRows = {
-  { L("Duo", "两人"), function() Cmd(".bots fill 2") end,
-    L("You and one bot: a tank, or a healer if you are the tank.", "你再加一名：你不是坦克就带坦克，你是坦克就带治疗。") },
-  { L("Trio", "三人"), function() Cmd(".bots fill 3") end,
-    L("A tank, a healer and damage.", "坦克、治疗和输出。") },
-  { L("Party of five", "五人"), function() Cmd(".bots fill 5") end,
-    L("A full party. A dungeon fills to five on its own.", "补满五人。进五人副本时也会补到五人。") },
-  { L("Dismiss", "解散"), function() Cmd(".bots dismiss") end,
-    L("Send the bots home.", "送走机器人。") },
-  { L("Role and orders", "职责和指挥"), ShowPanel,
-    L("What you play, dungeon fill, and orders.", "你的职责、进副本是否自动补、以及指挥。") },
+  { L("Duo", "两人"), function() Cmd(".bots fill 2") end },
+  { L("Trio", "三人"), function() Cmd(".bots fill 3") end },
+  { L("Party of five", "五人"), function() Cmd(".bots fill 5") end },
+  { L("Dismiss", "解散"), function() Cmd(".bots dismiss") end },
+  { L("Role and orders", "职责和指挥"), ShowPanel },
 }
 
 menu:SetHeight(10 + table.getn(menuRows) * 24)
+local menuBtns = {}
 local prev
 for i = 1, table.getn(menuRows) do
   local row = menuRows[i]
@@ -227,13 +223,7 @@ for i = 1, table.getn(menuRows) do
     menu:Hide()
     row[2]()
   end)
-  b:SetScript("OnEnter", function()
-    GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
-    GameTooltip:AddLine(row[1])
-    GameTooltip:AddLine(row[3], .8, .8, .8)
-    GameTooltip:Show()
-  end)
-  b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  menuBtns[i] = b
   prev = b
 end
 
@@ -243,8 +233,8 @@ local function ToggleMenu()
     return
   end
   panel:Hide()
-  menu:ClearAllPoints()
-  menu:SetPoint("TOPRIGHT", Minimap, "BOTTOMLEFT", 8, 8)
+  -- Same drop-down as the farming menu: under the addon-button strip.
+  if Solo_PlaceStripMenu then Solo_PlaceStripMenu(menu, menuBtns) end
   menu:Show()
 end
 

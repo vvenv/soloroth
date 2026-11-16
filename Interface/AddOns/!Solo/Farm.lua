@@ -518,6 +518,7 @@ local menuRows = {
 }
 
 menu:SetHeight(10 + table.getn(menuRows) * 24)
+local menuBtns = {}
 local prev
 for i = 1, table.getn(menuRows) do
   local row = menuRows[i]
@@ -533,6 +534,7 @@ for i = 1, table.getn(menuRows) do
     menu:Hide()
     row[2]()
   end)
+  menuBtns[i] = b
   prev = b
 end
 
@@ -541,8 +543,8 @@ local function ToggleMenu()
     menu:Hide()
     return
   end
-  menu:ClearAllPoints()
-  menu:SetPoint("TOPRIGHT", Minimap, "BOTTOMLEFT", 8, 8)
+  -- Under the addon-button strip, the same width as that strip.
+  if Solo_PlaceStripMenu then Solo_PlaceStripMenu(menu, menuBtns) end
   menu:Show()
 end
 

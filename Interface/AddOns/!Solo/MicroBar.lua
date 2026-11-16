@@ -31,6 +31,36 @@ local function CountVisible(abs)
   return n
 end
 
+-- A menu dropped from the addon-button strip: same width, sitting on its
+-- bottom edge. `buttons` is the list of rows, widened to the strip.
+function Solo_PlaceStripMenu(menu, buttons)
+  local names = { "SoloFarmMenu", "BotsMenu" }
+  local i = 1
+  while names[i] do
+    local other = getglobal(names[i])
+    if other and other ~= menu and other:IsShown() then other:Hide() end
+    i = i + 1
+  end
+  local bar = pfUI and pfUI.addonbuttons
+  local map = (pfUI and pfUI.minimap) or Minimap
+  local w = bar and bar:GetWidth() or 0
+  if w < 40 then w = (map and map:GetWidth()) or 170 end
+  menu:SetWidth(w)
+  local bw = w - 16
+  if bw < 40 then bw = 40 end
+  i = 1
+  while buttons and buttons[i] do
+    buttons[i]:SetWidth(bw)
+    i = i + 1
+  end
+  menu:ClearAllPoints()
+  if bar and bar:IsShown() and (bar:GetWidth() or 0) >= 40 then
+    menu:SetPoint("TOP", bar, "BOTTOM", 0, -2)
+  elseif map then
+    menu:SetPoint("TOP", map, "BOTTOM", 0, -2)
+  end
+end
+
 local function DockAddonButtons()
   local micro = pfUI and pfUI.panel and pfUI.panel.microbutton
   local abs = pfUI and pfUI.addonbuttons
