@@ -47,13 +47,13 @@ local MODE_NAME = {
 }
 
 -- ------------------------------------------------------------------ panel --
--- One line at the top of the screen (mode, range, time). A second line
--- appears only while a run has something to report (kills, loot, money,
--- skill gains). The stop button sits on the right of that strip.
+-- One strip at the top of the screen: mode, range, time, and (when a run
+-- has something to report) kills / loot / money / skill gains, all on one
+-- line. The stop button sits on the right.
 
 local panel = CreateFrame("Frame", "SoloFarmPanel", UIParent)
 panel:SetFrameStrata("MEDIUM")
-panel:SetWidth(480) panel:SetHeight(28)
+panel:SetWidth(640) panel:SetHeight(28)
 panel:SetPoint("TOP", UIParent, "TOP", 0, -6)
 panel:SetBackdrop({
   bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -77,7 +77,7 @@ panel.stop:SetScript("OnClick", function() SoloFarm_Stop() end)
 
 panel.line = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 panel.line:SetPoint("LEFT", panel, "LEFT", 10, 0)
-panel.line:SetWidth(400)
+panel.line:SetPoint("RIGHT", panel.stop, "LEFT", -8, 0)
 panel.line:SetJustifyH("LEFT")
 panel.line:SetJustifyV("CENTER")
 panel.line:SetText("")
@@ -371,17 +371,10 @@ local function RefreshInfo()
     second = table.concat(parts, " · ")
   end
   if second ~= "" then
-    panel.line:SetText("|cff44ddff" .. head .. "|r\n" .. second)
+    panel.line:SetText("|cff44ddff" .. head .. "|r · " .. second)
   else
     panel.line:SetText("|cff44ddff" .. head .. "|r")
   end
-  -- 1.12 font strings have GetHeight for the wrapped text, not GetStringHeight.
-  -- One line until a run has something to report; skill gains share that second line.
-  -- The border eats a few pixels, so the pad is larger than the text needs.
-  local h = panel.line:GetHeight()
-  if not h or h < 12 then h = second ~= "" and 26 or 14 end
-  if h + 20 < 32 then h = 12 end
-  panel:SetHeight(h + 20)
 end
 
 panel:SetScript("OnUpdate", function()
