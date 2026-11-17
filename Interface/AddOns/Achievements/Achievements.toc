@@ -1,8 +1,8 @@
 ## Interface: 11200
 ## Title: Achievements
 ## Title-zhCN: 成就
-## Notes: The WoW 3.x achievements that the 1.12 world holds: levels, quests, exploration, dungeons and raids. Needs the Soloroth server.
-## Notes-zhCN: 3.x 成就系统里 1.12 世界有的部分：等级、任务、探索、地下城与团队副本。需要 Soloroth 服务端。
+## Notes: The WoW 3.x achievements the 1.12 world holds without a quest log: levels, exploration, dungeons, raids, feats and journeys. Needs the Soloroth server.
+## Notes-zhCN: 3.x 成就系统里 1.12 世界有的部分：等级、探索、地下城与团队副本、轶事与旅程。没有任务类成就。需要 Soloroth 服务端。
 ## Author: local
 ## Version: 1.0.0
 ## SavedVariablesPerCharacter: SoloAchievementsDB

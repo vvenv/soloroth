@@ -9,17 +9,16 @@ Writes
   Interface/AddOns/Achievements/Data.lua         the same, plus the texts and
                                                 icons the window shows
 
-The achievements are the WoW 3.x ones that the 1.12 world holds: levels, quest
-counts, the Loremaster line, exploring every zone, the classic dungeons and
-raids, plus a Feats set (world bosses, famous rares, iconic quests). Two
-inputs make them fit this world rather than 3.x's:
+The achievements are the WoW 3.x ones that the 1.12 world holds without a
+quest log: levels, exploring every zone, the classic dungeons and raids, a
+Feats set (world bosses, famous rares, outdoor bosses Classic only summoned
+for quests), and Journeys (explore the chapter's zones and clear its
+dungeons). Soloroth has no quest UI, so there is no Quests category, no
+Loremaster, and no "complete quest X" criteria.
 
-  * Exploration criteria are the client's WorldMapOverlay rows, as in 3.x: an
-    overlay counts once any of its areas is explored. Read from the zhCN
-    client's DBCs (and the enUS DBCs vmangos extracted, for English names).
-  * Zone quest counts come from the world DB: quests with a spawned starter
-    that the faction can take (no class, profession or repeatable quests, at
-    most one per exclusive group). A zone asks for 60% of them.
+Exploration criteria are the client's WorldMapOverlay rows, as in 3.x: an
+overlay counts once any of its areas is explored. Read from the zhCN
+client's DBCs (and the enUS DBCs vmangos extracted, for English names).
 
 Needs: the world DB (classic_world, read through server/mariadb), the client
 MPQs in Data/ and mpqx (built from the client: `cargo build --release -p
@@ -40,20 +39,14 @@ MPQX = os.path.join(ROOT, "release/build/macos/client-target/release/mpqx")
 DATA = os.path.join(ROOT, "Data")
 ENUS_DBC = os.path.join(ROOT, "../wow-data/vmangos-deploy/storage/mangosd/extracted-data/5875/dbc")
 WORLD_DB = "classic_world"
-PATCH = 10  # WowPatch: 1.12
 
-# Criteria types (AchievementMgr.h keeps the same numbers).
-REACH_LEVEL, QUEST_COUNT, QUESTS_IN_ZONE, EXPLORE_AREA, KILL_CREATURE, EARN_ACHIEVEMENT, COMPLETE_QUEST = 1, 2, 3, 4, 5, 6, 7
+# Criteria types (AchievementMgr.h keeps the same numbers; 2/3/7 quest types unused).
+REACH_LEVEL, EXPLORE_AREA, KILL_CREATURE, EARN_ACHIEVEMENT = 1, 4, 5, 6
 BOTH, ALLIANCE, HORDE = 0, 1, 2
-ZONE_SHARE = 0.6
-ZONE_MIN = 10      # a zone that would ask for fewer quests gets no achievement
 
 # Categories: id, parent, english, chinese.
 CATEGORIES = [
     (1, 0, "General", "综合"),
-    (2, 0, "Quests", "任务"),
-    (21, 2, "Eastern Kingdoms", "东部王国"),
-    (22, 2, "Kalimdor", "卡利姆多"),
     (3, 0, "Exploration", "探索"),
     (31, 3, "Eastern Kingdoms", "东部王国"),
     (32, 3, "Kalimdor", "卡利姆多"),
@@ -66,30 +59,30 @@ CATEGORIES = [
 
 # The old world as four chapters of one journey, in the order the stories run
 # and the levels rise: (id, en, zh, description en, zh, icon, zones, dungeons
-# by faction). A chapter asks for the zone quest achievements its faction has
-# there and the dungeon achievements on the way.
+# by faction). A chapter asks for the explore achievements of those zones and
+# the dungeon achievements on the way.
 CHAPTERS = [
     (1601, "Chapter I: Homelands", "第一章：家园",
-     "Complete the quest achievements of the homelands and the dungeons on the way.",
-     "完成家园各区域的任务成就，并打通沿途的副本。",
+     "Explore the homelands and clear the dungeons on the way.",
+     "探索家园各区域，并打通沿途的副本。",
      "Ability_Townwatch",
      [12, 40, 44, 10, 1, 38, 11, 141, 148, 331, 14, 215, 17, 406, 85, 130],
      {1: [1303, 1302, 1304, 1305, 1306, 1307, 1308, 1310], 2: [1301, 1302, 1304, 1305, 1308, 1310]}),
     (1603, "Chapter II: Shadows of the Seven Kingdoms", "第二章：七大王国的残影",
-     "Complete the quest achievements of the old human kingdoms' lands and the Scarlet Monastery.",
-     "完成旧人类王国土地上的任务成就，并打通血色修道院。",
+     "Explore the old human kingdoms' lands and clear the Scarlet Monastery.",
+     "探索旧人类王国的土地，并打通血色修道院。",
      "INV_BannerPVP_01",
      [267, 36, 45, 15],
      {1: [1309], 2: [1309]}),
     (1605, "Chapter III: Gods and Demigods", "第三章：神与半神",
-     "Complete the quest achievements around the titans' vaults and the trolls' temples, and their dungeons.",
-     "完成泰坦宝库和巨魔神庙周边的任务成就，并打通奥达曼、玛拉顿、祖尔法拉克和沉没的神庙。",
+     "Explore the lands around the titans' vaults and the trolls' temples, and clear their dungeons.",
+     "探索泰坦宝库和巨魔神庙周边，并打通奥达曼、玛拉顿、祖尔法拉克和沉没的神庙。",
      "INV_Misc_Idol_02",
      [400, 33, 3, 405, 440, 8, 47, 357],
      {1: [1311, 1313, 1312, 1314], 2: [1311, 1313, 1312, 1314]}),
     (1607, "Chapter IV: Embers of the Old World", "第四章：旧世界的余烬",
-     "Complete the quest achievements of Blackrock, the Plaguelands and the far corners of both continents, and their dungeons.",
-     "完成黑石山、瘟疫之地和两块大陆边陲的任务成就，并打通沿途的副本。",
+     "Explore Blackrock, the Plaguelands and the far corners of both continents, and clear their dungeons.",
+     "探索黑石山、瘟疫之地和两块大陆边陲，并打通沿途的副本。",
      "INV_Misc_Head_Dragon_Black",
      [51, 46, 139, 28, 4, 16, 490, 361, 618, 1377],
      {1: [1315, 1316, 1317, 1318, 1319, 1320], 2: [1315, 1316, 1317, 1318, 1319, 1320]}),
@@ -131,8 +124,6 @@ RAIDS = [
 ]
 LEVEL_ICONS = {10: "INV_Sword_04", 20: "INV_Shield_06", 30: "INV_Helmet_25",
                40: "Ability_Mount_RidingHorse", 50: "INV_Chest_Plate06", 60: "Spell_Holy_SealOfWisdom"}
-QUEST_COUNTS = [(1101, 50, "INV_Misc_Note_01"), (1102, 100, "INV_Scroll_03"), (1103, 250, "INV_Misc_Book_07"),
-                (1104, 500, "INV_Misc_Book_09"), (1105, 1000, "INV_Misc_Book_11")]
 
 
 # ------------------------------------------------------------------ inputs --
@@ -172,67 +163,6 @@ def icon_exists(icon):
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
 
 
-# Team masks of FactionTemplate (FACTION_MASK_ALLIANCE / _HORDE) and the
-# factions the players' templates belong to.
-TEAM_MASK = {ALLIANCE: 2, HORDE: 4}
-TEAM_FACTION = {ALLIANCE: 469, HORDE: 67}
-RACES = {ALLIANCE: 1 | 4 | 8 | 64, HORDE: 2 | 16 | 32 | 128}
-
-
-def zone_quest_counts():
-    """{team: {zone: n}} of the quests a team can take, by the quest's zone."""
-    templates = {int(r["id"]): r for r in query("SELECT * FROM faction_template")}
-
-    def hostile(ft, team):
-        t = templates.get(ft)
-        if not t:
-            return False
-        if int(t["hostile_mask"]) & TEAM_MASK[team]:
-            return True
-        return str(TEAM_FACTION[team]) in (t["enemy_faction1"], t["enemy_faction2"], t["enemy_faction3"], t["enemy_faction4"])
-
-    rows = query("""
-SELECT q.entry, COALESCE(NULLIF(a.zone_id, 0), a.entry) zone, a.map_id, q.RequiredRaces, q.RequiredClasses,
-       q.RequiredSkill, q.SpecialFlags, q.Method, q.ExclusiveGroup,
-       (SELECT GROUP_CONCAT(DISTINCT ct.faction) FROM creature_questrelation r
-          JOIN creature c ON c.id = r.id AND c.patch_min <= %(p)d AND c.patch_max >= %(p)d
-          JOIN creature_template ct ON ct.entry = r.id
-               AND ct.patch = (SELECT MAX(patch) FROM creature_template x WHERE x.entry = r.id AND x.patch <= %(p)d)
-         WHERE r.quest = q.entry AND r.patch_min <= %(p)d AND r.patch_max >= %(p)d) npc_factions,
-       (EXISTS(SELECT 1 FROM gameobject_questrelation r
-          JOIN gameobject g ON g.id = r.id AND g.patch_min <= %(p)d AND g.patch_max >= %(p)d
-         WHERE r.quest = q.entry AND r.patch_min <= %(p)d AND r.patch_max >= %(p)d)
-        OR EXISTS(SELECT 1 FROM item_template i WHERE i.start_quest = q.entry)) other_starter
-FROM quest_template q
-JOIN (SELECT entry, MAX(patch) p FROM quest_template WHERE patch <= %(p)d GROUP BY entry) m
-  ON m.entry = q.entry AND m.p = q.patch
-JOIN area_template a ON a.entry = q.ZoneOrSort
-WHERE q.ZoneOrSort > 0
-""" % {"p": PATCH})
-    counts = {ALLIANCE: collections.Counter(), HORDE: collections.Counter()}
-    for team in (ALLIANCE, HORDE):
-        groups = set()
-        for r in rows:
-            if r["map_id"] not in ("0", "1") or r["Method"] == "1":
-                continue
-            if int(r["SpecialFlags"]) & 1 or r["RequiredClasses"] != "0" or r["RequiredSkill"] != "0":
-                continue
-            races = int(r["RequiredRaces"])
-            if races and not races & RACES[team]:
-                continue
-            factions = [int(x) for x in r["npc_factions"].split(",")] if r["npc_factions"] not in ("", "NULL") else []
-            takeable = r["other_starter"] == "1" or any(not hostile(f, team) for f in factions)
-            if not takeable:
-                continue
-            group = int(r["ExclusiveGroup"])
-            if group > 0:
-                if group in groups:
-                    continue
-                groups.add(group)
-            counts[team][int(r["zone"])] += 1
-    return counts
-
-
 def creature_names(entries):
     rows = query("SELECT t.entry, t.name, l.name_loc4 FROM creature_template t LEFT JOIN locales_creature l "
                  "ON l.entry = t.entry WHERE t.entry IN (%s) GROUP BY t.entry" % ",".join(map(str, entries)))
@@ -258,7 +188,6 @@ def build(tmp):
     areas_en = area_names(*dbc(os.path.join(ENUS_DBC, "AreaTable.dbc")))
     maps, _ = client_dbc("WorldMapArea", tmp)
     overlays, _ = client_dbc("WorldMapOverlay", tmp)
-    quests = zone_quest_counts()
     out = []
 
     # General: levels.
@@ -266,13 +195,6 @@ def build(tmp):
         a = Ach(1001 + i, 1, "Level %d" % lvl, "%d级" % lvl, "Reach level %d." % lvl, "达到%d级。" % lvl,
                 LEVEL_ICONS[lvl], bar=True)
         a.add(REACH_LEVEL, lvl)
-        out.append(a)
-
-    # Quests: counts.
-    for id, n, icon in QUEST_COUNTS:
-        a = Ach(id, 2, "%d Quests Completed" % n, "完成%d个任务" % n,
-                "Complete %d quests." % n, "完成%d个任务。" % n, icon, bar=True)
-        a.add(QUEST_COUNT, n)
         out.append(a)
 
     # Zones, in the order of the world map: continent, then name.
@@ -284,23 +206,8 @@ def build(tmp):
         zones.append((mapid, zone, [o for o in overlays if o[1] == m[0]]))
     zones.sort(key=lambda z: (z[0], areas_en[z[1]]))
 
-    lore = {(0, ALLIANCE): [], (0, HORDE): [], (1, ALLIANCE): [], (1, HORDE): []}
-    zone_ach = {}
-    for mapid, zone, ovs in zones:
-        cat = 21 if mapid == 0 else 22
-        for team in (ALLIANCE, HORDE):
-            n = int(quests[team][zone] * ZONE_SHARE)
-            if n < ZONE_MIN:
-                continue
-            a = Ach(20000 + zone * 2 + (team - 1), cat, "%s Quests" % areas_en[zone], "%s的任务" % areas_zh[zone],
-                    "Complete %d quests in %s." % (n, areas_en[zone]), "完成%d个%s的任务。" % (n, areas_zh[zone]),
-                    "INV_Letter_08", faction=team, bar=True)
-            a.add(QUESTS_IN_ZONE, n, [zone])
-            out.append(a)
-            lore[(mapid, team)].append(a)
-            zone_ach[(zone, team)] = a
-
     explore = {0: [], 1: []}
+    explore_by_zone = {}
     for mapid, zone, ovs in zones:
         if not ovs:
             continue
@@ -313,6 +220,7 @@ def build(tmp):
             a.add(EXPLORE_AREA, 1, ids, areas_en.get(ids[0], str(ids[0])), areas_zh.get(ids[0], str(ids[0])))
         out.append(a)
         explore[mapid].append(a)
+        explore_by_zone[zone] = a
 
     # Metas.
     def meta(id, cat, en, zh, den, dzh, icon, parts, points=10, faction=BOTH):
@@ -321,17 +229,6 @@ def build(tmp):
             a.add(EARN_ACHIEVEMENT, 1, [p.id], p.en, p.zh)
         out.append(a)
         return a
-
-    cont = {0: ("Eastern Kingdoms", "东部王国"), 1: ("Kalimdor", "卡利姆多")}
-    loremasters = {ALLIANCE: [], HORDE: []}
-    for i, (mapid, team) in enumerate(sorted(lore)):
-        en, zh = cont[mapid]
-        loremasters[team].append(meta(1151 + i, 2, "Loremaster of %s" % en, "%s博学者" % zh,
-                                      "Complete the quest achievements of %s." % en, "完成%s的所有任务成就。" % zh,
-                                      "INV_Misc_Book_08", lore[(mapid, team)], faction=team))
-    for i, team in enumerate((ALLIANCE, HORDE)):
-        meta(1155 + i, 2, "Loremaster", "博学者", "Complete the Loremaster achievements of both continents.",
-             "完成两块大陆的博学者成就。", "INV_Misc_Book_04", loremasters[team], points=25, faction=team)
 
     ek = meta(1201, 3, "Explore Eastern Kingdoms", "探索东部王国", "Explore the regions of Eastern Kingdoms.",
               "探索东部王国的所有地区。", "INV_Misc_Spyglass_02", explore[0], points=25)
@@ -359,8 +256,9 @@ def build(tmp):
     meta(1499, 42, "Classic Raider", "经典团队副本攻略者", "Complete the classic raid achievements.",
          "完成所有经典团队副本成就。", "INV_Misc_Bone_ElfSkull_01", raids, points=25)
 
-    # Feats: world bosses, famous rares, and a few iconic quests the 1.12
-    # world actually has. Kill progress is kept; quests are recounted at login.
+    # Feats: world bosses, famous rares, and outdoor bosses Classic only
+    # summoned for quests (Soloroth gives them world spawns). Kill progress
+    # is kept; no "complete quest" criteria — there is no quest log.
     feats_bosses = creature_names([
         314, 448, 645, 731, 1494, 2707, 2755, 2757, 2759, 2763, 2937, 4490, 5402,
         5828, 6239, 7664, 8075, 8391, 9453, 9456, 9684, 10373, 10581, 10737,
@@ -375,18 +273,10 @@ def build(tmp):
         out.append(a)
         return a
 
-    def quest(id, en, zh, den, dzh, icon, quest_id, points=10, faction=BOTH):
-        a = Ach(id, 5, en, zh, den, dzh, icon, points=points, faction=faction)
-        a.add(COMPLETE_QUEST, 1, [quest_id])
-        out.append(a)
-        return a
-
     kill(1501, "Hogger", "霍格", "Defeat Hogger.", "击败霍格。",
          "Ability_Hunter_Pet_Wolf", 448)
     kill(1502, "Again?", "又是你？", "Defeat Hogger 10 times.", "击败霍格10次。",
          "INV_Misc_MonsterClaw_03", 448, n=10, bar=True)
-    quest(1503, "Wanted: Hogger", "通缉：霍格", 'Complete the quest "Wanted: Hogger".',
-          "完成任务「通缉：霍格」。", "INV_Misc_Note_06", 176, faction=ALLIANCE)
     kill(1504, "Cookie's Specialty", "厨子的拿手菜", "Defeat Cookie in the Deadmines.",
          "在死亡矿井击败曲奇。", "INV_Misc_Food_16", 645)
     kill(1505, "Humar the Pridelord", "狮王修玛", "Defeat Humar the Pridelord in the Barrens.",
@@ -491,38 +381,12 @@ def build(tmp):
          "击败那些原版只靠任务召唤的野外首领。",
          "INV_Misc_Horn_01", qs, points=25)
 
-    quest(1516, "Big Game Hunter", "王牌猎人",
-          'Complete the quest "Big Game Hunter".', "完成任务「王牌猎人」。",
-          "INV_Weapon_Rifle_06", 208)
-    quest(1517, "The Green Hills of Stranglethorn", "荆棘谷的青山",
-          'Complete the quest "The Green Hills of Stranglethorn".',
-          "完成任务「荆棘谷的青山」。", "INV_Misc_Book_06", 338)
-    # Alliance and Horde each have their own Onyxia attunement finale.
-    ony = Ach(1518, 5, "Drakefire Amulet", "龙火护符",
-              "Complete the Onyxia attunement quest.", "完成奥妮克希亚的钥匙任务。",
-              "INV_Jewelry_Talisman_11", required=1)
-    ony.add(COMPLETE_QUEST, 1, [6502], "Drakefire Amulet", "龙火护符")
-    ony.add(COMPLETE_QUEST, 1, [6602], "Blood of the Black Dragon Champion", "黑龙勇士之血")
-    out.append(ony)
-    quest(1519, "Rise, Thunderfury!", "觉醒吧，雷霆之怒！",
-          'Complete the quest "Rise, Thunderfury!".', "完成任务「觉醒吧，雷霆之怒！」。",
-          "INV_Sword_39", 7787, points=25)
-    quest(1520, "The Nightmare Manifests", "梦魇显现",
-          'Complete the quest "The Nightmare Manifests".', "完成任务「梦魇显现」。",
-          "Spell_Nature_Sleep", 8736, points=25)
-    quest(1521, "Victory for the Alliance", "联盟的胜利",
-          'Complete the quest "Victory for the Alliance".', "完成任务「联盟的胜利」。",
-          "INV_Misc_Head_Dragon_Black", 7495, faction=ALLIANCE)
-    quest(1522, "For All To See", "万人敬仰",
-          'Complete the quest "For All To See".', "完成任务「万人敬仰」。",
-          "INV_Misc_Head_Dragon_Black", 7491, faction=HORDE)
-
     # Journeys: the chapters, then the whole journey, per faction.
     by_id = {a.id: a for a in dungeons}
     for team in (ALLIANCE, HORDE):
         chapters = []
         for id, en, zh, den, dzh, icon, zone_ids, dungeon_ids in CHAPTERS:
-            parts = [zone_ach[(z, team)] for z in zone_ids if (z, team) in zone_ach]
+            parts = [explore_by_zone[z] for z in zone_ids if z in explore_by_zone]
             parts += [by_id[d] for d in dungeon_ids[team]]
             chapters.append(meta(id + team - 1, 6, en, zh,
                                  den, dzh,
@@ -534,7 +398,7 @@ def build(tmp):
     for a in out:
         if not icon_exists(a.icon):
             sys.exit("missing icon %s (achievement %d)" % (a.icon, a.id))
-    return out, quests
+    return out
 
 
 # ------------------------------------------------------------------ output --
@@ -570,9 +434,9 @@ def write_sql(path, mig, achs):
     w("  PRIMARY KEY (`id`)")
     w(") ENGINE=MyISAM DEFAULT CHARSET=utf8;")
     w("")
-    w("-- type: 1 reach level, 2 quests completed, 3 quests completed in zone asset1,")
-    w("-- 4 explore any of the areas asset1..4, 5 kill creature asset1, 6 earn")
-    w("-- achievement asset1, 7 complete quest asset1. value: the amount needed.")
+    w("-- type: 1 reach level, 4 explore any of the areas asset1..4, 5 kill creature")
+    w("-- asset1, 6 earn achievement asset1. (2/3/7 quest types unused: no quest log.)")
+    w("-- value: the amount needed.")
     w("CREATE TABLE IF NOT EXISTS `achievement_criteria` (")
     w("  `id` int(11) unsigned NOT NULL,")
     w("  `achievement` int(11) unsigned NOT NULL,")
@@ -642,7 +506,7 @@ def main():
         sys.exit(__doc__)
     mig = sys.argv[1]
     with tempfile.TemporaryDirectory() as tmp:
-        achs, quests = build(tmp)
+        achs = build(tmp)
     write_sql(os.path.join(ROOT, "server/core/sql/migrations/%s_world.sql" % mig), mig, achs)
     os.makedirs(os.path.join(ROOT, "Interface/AddOns/Achievements"), exist_ok=True)
     write_lua(os.path.join(ROOT, "Interface/AddOns/Achievements/Data.lua"), achs)
