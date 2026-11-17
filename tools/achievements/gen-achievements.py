@@ -361,8 +361,12 @@ def build(tmp):
 
     # Feats: world bosses, famous rares, and a few iconic quests the 1.12
     # world actually has. Kill progress is kept; quests are recounted at login.
-    feats_bosses = creature_names([448, 645, 5828, 6109, 7846, 12397, 14507, 14509, 14510,
-                                   14515, 14517, 14887, 14888, 14889, 14890])
+    feats_bosses = creature_names([
+        314, 448, 645, 731, 1494, 2707, 2755, 2757, 2759, 2763, 2937, 4490, 5402,
+        5828, 6239, 7664, 8075, 8391, 9453, 9456, 9684, 10373, 10581, 10737,
+        10882, 12339, 14435, 14467, 15623, 6109, 7846, 12397, 14507, 14509,
+        14510, 14515, 14517, 14887, 14888, 14889, 14890,
+    ])
 
     def kill(id, en, zh, den, dzh, icon, entry, points=10, n=1, bar=False):
         name_en, name_zh = feats_bosses[entry]
@@ -417,6 +421,75 @@ def build(tmp):
     for e in (14517, 14507, 14510, 14515, 14509):
         zg.add(KILL_CREATURE, 1, [e], feats_bosses[e][0], feats_bosses[e][1])
     out.append(zg)
+
+    # Outdoor quest-summoned bosses (Soloroth gives them world spawns).
+    # Prefer a kill feat when the fight is the point; quest-item loot still
+    # counts for NoQuest turn-ins on its own.
+    qs = []
+    qs.append(kill(1523, "Eliza", "伊莉莎", "Defeat Eliza in Duskwood.",
+                   "在暮色森林击败伊莉莎。", "Spell_Shadow_RaiseDead", 314))
+    qs.append(kill(1524, "Negolash", "奈古拉什", "Defeat Negolash on the Savage Coast.",
+                   "在野人海岸击败奈古拉什。", "INV_Misc_Head_Dragon_01", 1494))
+    qs.append(kill(1525, "Blacklash", "布莱克拉什", "Defeat Blacklash in the Badlands.",
+                   "在荒芜之地击败布莱克拉什。", "INV_Misc_Head_Dragon_Bronze", 2757))
+    qs.append(kill(1526, "Hematus", "赫玛图斯", "Defeat Hematus in the Badlands.",
+                   "在荒芜之地击败赫玛图斯。", "INV_Misc_Head_Dragon_Bronze", 2759))
+    qs.append(kill(1527, "Thenan", "瑟恩纳", "Defeat Thenan in Arathi Highlands.",
+                   "在阿拉希高地击败瑟恩纳。", "INV_Stone_15", 2763))
+    qs.append(kill(1528, "Myzrael", "密斯莱尔", "Defeat Myzrael in Arathi Highlands.",
+                   "在阿拉希高地击败密斯莱尔。", "Spell_Nature_Earthquake", 2755))
+    qs.append(kill(1529, "Dagun the Ravenous", "贪婪的达古恩",
+                   "Defeat Dagun the Ravenous in the Wetlands.",
+                   "在湿地击败贪婪的达古恩。", "Spell_Frost_SummonWaterElemental", 2937))
+    qs.append(kill(1530, "Shadra", "沙德拉", "Defeat Shadra in the Hinterlands.",
+                   "在辛特兰击败沙德拉。", "Ability_PoisonSting", 2707))
+    qs.append(kill(1531, "Cyclonian", "塞克隆尼亚", "Defeat Cyclonian in the Alterac Mountains.",
+                   "在奥特兰克山脉击败塞克隆尼亚。", "Spell_Nature_EarthBind", 6239))
+    qs.append(kill(1532, "Lathoric the Black", "黑衣拉索里克",
+                   "Defeat Lathoric the Black in Searing Gorge.",
+                   "在灼热峡谷击败黑衣拉索里克。", "Spell_Shadow_SummonVoidWalker", 8391))
+    qs.append(kill(1533, "Razelikh the Defiler", "污染者拉瑟莱克",
+                   "Defeat Razelikh the Defiler in the Blasted Lands.",
+                   "在诅咒之地击败污染者拉瑟莱克。", "Spell_Shadow_Metamorphosis", 7664))
+    qs.append(kill(1534, "Demetria", "德米提雅", "Defeat Demetria in the Eastern Plaguelands.",
+                   "在东瘟疫之地击败德米提雅。", "Spell_Holy_PrayerOfHealing", 12339))
+    qs.append(kill(1535, "Arikara", "阿利卡拉", "Defeat Arikara in Thousand Needles.",
+                   "在千针石林击败阿利卡拉。", "Ability_Hunter_Pet_WindSerpent", 10882))
+    qs.append(kill(1536, "Young Arikara", "幼年阿利卡拉",
+                   "Defeat Young Arikara in Thousand Needles.",
+                   "在千针石林击败幼年阿利卡拉。", "Ability_Hunter_Pet_WindSerpent", 10581))
+    qs.append(kill(1537, "Lar'korwi", "拉克维", "Defeat Lar'korwi in Un'Goro Crater.",
+                   "在安戈洛环形山击败拉克维。", "Ability_Hunter_Pet_Raptor", 9684))
+    qs.append(kill(1538, "Edana Hatetalon", "艾丹娜·邪爪", "Defeat Edana Hatetalon in Feralas.",
+                   "在菲拉斯击败艾丹娜·邪爪。", "Ability_Hunter_Pet_Owl", 8075))
+    qs.append(kill(1539, "Khan Hratha", "赫鲁萨可汗", "Defeat Khan Hratha in Desolace.",
+                   "在凄凉之地击败赫鲁萨可汗。", "INV_Misc_Head_Centaur_01", 5402))
+    qs.append(kill(1540, "Xabraxxis", "萨巴克希斯", "Defeat Xabraxxis in Ashenvale.",
+                   "在灰谷击败萨巴克希斯。", "Spell_Shadow_SummonSuccubus", 10373))
+    qs.append(kill(1541, "Warlord Krom'zar", "督军克罗姆扎",
+                   "Defeat Warlord Krom'zar in the Barrens.",
+                   "在贫瘠之地击败督军克罗姆扎。", "INV_Misc_Head_Centaur_01", 9456))
+    qs.append(kill(1542, "Aquementas", "亚奎门塔斯", "Defeat Aquementas in Tanaris.",
+                   "在塔纳利斯击败亚奎门塔斯。", "Spell_Frost_SummonWaterElemental", 9453))
+    qs.append(kill(1543, "Shy-Rotam", "希洛塔姆", "Defeat Shy-Rotam in Winterspring.",
+                   "在冬泉谷击败希洛塔姆。", "Ability_Hunter_Pet_Cat", 10737))
+    qs.append(kill(1544, "Xandivious", "沙迪维尔斯", "Defeat Xandivious in Winterspring.",
+                   "在冬泉谷击败沙迪维尔斯。", "Spell_Shadow_SummonFelHunter", 15623))
+    qs.append(kill(1545, "Prince Thunderaan", "桑德兰王子",
+                   "Defeat Prince Thunderaan in Silithus.",
+                   "在希利苏斯击败桑德兰王子。", "Spell_Nature_EarthBind", 14435, points=25))
+    qs.append(kill(1546, "Kroshius", "克罗苏斯", "Defeat Kroshius in Felwood.",
+                   "在费伍德森林击败克罗苏斯。", "Spell_Fire_Incinerate", 14467))
+    qs.append(kill(1547, "Grenka Bloodscreech", "格林卡·血啸",
+                   "Defeat Grenka Bloodscreech in Thousand Needles.",
+                   "在千针石林击败格林卡·血啸。", "Ability_Townwatch", 4490))
+    qs.append(kill(1548, "King Bangalash", "虎王邦加拉什",
+                   "Defeat King Bangalash in Stranglethorn Vale.",
+                   "在荆棘谷击败虎王邦加拉什。", "Ability_Hunter_Pet_Cat", 731))
+    meta(1549, 5, "Called Out", "现身受死",
+         "Defeat the outdoor bosses that Classic only summoned for quests.",
+         "击败那些原版只靠任务召唤的野外首领。",
+         "INV_Misc_Horn_01", qs, points=25)
 
     quest(1516, "Big Game Hunter", "王牌猎人",
           'Complete the quest "Big Game Hunter".', "完成任务「王牌猎人」。",
