@@ -1,8 +1,8 @@
 #!/bin/bash
 # Installs the 1.12 addon set from this repository (Interface/AddOns) into
-# the client's addon folder (benilla-config/AddOns): GMBox, Bots, !Solo and
-# Achievements (the dungeon list, the party button, the single-player defaults,
-# and the achievement window) and the vetted
+# the client's addon folder (benilla-config/AddOns): GMBox, Dungeon, Bots,
+# !Solo and Achievements (GM tools, the dungeon hub, the party button, the
+# single-player defaults, and the achievement window) and the vetted
 # third-party addons (pfUI, Atlas, AtlasLoot, Bagshui;
 # see THIRD-PARTY-NOTICES.md). localize-addons.py then adds Chinese
 # where an addon lacks it, on the installed copies.

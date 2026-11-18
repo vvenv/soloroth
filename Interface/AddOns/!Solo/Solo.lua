@@ -53,15 +53,16 @@ local PFUI = {
   -- pfUI kills the stock MainMenuBar; without this the character / spellbook /
   -- talent / social micro buttons have nowhere to sit.
   { { "panel", "micro", "enable" }, "1" },
-  -- Addon minimap buttons (GMBox, party, farm, Atlas, …) sit in one strip under that
-  -- micro bar (MicroBar.lua docks the strip). Always shown, not combat-hidden.
+  -- Addon minimap buttons (GMBox, party, farm, Dungeon, …) sit in one strip
+  -- under that micro bar (MicroBar.lua docks the strip). Always shown, not
+  -- combat-hidden. Atlas / AtlasLoot icons are hidden; open them from /gd.
   { { "abuttons", "enable" }, "1" },
   { { "abuttons", "position" }, "bottom" },
   { { "abuttons", "showdefault" }, "1" },
   { { "abuttons", "hideincombat" }, "0" },
-  -- GMBox, party, farm, Atlas, AtlasLoot. MicroBar.lua then matches the
-  -- column count to however many icons are actually showing.
-  { { "abuttons", "rowsize" }, "5" },
+  -- GMBox, party, farm, Dungeon. MicroBar.lua then matches the column count
+  -- to however many icons are actually showing.
+  { { "abuttons", "rowsize" }, "4" },
   -- Info panels: no guild or friends to count.
   { { "panel", "left", "left" }, "exp" },
   { { "panel", "left", "right" }, "bagspace" },
@@ -378,6 +379,23 @@ local function HideGuildUnderNames()
   SetCVar("UnitNamePlayerGuild", "0")
 end
 
+-- ---------------------------------------------------- Atlas / AtlasLoot MM --
+-- Map and loot open from the Dungeon hub (/gd). Hide their own minimap
+-- buttons so the strip stays GMBox / party / farm / Dungeon.
+
+local function HideDungeonRefButtons()
+  if type(AtlasOptions) == "table" then
+    AtlasOptions.AtlasButtonShown = false
+    if type(AtlasButton_Init) == "function" then AtlasButton_Init() end
+  end
+  if type(AtlasLootCharDB) == "table" then
+    AtlasLootCharDB.MinimapButton = false
+    if type(AtlasLootMinimapButton_Init) == "function" then
+      AtlasLootMinimapButton_Init()
+    end
+  end
+end
+
 -- ------------------------------------------------------------------ events --
 
 local ev = CreateFrame("Frame")
@@ -388,13 +406,17 @@ ev:SetScript("OnEvent", function()
   if event == "ADDON_LOADED" then
     if arg1 == "pfUI" then
       PreparePfUI()
+    elseif arg1 == "Atlas" or arg1 == "AtlasLoot" then
+      HideDungeonRefButtons()
     end
   elseif event == "VARIABLES_LOADED" then
     EnableCombatText()
     HideGuildUnderNames()
+    HideDungeonRefButtons()
   elseif event == "PLAYER_ENTERING_WORLD" then
     AssignChatGroups()
     InstallSoloChats()
     PlaceSoloChats()
+    HideDungeonRefButtons()
   end
 end)

@@ -1,6 +1,6 @@
 --[[--------------------------------------------------------------------------
 Party bots. Calling them needs no GM rights, so this is not part of GMBox
-(that addon keeps the dungeon list, which teleports). The round button sits
+or the Dungeon hub (teleport / reset / map / loot). The round button sits
 with the others under the minimap. Left click opens the size menu; right
 click sends the bots home.
 

@@ -18,7 +18,7 @@ Requires a GM account (this realm: gmlevel 6). Without it the server simply
 refuses each command.
 ----------------------------------------------------------------------------]]
 
-local VERSION = "2.0.0"
+local VERSION = "3.0.0"
 
 -- The realm's world DB carries Simplified Chinese for ~89% of items, so on a
 -- zhCN client the addon searches and shows Chinese names and labels. The 1.12
@@ -110,10 +110,12 @@ local function InitDB()
   if type(db.count)      ~= "number" then db.count = 1 end
   if type(db.tab)        ~= "number" then db.tab = 1 end
   if type(db.mmAngle)    ~= "number" then db.mmAngle = 200 end
-  if db.version == nil then
-    -- 1.x had three tabs, Tools third; Tools is fourth since Dungeons came in.
-    if db.tab == 3 then db.tab = 4 end
-    db.version = 2
+  if not db.version or db.version < 3 then
+    -- v2: Teleport / Items / Dungeons / Tools. Dungeons moved to the Dungeon
+    -- addon; Tools is third again. A leftover tab 3 (old Dungeons) or 4
+    -- (old Tools) becomes Tools.
+    if db.tab == 3 or db.tab == 4 then db.tab = 3 end
+    db.version = 3
   end
 end
 
@@ -409,8 +411,8 @@ local close = CreateFrame("Button", "GMBoxClose", f, "UIPanelCloseButton")
 close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -6, -6)
 
 ui.tabs = {}
-local TABS = { L("Teleport", "传送"), L("Items", "物品"), L("Dungeons", "副本"), L("Tools", "工具") }
-local NTABS = 4
+local TABS = { L("Teleport", "传送"), L("Items", "物品"), L("Tools", "工具") }
+local NTABS = 3
 for i = 1, NTABS do
   local b = Button(f, 96, 22, TABS[i], "TOPLEFT", f, "TOPLEFT", 16 + (i - 1) * 100, -34)
   b.index = i
@@ -690,128 +692,8 @@ Label(tools, L("Any command", "任意命令"), "GameFontNormalSmall", "RIGHT", r
 Label(tools, L("(leading dot optional, Enter sends)", "(开头的点可省，回车发送)"), "GameFontDisableSmall",
       "TOPLEFT", rawBox, "BOTTOMLEFT", 0, -2)
 
--- ---------------------------------------------------------- dungeons tab ---
--- Five-player dungeons with the spot just inside their entrance (the
--- areatrigger_teleport targets), so one click lands the party inside. The
--- server still fills the party three seconds later; the party button under
--- the minimap (the Bots addon) chooses how many and gives the orders.
-
-local DUNGEONS = {
-  -- { english, chinese, min, max, map, x, y, z, o }
-  { "Ragefire Chasm",             "怒焰裂谷",           13, 18, 389,     0.8,    -8.2,  -15.5, 4.71, 2437 },
-  { "Wailing Caverns",            "哀嚎洞穴",           17, 24,  43,  -158.4,   131.6,  -74.3, 5.85, 718 },
-  { "The Deadmines",              "死亡矿井",           17, 26,  36,   -14.6,  -385.5,   62.5, 1.57, 1581 },
-  { "Shadowfang Keep",            "影牙城堡",           22, 30,  33,  -228.2,  2111.4,   76.9, 1.22, 209 },
-  { "Blackfathom Deeps",          "黑暗深渊",           24, 32,  48,  -150.2,   106.6,  -39.8, 4.45, 719 },
-  { "The Stockade",               "暴风城监狱",         24, 32,  34,    49.0,     0.5,  -16.4, 6.28, 717 },
-  { "Scarlet Monastery: Graveyard", "血色修道院：墓地",   26, 36, 189,  1687.3,  1050.1,   18.7, 1.57, 796 },
-  { "Gnomeregan",                 "诺莫瑞根",           29, 38,  90,  -329.1,    -3.2, -152.9, 2.97, 133 },
-  { "Razorfen Kraul",             "剃刀沼泽",           29, 38,  47,  1942.3,  1544.2,   83.3, 1.31, 1717 },
-  { "Scarlet Monastery: Library", "血色修道院：图书馆", 29, 39, 189,   253.7,  -206.6,   18.7, 4.71, 796 },
-  { "Scarlet Monastery: Armory",  "血色修道院：军械库", 32, 42, 189,  1608.1,  -318.9,   18.7, 4.71, 796 },
-  { "Scarlet Monastery: Cathedral", "血色修道院：大教堂", 35, 45, 189,   853.2,  1319.2,   18.7, 1.57, 796 },
-  { "Razorfen Downs",             "剃刀高地",           37, 46, 129,  2593.7,  1111.2,   51.0, 4.71, 722 },
-  { "Uldaman",                    "奥达曼",             41, 51,  70,  -228.9,    46.1,  -46.0, 1.57, 1517 },
-  { "Zul'Farrak",                 "祖尔法拉克",         42, 54, 209,  1212.7,   842.0,    8.9, 6.28, 978 },
-  { "Maraudon: Orange",           "玛拉顿：橙色入口",   46, 55, 349,  1016.8,  -458.5,  -43.5, 6.28, 2100 },
-  { "Maraudon: Purple",           "玛拉顿：紫色入口",   46, 55, 349,   755.1,  -617.7,  -32.9, 1.57, 2100 },
-  { "Sunken Temple",              "沉没的神庙",         50, 60, 109,  -315.9,   100.2, -131.8, 3.14, 1417 },
-  { "Blackrock Depths",           "黑石深渊",           52, 60, 230,   456.9,    34.1,  -68.1, 4.71, 1584 },
-  { "Lower Blackrock Spire",      "黑石塔下层",         55, 60, 229,    78.4,  -226.8,   49.8, 4.71, 1583 },
-  { "Dire Maul: East",            "厄运之槌：东",       55, 60, 429,  -203.2,  -323.0,   -2.7, 4.71, 2557 },
-  { "Dire Maul: West",            "厄运之槌：西",       57, 60, 429,   -65.7,   159.6,   -3.5, 2.36, 2557 },
-  { "Dire Maul: North",           "厄运之槌：北",       57, 60, 429,   254.9,   -19.5,   -2.6, 5.50, 2557 },
-  { "Scholomance",                "通灵学院",           58, 60, 289,   190.8,   126.3,  137.2, 6.28, 2057 },
-  { "Stratholme: Main Gate",      "斯坦索姆：正门",     58, 60, 329,  3392.9, -3395.0,  143.1, 1.57, 2017 },
-  { "Stratholme: Service Gate",   "斯坦索姆：后门",     58, 60, 329,  3590.9, -3643.2,  138.5, 5.50, 2017 },
-}
-
--- Colours by how the dungeon's range sits against my level.
-local function DungeonColor(d)
-  local lvl = UnitLevel("player") or 1
-  if lvl < d[3] - 2 then return 1, 0.1, 0.1 end        -- red: too low
-  if lvl < d[3] then return 1, 0.5, 0.25 end           -- orange: a stretch
-  if lvl <= d[4] - 3 then return 1, 0.82, 0 end        -- yellow: right
-  if lvl <= d[4] + 2 then return 0.25, 0.75, 0.25 end  -- green: easy
-  return 0.5, 0.5, 0.5                                 -- grey: trivial
-end
-
-local dung = CreateFrame("Frame", nil, f)
-dung:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -62)
-dung:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -16, 16)
-dung:Hide()
-
-local dui = { rows = {}, offset = 0 }
-local DROWS = 20
-
-Label(dung, L("Dungeon (click to go inside)", "副本（点击直接传送进去）"), "GameFontNormalSmall",
-      "TOPLEFT", dung, "TOPLEFT", 2, -2)
-Label(dung, L("Level", "等级"), "GameFontNormalSmall", "TOPRIGHT", dung, "TOPRIGHT", -8, -2)
-
-local function DungeonRefresh()
-  local n = table.getn(DUNGEONS)
-  if dui.offset > n - DROWS then dui.offset = n - DROWS end
-  if dui.offset < 0 then dui.offset = 0 end
-  for i = 1, DROWS do
-    local b, d = dui.rows[i], DUNGEONS[dui.offset + i]
-    if d then
-      b.d = d
-      b.text:SetText(ZH and d[2] or d[1])
-      b.text:SetTextColor(DungeonColor(d))
-      b.info:SetText(d[3] .. "-" .. d[4])
-      b:Show()
-    else
-      b:Hide()
-    end
-  end
-end
-
-local function DungeonGo(d)
-  -- The spot just inside the entrance; the server adds the bots there.
-  Cmd(string.format(".go xyzo %.1f %.1f %.1f %.2f %d", d[6], d[7], d[8], d[9], d[5]))
-  msg("-> " .. (ZH and d[2] or d[1]))
-end
-
-for i = 1, DROWS do
-  local b = CreateFrame("Button", "GMBoxDungeonRow" .. i, dung)
-  b:SetWidth(558) b:SetHeight(ROW_H)
-  if i == 1 then b:SetPoint("TOPLEFT", dung, "TOPLEFT", 2, -18)
-  else b:SetPoint("TOPLEFT", dui.rows[i - 1], "BOTTOMLEFT", 0, -1) end
-  b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-  table.insert(skin.rows, b)
-  b.text = b:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-  b.text:SetPoint("LEFT", b, "LEFT", 4, 0)
-  b.text:SetJustifyH("LEFT")
-  b.text:SetWidth(440)
-  b.info = b:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-  b.info:SetPoint("RIGHT", b, "RIGHT", -4, 0)
-  b.info:SetJustifyH("RIGHT")
-  b:RegisterForClicks("LeftButtonUp")
-  b:SetScript("OnClick", function()
-    if this.d then DungeonGo(this.d) end
-  end)
-  b:SetScript("OnEnter", function()
-    local d = this.d
-    if not d then return end
-    GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
-    GameTooltip:AddLine(ZH and d[2] or d[1])
-    if ZH then GameTooltip:AddLine(d[1], 0.8, 0.8, 0.8) end
-    GameTooltip:AddLine(L("Recommended level ", "推荐等级 ") .. d[3] .. "-" .. d[4], 0.8, 0.8, 0.8)
-    GameTooltip:AddLine(L("Click: teleport inside. Bots join three seconds later.",
-                          "点击传送进副本，3 秒后机器人自动入队。"), 0.4, 0.8, 1)
-    GameTooltip:Show()
-  end)
-  b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-  dui.rows[i] = b
-end
-
-dung:EnableMouseWheel(true)
-dung:SetScript("OnMouseWheel", function()
-  dui.offset = dui.offset + ((arg1 > 0) and -3 or 3)
-  DungeonRefresh()
-end)
-
 -- `[xp]` is the tools page talking to itself. `[bots]` is hidden by the Bots addon.
+-- Dungeon teleports / reset / Atlas / AtlasLoot live in the Dungeon addon (/gd).
 local origChatEvent = ChatFrame_OnEvent
 function ChatFrame_OnEvent(event)
   if event == "CHAT_MSG_SYSTEM" and arg1 and string.find(arg1, "^%[xp%]") then
@@ -858,8 +740,8 @@ mm:SetScript("OnEnter", function()
   GameTooltip:SetOwner(this, "ANCHOR_LEFT")
   GameTooltip:AddLine("GM Box")
   GameTooltip:AddLine(L("Left click: open or close", "左键：打开/关闭"), 0.8, 0.8, 0.8)
-  GameTooltip:AddLine(L("Right click: dungeon list", "右键：副本列表"), 0.8, 0.8, 0.8)
   GameTooltip:AddLine(L("Drag: move around the minimap", "拖动：沿小地图移动"), 0.8, 0.8, 0.8)
+  GameTooltip:AddLine(L("Dungeon hub is /gd (Dungeon addon)", "副本中心在 /gd（Dungeon 插件）"), 0.7, 0.7, 0.7)
   GameTooltip:Show()
 end)
 mm:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -989,16 +871,11 @@ function SetTab(i)
   for t = 1, NTABS do
     MarkCurrent(ui.tabs[t], t == i)
   end
-  panel:Hide() tools:Hide() dung:Hide()
-  if i == 4 then
+  panel:Hide() tools:Hide()
+  if i == 3 then
     tools:Show()
     XpRefresh()
     Cmd(".xprate quiet")
-    return
-  end
-  if i == 3 then
-    dung:Show()
-    DungeonRefresh()
     return
   end
   panel:Show()
@@ -1073,11 +950,7 @@ local function SkinWithPfUI()
 end
 
 mm:SetScript("OnClick", function()
-  if arg1 == "RightButton" then
-    if f:IsVisible() and db.tab == 3 then f:Hide() else Toggle(3) end
-  else
-    Toggle()
-  end
+  Toggle()
 end)
 
 BINDING_HEADER_GMBOX = "GM Box"
@@ -1090,17 +963,17 @@ local function Help()
   if ZH then
     msg("命令:")
     msg("  /gm            开关窗口（小地图上也有按钮）")
-    msg("  /gd            副本列表")
     msg("  /gt <文字>     传送: 唯一匹配直接过去，多个就开列表")
     msg("  /gi <文字|id> [数量]   物品: 同上，唯一匹配直接进包（中英文名都能搜）")
+    msg("  副本中心在 /gd（Dungeon 插件）")
     msg("列表里: 左键执行，右键收藏，")
     msg("对地点 shift+左键 = 用 .go xyz 而不是 .tele")
   else
     msg("commands:")
     msg("  /gm            open or close the window (or the minimap button)")
-    msg("  /gd            dungeon list")
     msg("  /gt <text>     teleport: one match goes instantly, otherwise the list opens")
     msg("  /gi <text|id> [count]   item: same idea, adds it straight to your bags")
+    msg("  dungeon hub is /gd (Dungeon addon)")
     msg("in the list: left click = do it, right click = favourite,")
     msg("shift+click on a place = .go xyz instead of .tele")
   end
@@ -1111,12 +984,13 @@ SLASH_GMBOX2 = "/gmbox"
 SlashCmdList["GMBOX"] = function(a)
   a = a or ""
   if a == "help" or a == "?" then Help() return end
-  if a == "dungeon" or a == "dungeons" or a == "fb" then Toggle(3) return end
+  if a == "dungeon" or a == "dungeons" or a == "fb" then
+    if type(Dungeon_Toggle) == "function" then Dungeon_Toggle()
+    else msg(L("install the Dungeon addon for /gd", "副本列表在 Dungeon 插件（/gd）")) end
+    return
+  end
   if a ~= "" then Toggle(nil, a) else Toggle() end
 end
-
-SLASH_GMBOXDUNGEON1 = "/gd"
-SlashCmdList["GMBOXDUNGEON"] = function() Toggle(3) end
 
 SLASH_GMBOXTELE1 = "/gt"
 SlashCmdList["GMBOXTELE"] = function(a)

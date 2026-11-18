@@ -1,0 +1,12 @@
+## Interface: 11200
+## Title: Dungeon
+## Notes: Dungeon hub: teleport inside, reset, Atlas map, AtlasLoot tables.
+## Title-zhCN: 副本
+## Notes-zhCN: 副本中心：传送进本、重置、地图、掉落。
+## Author: local
+## Version: 1.0.0
+## SavedVariables: DungeonDB
+## OptionalDeps: Atlas, AtlasLoot, pfUI, !Solo
+
+Dungeon.lua
+Bindings.xml
