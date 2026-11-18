@@ -546,7 +546,7 @@ mm:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
 mm:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 mm:RegisterForDrag("LeftButton")
 local mmIcon = mm:CreateTexture(nil, "ARTWORK")
-mmIcon:SetTexture("Interface\\Icons\\INV_Misc_Bag_10")
+mmIcon:SetTexture("Interface\\Icons\\Ability_Rogue_Sprint")
 mmIcon:SetWidth(20) mmIcon:SetHeight(20)
 mmIcon:SetPoint("TOPLEFT", mm, "TOPLEFT", 7, -5)
 local mmBorder = mm:CreateTexture(nil, "OVERLAY")
@@ -612,7 +612,7 @@ menu:SetScript("OnHide", function() sink:Hide() end)
 -- to "put it in the spellbook" without inventing fake spells.
 
 local MACRO_DEFS = {
-  { L("Solo farm", "自动挂机"), "INV_Misc_Bag_10", "/gj" },
+  { L("Solo farm", "自动挂机"), "Ability_Rogue_Sprint", "/gj" },
   { L("Solo grind", "自动打怪"), "Ability_DualWield", "/dg" },
   { L("Solo assist", "半自动打怪"), "Ability_Warrior_Charge", "/bzd" },
   { L("Solo fish", "自动钓鱼"), "INV_Misc_Fish_02", "/dy" },

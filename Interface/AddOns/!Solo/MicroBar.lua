@@ -5,7 +5,9 @@ Stock micro buttons are 33×44 with the glyph in the lower half; pfUI only
 scales that art. Addon buttons wear the round minimap ring, which is drawn
 larger than the button itself (pfUI sizes the cell from the button, so the
 ring spills out). This file replaces both with the action-bar icon: cropped,
-border from the action-bar setting, same size and gap as bar 1.
+border from the action-bar setting, same size as bar 1. The gap is wider than
+bar 1's: that spacing is 1, and the border is drawn outside the frame, so a
+gap of 1 leaves the squares touching.
 
 pfUI still collects the addon buttons. After it places them, they are packed
 into a row under the micro buttons. Atlas / AtlasLoot open from /gd.
@@ -33,9 +35,14 @@ end
 local function ButtonMetrics()
   local bar = pfUI_config and pfUI_config.bars and pfUI_config.bars.bar1
   local size = bar and tonumber(bar.icon_size)
-  local gap = bar and tonumber(bar.spacing)
   if not size or size < 14 or size > 32 then size = 20 end
-  if not gap or gap < 0 or gap > 12 then gap = 1 end
+  local border = 2
+  if pfUI and pfUI.api and pfUI.api.GetBorderSize then
+    local _, scaled = pfUI.api.GetBorderSize("actionbars")
+    if scaled and scaled > 0 then border = scaled end
+  end
+  -- Two borders, then a few pixels of air between them.
+  local gap = math.ceil(border * 2 + 4)
   return size, gap
 end
 

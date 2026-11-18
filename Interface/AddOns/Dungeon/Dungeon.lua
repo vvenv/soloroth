@@ -11,7 +11,7 @@ Formerly the GMBox "Dungeons" tab plus the separate Atlas / AtlasLoot
 minimap buttons. `/gd` lands here.
 ----------------------------------------------------------------------------]]
 
-local VERSION = "1.1.0"
+local VERSION = "1.2.0"
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end
@@ -369,6 +369,7 @@ mm:SetScript("OnEnter", function()
   GameTooltip:AddLine(L("Dungeon", "副本"))
   GameTooltip:AddLine(L("Left: open the hub", "左键：打开副本中心"), 0.8, 0.8, 0.8)
   GameTooltip:AddLine(L("Right: reset instances", "右键：重置副本"), 0.8, 0.8, 0.8)
+  if type(DungeonProgress_Tooltip) == "function" then DungeonProgress_Tooltip() end
   GameTooltip:Show()
 end)
 mm:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -395,8 +396,8 @@ SlashCmdList["DUNGEON"] = function(a)
     return
   end
   if a == "help" or a == "?" then
-    msg(L("/gd open  /gd reset  /gd map  /gd loot",
-          "/gd 打开  /gd reset 重置  /gd map 地图  /gd loot 掉落"))
+    msg(L("/gd open  /gd reset  /gd map  /gd loot. Boss progress shows while you are inside.",
+          "/gd 打开  /gd reset 重置  /gd map 地图  /gd loot 掉落。在副本里会显示首领进度。"))
     return
   end
   Toggle()
@@ -457,9 +458,9 @@ ev:SetScript("OnEvent", function()
     f:Hide()
   elseif event == "PLAYER_LOGIN" then
     if ZH then
-      msg("就绪 -- /gd 打开副本中心（传送、重置、地图、掉落）。")
+      msg("就绪 -- /gd 打开副本中心（传送、重置、地图、掉落）。在副本里显示首领进度。")
     else
-      msg("ready -- /gd opens the dungeon hub (teleport, reset, map, loot).")
+      msg("ready -- /gd opens the dungeon hub (teleport, reset, map, loot). Boss progress shows inside.")
     end
   end
 end)
