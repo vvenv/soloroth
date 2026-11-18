@@ -24,7 +24,7 @@ It is not affiliated with or endorsed by Blizzard Entertainment and ships no gam
 | Atlas | 1.12.0 | Dan Gilbert | none shipped | http://www.atlasmod.com |
 | AtlasLoot | 4.06.06 | Daviesh | none shipped | AtlasLoot Enhanced for 1.12 |
 
-Teleport, GMBox, Dungeon, Bots, Achievements and !Solo in the same folder are this project's own, under its GPL-3.0.
+Teleport, Items, GMBox, Dungeon, Bots, Achievements and !Solo in the same folder are this project's own, under its GPL-3.0.
 
 ## benilla
 

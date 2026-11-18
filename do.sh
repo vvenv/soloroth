@@ -348,7 +348,7 @@ cmd_account() {
     if [ -z "$gm" ]; then
       local g
       g="$(prompt_menu "GM 权限" --default=1 \
-        "gm:给 GM（传送 / 物品 / GMBox 工具）" \
+        "gm:给 GM（传送 / 物品 / 工具）" \
         "no:普通账号")"
       if is_back "$g"; then
         return 0

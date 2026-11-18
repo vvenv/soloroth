@@ -3,7 +3,7 @@
 装在 1.12.1 客户端里（`Interface/AddOns/Teleport`）。点一下就把 `.tele` 或 `.go xyz`
 发给服务端。需要 GM 账号；没权限的话服务端只会拒绝。
 
-以前这是 GMBox 的「传送」页。物品和 GM 工具仍在 **GMBox**（`/gm`、`/gi`）。
+以前这是 GMBox 的「传送」页。物品在 **Items**（`/gi`），GM 工具在 **GMBox**（`/gm`）。
 五人副本的进本、重置、地图和掉落在 **Dungeon**（`/gd`）。
 
 ## 打开

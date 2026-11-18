@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installs the 1.12 addon set from this repository (Interface/AddOns) into
-# the client's addon folder (benilla-config/AddOns): Teleport, GMBox, Dungeon,
-# Bots, !Solo and Achievements (teleport points, GM tools, the dungeon hub,
+# the client's addon folder (benilla-config/AddOns): Teleport, Items, GMBox,
+# Dungeon, Bots, !Solo and Achievements (teleport points, items, GM tools, the dungeon hub,
 # the party button, the single-player defaults, and the achievement window)
 # and the vetted
 # third-party addons (pfUI, Atlas, AtlasLoot, Bagshui;

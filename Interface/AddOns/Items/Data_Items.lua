@@ -1,5 +1,6 @@
--- GMBox item database -- generated from VMaNGOS item_template (17707 items).
--- Do not edit by hand; regenerate with bin/gmbox-gen-data.sh.
+-- Items database -- generated from VMaNGOS item_template (17707 items).
+-- Do not edit by hand. bin/gmbox-gen-data.sh still writes these tables under
+-- the GMBox_Item* names.
 -- The packed strings at the bottom hold one or two characters per item,
 -- sharing the index of the tables above; see each one's comment.
 

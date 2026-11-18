@@ -1,8 +1,8 @@
 --[[--------------------------------------------------------------------------
 Teleport -- the server's game_tele list, on its own.
 
-Formerly the GMBox "Teleport" tab and /gt. Items and GM tools stay in GMBox
-(/gm, /gi). Five-player instances stay in Dungeon (/gd).
+Formerly the GMBox "Teleport" tab and /gt. Items are the Items addon (/gi).
+GM tools stay in GMBox (/gm). Five-player instances stay in Dungeon (/gd).
 
 Data_Tele.lua (loaded first) still publishes GMBox_Tele, GMBox_TeleZH and
 GMBox_TelePY. Those names are what the generator writes. The Chinese and

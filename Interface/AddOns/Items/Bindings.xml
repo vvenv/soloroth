@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="ITEMS_TOGGLE" header="ITEMS">
+    Items_Toggle();
+  </Binding>
+</Bindings>

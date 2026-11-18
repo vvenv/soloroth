@@ -1,0 +1,13 @@
+## Interface: 11200
+## Title: Items
+## Title-zhCN: 物品
+## Notes: Search the server's items and add them with one click.
+## Notes-zhCN: 搜索物品，点一下放进背包。
+## Author: local
+## Version: 1.0.0
+## SavedVariables: ItemsDB
+## OptionalDeps: pfUI, !Solo
+
+Data_Items.lua
+Items.lua
+Bindings.xml

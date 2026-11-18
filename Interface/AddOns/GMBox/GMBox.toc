@@ -1,9 +1,10 @@
 ## Interface: 11200
 ## Title: GM Box
-## Notes: Items and VMaNGOS GM commands, one click each. Teleport is /gt. Dungeons: /gd.
+## Title-zhCN: GM 工具箱
+## Notes: VMaNGOS GM commands, one click each. Items are /gi. Teleport is /gt.
+## Notes-zhCN: GM 命令，点一下就发出。物品在 /gi，传送在 /gt。
 ## Author: local
-## Version: 4.0.0 (teleport list moved to Teleport)
+## Version: 5.0.0 (items moved to Items)
 ## SavedVariables: GMBoxDB
 
-Data_Items.lua
 GMBox.lua
