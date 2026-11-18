@@ -590,7 +590,7 @@ mm:SetScript("OnEnter", function()
   else
     GameTooltip:AddLine(L("Not farming.", "没有在挂机。"), .8, .8, .8)
   end
-  GameTooltip:AddLine(L("Left: menu   Right: stop   Drag: move", "左键：菜单   右键：停止   拖动：移动"), .7, .7, .7)
+  GameTooltip:AddLine(L("Left: menu   Right: stop", "左键：菜单   右键：停止"), .7, .7, .7)
   GameTooltip:Show()
 end)
 mm:SetScript("OnLeave", function() GameTooltip:Hide() end)

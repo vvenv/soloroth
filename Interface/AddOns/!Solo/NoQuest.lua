@@ -2,9 +2,9 @@
 No quests. The server never offers one, so the stock quest log, its tracker
 and the quest-accept window stay shut. The micro-bar button goes too.
 
-pfUI lays that bar out from its own MICRO_BUTTONS while it loads (a copy,
-not the global). This file loads first, so the button is taken out of the
-global list, then the bar is chained again once pfUI has placed it.
+pfUI builds that bar from its own MICRO_BUTTONS list, which still names the
+quest button. Hide the button once pfUI has placed it; MicroBar.lua lays out
+the ones that remain.
 ----------------------------------------------------------------------------]]
 
 local function DropMicro(name)
@@ -36,33 +36,11 @@ local function Shut(frame)
   frame.Show = function() end
 end
 
-local MICRO = {
-  "CharacterMicroButton", "SpellbookMicroButton", "TalentMicroButton",
-  "SocialsMicroButton", "WorldMapMicroButton", "MainMenuMicroButton", "HelpMicroButton",
-}
-
-local function RelayoutMicro()
+local function HideQuestButton()
   if QuestLogMicroButton then
     QuestLogMicroButton:Hide()
     QuestLogMicroButton:ClearAllPoints()
   end
-  local parent = pfUI and pfUI.panel and pfUI.panel.microbutton
-  if not parent then return end
-  local prev, i, button
-  for i = 1, table.getn(MICRO) do
-    button = getglobal(MICRO[i])
-    if button then
-      button:ClearAllPoints()
-      if not prev then
-        button:SetPoint("LEFT", parent, "LEFT", 1, 10)
-      else
-        button:SetPoint("TOPLEFT", prev, "TOPRIGHT", 1, 0)
-      end
-      prev = button
-    end
-  end
-  -- pfUI sizes the bar for eight buttons. One less, a little shorter.
-  parent:SetWidth(127)
   -- Stock UpdateTalentButton still gates the talent button on level 10.
   if UpdateTalentButton then UpdateTalentButton() end
 end
@@ -72,7 +50,7 @@ local function Apply()
   Shut(QuestTimerFrame)
   Shut(QuestLogFrame)
   Shut(QuestFrame)
-  RelayoutMicro()
+  HideQuestButton()
 end
 
 local ev = CreateFrame("Frame")

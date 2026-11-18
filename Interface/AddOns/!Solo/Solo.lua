@@ -60,8 +60,8 @@ local PFUI = {
   { { "abuttons", "position" }, "bottom" },
   { { "abuttons", "showdefault" }, "1" },
   { { "abuttons", "hideincombat" }, "0" },
-  -- Teleport, Items, GMBox, party, farm, Dungeon. MicroBar.lua then matches
-  -- the column count to however many icons are actually showing.
+  -- Teleport, Items, GMBox, party, farm, Dungeon. MicroBar.lua redraws them
+  -- as action-bar squares and packs the row to however many are showing.
   { { "abuttons", "rowsize" }, "6" },
   -- Info panels: no guild or friends to count.
   { { "panel", "left", "left" }, "exp" },

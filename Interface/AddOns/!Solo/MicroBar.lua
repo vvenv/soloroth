@@ -1,12 +1,161 @@
 --[[--------------------------------------------------------------------------
-Micro bar dock. pfUI kills the stock MainMenuBar and puts micro buttons under
-the minimap. Addon minimap buttons (Teleport, Items, GMBox, party, farm, Dungeon, …) go into
-pfUI's abuttons strip under that. Atlas / AtlasLoot open from /gd.
+Micro bar and addon-button strip, both drawn as pfUI action-bar squares.
 
-pfUI packs icons on a rowsize-wide grid. Solo sets rowsize to the live button
-count so the icons fill the strip evenly (centered as a group). This file only
-keeps the strip parked under the micro bar.
+Stock micro buttons are 33×44 with the glyph in the lower half; pfUI only
+scales that art. Addon buttons wear the round minimap ring, which is drawn
+larger than the button itself (pfUI sizes the cell from the button, so the
+ring spills out). This file replaces both with the action-bar icon: cropped,
+border from the action-bar setting, same size and gap as bar 1.
+
+pfUI still collects the addon buttons. After it places them, they are packed
+into a row under the micro buttons. Atlas / AtlasLoot open from /gd.
 ----------------------------------------------------------------------------]]
+
+local MICRO = {
+  { "CharacterMicroButton" },
+  { "SpellbookMicroButton", "Interface\\Icons\\INV_Misc_Book_09" },
+  { "TalentMicroButton", "Interface\\Icons\\Ability_Marksmanship" },
+  { "SocialsMicroButton", "Interface\\Icons\\INV_Letter_15" },
+  { "WorldMapMicroButton", "Interface\\Icons\\INV_Misc_Map_01" },
+  { "MainMenuMicroButton", "Interface\\Icons\\INV_Misc_Gear_01" },
+  { "HelpMicroButton", "Interface\\Icons\\INV_Misc_QuestionMark" },
+}
+
+local PAD = 4
+local talentHooked
+
+local function IsItemIcon(path)
+  if type(path) ~= "string" then return end
+  local low = string.lower(path)
+  return strfind(low, "icons\\") or strfind(low, "icons/")
+end
+
+local function ButtonMetrics()
+  local bar = pfUI_config and pfUI_config.bars and pfUI_config.bars.bar1
+  local size = bar and tonumber(bar.icon_size)
+  local gap = bar and tonumber(bar.spacing)
+  if not size or size < 14 or size > 32 then size = 20 end
+  if not gap or gap < 0 or gap > 12 then gap = 1 end
+  return size, gap
+end
+
+local function HideChrome(btn, keep)
+  if btn.SetHighlightTexture then btn:SetHighlightTexture("") end
+  if btn.SetNormalTexture then btn:SetNormalTexture("") end
+  if btn.SetPushedTexture then btn:SetPushedTexture("") end
+  if btn.SetDisabledTexture then btn:SetDisabledTexture("") end
+  local _, region
+  for _, region in ipairs({ btn:GetRegions() }) do
+    if region ~= keep and region.Hide and region.GetObjectType
+        and region:GetObjectType() == "Texture" and not IsItemIcon(region:GetTexture()) then
+      region:Hide()
+      -- The menu button's OnUpdate shows the stock face again every frame.
+      region.Show = function() end
+    end
+  end
+end
+
+-- `crop` is for item icons. The character portrait already has its own
+-- coordinates from SetPortraitTexture; overwriting them shows the raw image.
+local function Square(btn, icon, crop)
+  local A = pfUI and pfUI.api
+  if not A or not A.CreateBackdrop or not btn then return end
+  local size = ButtonMetrics()
+  btn:SetScale(1)
+  btn:SetWidth(size)
+  btn:SetHeight(size)
+  if btn.frame then
+    btn.frame:Hide()
+    btn.frame.Show = function() end
+  end
+  HideChrome(btn, icon)
+  -- The menu button's OnUpdate puts the stock face back every frame.
+  if not btn.soloFaceLocked then
+    btn.soloFaceLocked = true
+    btn.SetNormalTexture = function() end
+    btn.SetPushedTexture = function() end
+    btn.SetDisabledTexture = function() end
+    btn.SetHighlightTexture = function() end
+  end
+  if not btn.backdrop then
+    local _, border = A.GetBorderSize("actionbars")
+    A.CreateBackdrop(btn, border)
+  end
+  if icon then
+    icon:ClearAllPoints()
+    icon:SetAllPoints(btn)
+    if crop then icon:SetTexCoord(.08, .92, .08, .92) end
+    icon:SetDrawLayer("ARTWORK")
+    icon:Show()
+  end
+  if not btn.soloSquare and A.SetHighlight then
+    btn.soloSquare = true
+    A.SetHighlight(btn)
+  end
+end
+
+local function Pack(parent, buttons, size, gap, pad)
+  local n = table.getn(buttons)
+  if n < 1 then return end
+  parent:SetWidth(pad * 2 + n * size + (n - 1) * gap)
+  parent:SetHeight(size + pad * 2)
+  local i = 1
+  while buttons[i] do
+    buttons[i]:ClearAllPoints()
+    buttons[i]:SetPoint("LEFT", parent, "LEFT", pad + (i - 1) * (size + gap), 0)
+    i = i + 1
+  end
+end
+
+local function SkinMicro()
+  local micro = pfUI and pfUI.panel and pfUI.panel.microbutton
+  if not micro or not (pfUI.api and pfUI.api.CreateBackdrop) then return end
+  if QuestLogMicroButton then
+    QuestLogMicroButton:Hide()
+    QuestLogMicroButton:ClearAllPoints()
+  end
+  local size, gap = ButtonMetrics()
+  local shown, i = {}, 1
+  while MICRO[i] do
+    local name, path = MICRO[i][1], MICRO[i][2]
+    local btn = getglobal(name)
+    if btn and btn:IsShown() then
+      local icon
+      if name == "CharacterMicroButton" then
+        icon = getglobal("MicroButtonPortrait")
+        if icon and not btn.soloPortrait and SetPortraitTexture then
+          SetPortraitTexture(icon, "player")
+          btn.soloPortrait = true
+        end
+      elseif path then
+        if not btn.soloIcon then
+          btn.soloIcon = btn:CreateTexture(nil, "ARTWORK")
+          btn.soloIcon:SetTexture(path)
+        end
+        icon = btn.soloIcon
+      end
+      Square(btn, icon, name ~= "CharacterMicroButton")
+      if icon then
+        if btn.IsEnabled and not btn:IsEnabled() then
+          icon:SetVertexColor(.45, .45, .45)
+        else
+          icon:SetVertexColor(1, 1, 1)
+        end
+      end
+      table.insert(shown, btn)
+    end
+    i = i + 1
+  end
+  Pack(micro, shown, size, gap, 0)
+  if not talentHooked and UpdateTalentButton then
+    talentHooked = true
+    local old = UpdateTalentButton
+    UpdateTalentButton = function()
+      old()
+      SkinMicro()
+    end
+  end
+end
 
 local function CenterMicroOnMinimap()
   local micro = pfUI and pfUI.panel and pfUI.panel.microbutton
@@ -21,14 +170,21 @@ local function CenterMicroOnMinimap()
   end
 end
 
-local function CountVisible(abs)
-  local n, i, btn = 0, 1
-  while abs.buttons and abs.buttons[i] do
-    btn = getglobal(abs.buttons[i])
-    if btn and btn:IsVisible() then n = n + 1 end
-    i = i + 1
+local function AddonIcon(btn)
+  if btn.soloIcon then return btn.soloIcon end
+  local _, region
+  for _, region in ipairs({ btn:GetRegions() }) do
+    if IsItemIcon(region.GetTexture and region:GetTexture()) then
+      btn.soloIcon = region
+      return region
+    end
   end
-  return n
+end
+
+local function SkinAddonButton(btn)
+  local icon = AddonIcon(btn)
+  Square(btn, icon, true)
+  if icon then icon:SetVertexColor(1, 1, 1) end
 end
 
 -- A menu dropped from the addon-button strip: same width, sitting on its
@@ -68,8 +224,19 @@ local function DockAddonButtons()
   if not micro or not abs or not map then return end
 
   CenterMicroOnMinimap()
+  SkinMicro()
+  local size, gap = ButtonMetrics()
+  local shown, i = {}, 1
+  while abs.buttons and abs.buttons[i] do
+    local btn = getglobal(abs.buttons[i])
+    if btn and btn:IsVisible() then
+      SkinAddonButton(btn)
+      table.insert(shown, btn)
+    end
+    i = i + 1
+  end
+  Pack(abs, shown, size, gap, PAD)
   abs:ClearAllPoints()
-  abs:SetWidth(map:GetWidth() or 170)
   abs:SetPoint("TOP", micro, "BOTTOM", 0, -4)
   if abs.minimapbutton then abs.minimapbutton:Hide() end
   if not abs:IsShown() then abs:Show() end
@@ -82,13 +249,6 @@ local function HookAddonButtons()
     abs.soloDocked = true
     local old = abs.ProcessButtons
     abs.ProcessButtons = function(self)
-      -- Match columns to icons so pfUI's own grid fills evenly (no left gap).
-      if pfUI_config and pfUI_config.abuttons then
-        local n = CountVisible(self)
-        if n < 1 then n = table.getn(self.buttons or {}) end
-        if n < 1 then n = 4 end
-        pfUI_config.abuttons.rowsize = tostring(n)
-      end
       old(self)
       DockAddonButtons()
     end
@@ -114,15 +274,25 @@ end
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("ADDON_LOADED")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
+ev:RegisterEvent("UNIT_PORTRAIT_UPDATE")
 ev:SetScript("OnEvent", function()
+  if event == "UNIT_PORTRAIT_UPDATE" then
+    if arg1 == "player" and SetPortraitTexture then
+      local icon = getglobal("MicroButtonPortrait")
+      if icon then SetPortraitTexture(icon, "player") end
+    end
+    return
+  end
   if event == "ADDON_LOADED" and arg1 ~= "pfUI" then return end
   HookAddonButtons()
+  SkinMicro()
   if event == "PLAYER_ENTERING_WORLD" then
     RestoreTalentKey()
     this.soloMicroWait = 0
     this:SetScript("OnUpdate", function()
       this.soloMicroWait = this.soloMicroWait + arg1
       HookAddonButtons()
+      SkinMicro()
       if this.soloMicroWait < 4 then return end
       this:SetScript("OnUpdate", nil)
       if pfUI and pfUI.addonbuttons and pfUI.addonbuttons.ProcessButtons then
