@@ -1,5 +1,6 @@
--- GMBox teleport database -- generated from VMaNGOS game_tele (997 locations).
--- Do not edit by hand; regenerate with bin/gmbox-gen-data.sh.
+-- Teleport database -- generated from VMaNGOS game_tele (997 locations).
+-- Do not edit by hand. bin/gmbox-gen-data.sh still writes these three tables
+-- under the names GMBox_Tele / GMBox_TeleZH / GMBox_TelePY.
 -- Entry layout: { name, map, x, y, z }. The name is what '.tele <name>' expects.
 
 GMBox_Tele = {}

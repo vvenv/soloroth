@@ -1,6 +1,6 @@
 --[[--------------------------------------------------------------------------
 Micro bar dock. pfUI kills the stock MainMenuBar and puts micro buttons under
-the minimap. Addon minimap buttons (GMBox, party, farm, Dungeon, …) go into
+the minimap. Addon minimap buttons (Teleport, GMBox, party, farm, Dungeon, …) go into
 pfUI's abuttons strip under that. Atlas / AtlasLoot open from /gd.
 
 pfUI packs icons on a rowsize-wide grid. Solo sets rowsize to the live button

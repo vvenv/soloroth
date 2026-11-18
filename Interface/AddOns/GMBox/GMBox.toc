@@ -1,10 +1,9 @@
 ## Interface: 11200
 ## Title: GM Box
-## Notes: Teleports, items, and VMaNGOS GM commands, one click each. Dungeons: see the Dungeon addon.
+## Notes: Items and VMaNGOS GM commands, one click each. Teleport is /gt. Dungeons: /gd.
 ## Author: local
-## Version: 3.0.0 (dungeon list moved to Dungeon)
+## Version: 4.0.0 (teleport list moved to Teleport)
 ## SavedVariables: GMBoxDB
 
-Data_Tele.lua
 Data_Items.lua
 GMBox.lua

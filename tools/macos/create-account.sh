@@ -1,7 +1,7 @@
 #!/bin/bash
 # Creates a game account on the running local server (through the mangosd
-# console). With "gm" it also gets GM rights (level 6), which the GMBox
-# teleport, item and tool buttons need; bots and dungeons work without.
+# console). With "gm" it also gets GM rights (level 6), which the teleport,
+# item and tool buttons need; bots and the dungeon list work without.
 #
 #   tools/macos/create-account.sh <name> <password> [gm]
 set -euo pipefail

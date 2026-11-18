@@ -1,0 +1,13 @@
+## Interface: 11200
+## Title: Teleport
+## Title-zhCN: 传送
+## Notes: Search the server's teleport points and go there in one click.
+## Notes-zhCN: 搜索传送点，点一下就过去。
+## Author: local
+## Version: 1.0.0
+## SavedVariables: TeleportDB
+## OptionalDeps: pfUI, !Solo
+
+Data_Tele.lua
+Teleport.lua
+Bindings.xml

@@ -53,16 +53,16 @@ local PFUI = {
   -- pfUI kills the stock MainMenuBar; without this the character / spellbook /
   -- talent / social micro buttons have nowhere to sit.
   { { "panel", "micro", "enable" }, "1" },
-  -- Addon minimap buttons (GMBox, party, farm, Dungeon, …) sit in one strip
+  -- Addon minimap buttons (Teleport, GMBox, party, farm, Dungeon, …) sit in one strip
   -- under that micro bar (MicroBar.lua docks the strip). Always shown, not
   -- combat-hidden. Atlas / AtlasLoot icons are hidden; open them from /gd.
   { { "abuttons", "enable" }, "1" },
   { { "abuttons", "position" }, "bottom" },
   { { "abuttons", "showdefault" }, "1" },
   { { "abuttons", "hideincombat" }, "0" },
-  -- GMBox, party, farm, Dungeon. MicroBar.lua then matches the column count
-  -- to however many icons are actually showing.
-  { { "abuttons", "rowsize" }, "4" },
+  -- Teleport, GMBox, party, farm, Dungeon. MicroBar.lua then matches the
+  -- column count to however many icons are actually showing.
+  { { "abuttons", "rowsize" }, "5" },
   -- Info panels: no guild or friends to count.
   { { "panel", "left", "left" }, "exp" },
   { { "panel", "left", "right" }, "bagspace" },
@@ -381,7 +381,7 @@ end
 
 -- ---------------------------------------------------- Atlas / AtlasLoot MM --
 -- Map and loot open from the Dungeon hub (/gd). Hide their own minimap
--- buttons so the strip stays GMBox / party / farm / Dungeon.
+-- buttons so the strip stays Teleport / GMBox / party / farm / Dungeon.
 
 local function HideDungeonRefButtons()
   if type(AtlasOptions) == "table" then
