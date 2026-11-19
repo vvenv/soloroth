@@ -100,9 +100,8 @@ local PFUI = {
   { { "disabled", "whisperproxy" }, "1" },        -- forwards whispers
   { { "disabled", "socialmod" }, "1" },           -- friends and guild list tweaks
   { { "disabled", "chatcopy" }, "1" },            -- copy chat lines
-  -- Bagshui is the bag addon; pfUI's own bags would open a second bank
-  -- window (Bagshui asks for this on every login otherwise).
-  { { "disabled", "bags" }, "1" },
+  -- Re-enable if an older !Solo left bags off for Bagshui.
+  { { "disabled", "bags" }, "0" },
 }
 
 -- The steps of pfUI's first-run wizard. Its profile step would copy the

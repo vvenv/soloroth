@@ -7,7 +7,6 @@ install-addons.sh runs this after copying the addons, so a reinstall keeps
 it. Every step is idempotent and prints what it changed. The addons' own
 folder (../wow-data/addons) is never touched.
 
-  Bagshui      no zhCN at all: adds Locale/zhCN.lua (tools/macos/addons-zhCN).
   AtlasLoot    two bugs of its zhCN files: a `true` value in locale.cn.lua,
                which AceLocale allows only in the base locale, and TBC loot
                table titles in loottables.cn.lua for tables this 1.12 build
@@ -15,11 +14,7 @@ folder (../wow-data/addons) is never touched.
 """
 import os
 import re
-import shutil
 import sys
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-OVERLAY = os.path.join(HERE, "addons-zhCN")
 
 
 def read(path):
@@ -51,19 +46,6 @@ def replace_all(path, pairs, what):
         print("localized " + what)
 
 
-def bagshui(addons):
-    locale = os.path.join(addons, "Bagshui", "Locale")
-    if not os.path.isdir(locale):
-        return
-    shutil.copyfile(os.path.join(OVERLAY, "Bagshui", "Locale", "zhCN.lua"), os.path.join(locale, "zhCN.lua"))
-    xml = os.path.join(locale, "Locales.xml")
-    text = read(xml)
-    if "zhCN.lua" not in text:
-        text = text.replace('<Include file="enUS.lua" />', '<Include file="enUS.lua" />\n\t<Include file="zhCN.lua" />')
-        write(xml, text)
-    print("localized Bagshui")
-
-
 def atlasloot(addons):
     replace_all(os.path.join(addons, "AtlasLoot", "Locale", "locale.cn.lua"), [
         ('["Left-click to open AtlasLoot.\\nMiddle-click for AtlasLoot options.\\nRight-click and drag to move this button."] = true,',
@@ -83,9 +65,7 @@ def main():
     if len(sys.argv) != 2 or not os.path.isdir(sys.argv[1]):
         print(__doc__)
         return 2
-    addons = sys.argv[1]
-    bagshui(addons)
-    atlasloot(addons)
+    atlasloot(sys.argv[1])
     return 0
 
 

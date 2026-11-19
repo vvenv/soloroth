@@ -4,14 +4,14 @@
 # Dungeon, Bots, !Solo and Achievements (teleport points, items, GM tools, the dungeon hub,
 # the party button, the single-player defaults, and the achievement window)
 # and the vetted
-# third-party addons (pfUI, Atlas, AtlasLoot, Bagshui;
+# third-party addons (pfUI, Atlas, AtlasLoot;
 # see THIRD-PARTY-NOTICES.md). localize-addons.py then adds Chinese
 # where an addon lacks it, on the installed copies.
 #
-# The first run also copies saved settings (Bagshui's excepted) from an old
-# 1.12 zhCN client (../wow-data/client-zhCN/WTF/Account/ADMIN/SavedVariables,
-# or OLD_SAVED=...) into benilla-config/saved, unless a settings file is
-# already there; without one the addons start from !Solo's defaults.
+# The first run also copies saved settings from an old 1.12 zhCN client
+# (../wow-data/client-zhCN/WTF/Account/ADMIN/SavedVariables, or OLD_SAVED=...)
+# into benilla-config/saved, unless a settings file is already there;
+# without one the addons start from !Solo's defaults.
 #
 #   tools/macos/install-addons.sh
 #
@@ -46,9 +46,6 @@ if [ -d "$old_saved" ]; then
     for f in "$old_saved"/*.lua; do
         name="$(basename "$f" .lua)"
         [ -d "$dest/$name" ] || continue
-        # Bagshui stores its category and group names as text: the old
-        # client's are English, so it starts fresh and names them in Chinese.
-        [ "$name" = "Bagshui" ] && continue
         if [ ! -f "$home/saved/$name.lua" ]; then
             cp "$f" "$home/saved/$name.lua"
             echo "settings $name"

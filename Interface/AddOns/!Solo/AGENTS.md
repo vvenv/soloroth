@@ -2,15 +2,13 @@
 
 Loads first (`!` sorts before every other folder) and applies the single-player defaults
 (`Solo.lua`) and every look change to other addons. Third-party addon sources are never
-edited; anything they should do differently is done from here. Bagshui's
-`Locale/zhCN.lua` ships inside Bagshui so its locale loader sees it (installed by
-`tools/macos/localize-addons.py`).
+edited; anything they should do differently is done from here.
 
 ## pfUI skins
 
 - Each window set is one pfUI skin, so pfUI's "disable skin" setting covers it:
   `SoloSkin.Register(name, func)` in `SkinKit.lua`. The loader hands that list to pfUI on
-  `ADDON_LOADED "pfUI"`. pfUI is not last: AtlasLoot loads it first, before Bagshui, Bots,
+  `ADDON_LOADED "pfUI"`. pfUI is not last: AtlasLoot loads it first, before Bots,
   GMBox, Items and Teleport. An addon that loads after that event must also call `pfUI:RegisterSkin` itself when
   `pfUI` is already there, or the skin never runs and stock buttons stay gold.
   `PfuiSkin.lua` registers benilla's own windows ("Benilla").
