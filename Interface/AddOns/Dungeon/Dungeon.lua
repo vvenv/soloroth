@@ -10,7 +10,7 @@ Formerly the GMBox "Dungeons" tab plus the separate Atlas / AtlasLoot
 minimap buttons. `/gd` lands here; inside an instance it opens on the map.
 ----------------------------------------------------------------------------]]
 
-local VERSION = "1.3.1"
+local VERSION = "1.3.2"
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end

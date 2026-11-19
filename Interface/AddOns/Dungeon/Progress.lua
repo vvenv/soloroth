@@ -7,7 +7,8 @@ so this asks with ".dungeon progress" and reads addon messages, prefix
 
   S                 start
   H clears<tab>name this wing, and how many times its last boss has died
-  K 0|1<tab>name     one boss, in order; 1 = already down
+  P x<tab>y         player world XY (minimap pins)
+  K 0|1<tab>name[<tab>x<tab>y]  one boss; optional spawn XY for pins
   D                 show
   X                 not in a tracked instance; hide
 
@@ -22,7 +23,7 @@ local VISIBLE = 12
 local ROW_H = 16
 
 local building
-local snap          -- { name, clears, bosses = { { down, name }, ... }, sig }
+local snap          -- { name, clears, bosses = { { down, name, x?, y? }, ... }, player, sig }
 local dismissed = false
 local offset = 0
 
@@ -36,6 +37,14 @@ end
 
 local function Request()
   Cmd(".dungeon progress")
+end
+
+function DungeonProgress_Request()
+  Request()
+end
+
+function DungeonProgress_Snap()
+  return snap
 end
 
 -- ------------------------------------------------------------------- frame --
@@ -166,14 +175,16 @@ local function Layout()
 
   local n = ShownCount(total)
   for i = 1, VISIBLE do
-    local b = bosses[offset + i]
+    local idx = offset + i
+    local b = bosses[idx]
     if i <= n and b then
+      local num = "|cffcccccc" .. idx .. ".|r "
       if b[1] then
-        rows[i]:SetText("|cff3dba6a" .. L("down", "已") .. "|r  " .. b[2])
-      elseif offset + i == firstUp then
-        rows[i]:SetText("|cffffcc00>>|r " .. b[2])
+        rows[i]:SetText(num .. "|cff3dba6a" .. L("down", "已") .. "|r  " .. b[2])
+      elseif idx == firstUp then
+        rows[i]:SetText(num .. "|cffffcc00>>|r " .. b[2])
       else
-        rows[i]:SetText("|cff777777" .. L("up", "未") .. "|r  " .. b[2])
+        rows[i]:SetText(num .. "|cff777777" .. L("up", "未") .. "|r  " .. b[2])
       end
       rows[i]:Show()
     else
@@ -186,6 +197,7 @@ local function Layout()
   f:SetHeight(h)
   PlaceProgress()
   if not dismissed then f:Show() else f:Hide() end
+  if type(DungeonPins_Update) == "function" then DungeonPins_Update(snap) end
 end
 
 f:SetScript("OnMouseWheel", function()
@@ -225,6 +237,7 @@ local function Apply()
     name = building.name,
     clears = building.clears,
     bosses = building.bosses,
+    player = building.player,
     sig = sig,
   }
   building = nil
@@ -234,22 +247,33 @@ end
 local function OnAddon(msg)
   local tag = string.sub(msg, 1, 1)
   if tag == "S" then
-    building = { clears = 0, name = nil, bosses = {} }
+    building = { clears = 0, name = nil, bosses = {}, player = nil }
   elseif tag == "X" then
     building = nil
     snap = nil
     dismissed = false
     f:Hide()
+    if type(DungeonPins_Clear) == "function" then DungeonPins_Clear() end
   elseif tag == "H" and building then
     local _, _, clears, name = strfind(msg, "^H (%d+)\t(.+)$")
     if clears then
       building.clears = tonumber(clears) or 0
       building.name = name
     end
+  elseif tag == "P" and building then
+    local _, _, x, y = strfind(msg, "^P ([%-%d%.]+)\t([%-%d%.]+)$")
+    if x and y then
+      building.player = { tonumber(x), tonumber(y) }
+    end
   elseif tag == "K" and building then
-    local _, _, flag, name = strfind(msg, "^K ([01])\t(.+)$")
-    if name then
-      tinsert(building.bosses, { flag == "1", name })
+    local _, _, flag, rest = strfind(msg, "^K ([01])\t(.+)$")
+    if flag and rest then
+      local _, _, name, xs, ys = strfind(rest, "^(.-)\t([%-%d%.]+)\t([%-%d%.]+)$")
+      if name and xs and ys then
+        tinsert(building.bosses, { flag == "1", name, tonumber(xs), tonumber(ys) })
+      else
+        tinsert(building.bosses, { flag == "1", rest })
+      end
     end
   elseif tag == "D" then
     Apply()
