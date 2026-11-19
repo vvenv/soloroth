@@ -20,7 +20,6 @@ local function L(en, zh) if ZH and zh then return zh end return en end
 local PREFIX = "SoloDun"
 local VISIBLE = 12
 local ROW_H = 16
-local FRAME_W = 220
 
 local building
 local snap          -- { name, clears, bosses = { { down, name }, ... }, sig }
@@ -57,6 +56,9 @@ local function PlaceProgress()
   local map = (pfUI and pfUI.minimap) or Minimap
   if not map or not f then return end
   local bar = pfUI and pfUI.addonbuttons
+  local width = map:GetWidth() * map:GetEffectiveScale() / f:GetEffectiveScale()
+  if not width or width < 40 then width = 170 end
+  if math.abs(f:GetWidth() - width) >= 0.5 then f:SetWidth(width) end
   local mapBottom = ScreenY(map, "GetBottom")
   local barBottom = bar and bar:IsShown() and ScreenY(bar, "GetBottom")
   local y
@@ -75,7 +77,7 @@ local function PlaceProgress()
 end
 
 f = CreateFrame("Frame", "DungeonProgressFrame", UIParent)
-f:SetWidth(FRAME_W)
+f:SetWidth(170)
 f:SetHeight(80)
 f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -24, -180)
 f:SetBackdrop({

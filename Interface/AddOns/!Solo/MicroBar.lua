@@ -10,7 +10,9 @@ bar 1's: that spacing is 1, and the border is drawn outside the frame, so a
 gap of 1 leaves the squares touching.
 
 pfUI still collects the addon buttons. After it places them, they are packed
-into a row under the micro buttons. Atlas / AtlasLoot open from /gd.
+into a row under the micro buttons. Both strips, and the dungeon progress
+panel, are the minimap's width; the squares shrink to fit that width.
+Atlas / AtlasLoot open from /gd.
 ----------------------------------------------------------------------------]]
 
 local MICRO = {
@@ -23,27 +25,50 @@ local MICRO = {
   { "HelpMicroButton", "Interface\\Icons\\INV_Misc_QuestionMark" },
 }
 
-local PAD = 4
 local talentHooked
 
-local function IsItemIcon(path)
-  if type(path) ~= "string" then return end
-  local low = string.lower(path)
-  return strfind(low, "icons\\") or strfind(low, "icons/")
+local function MapWidth(frame)
+  local map = pfUI and pfUI.minimap
+  local w = map and map.GetWidth and map:GetWidth()
+  if not w or w < 40 then w = 170 end
+  if frame and map and frame.GetEffectiveScale and map.GetEffectiveScale then
+    local fs, ms = frame:GetEffectiveScale(), map:GetEffectiveScale()
+    if fs and fs > 0 and ms then w = w * ms / fs end
+  end
+  return w
 end
 
-local function ButtonMetrics()
-  local bar = pfUI_config and pfUI_config.bars and pfUI_config.bars.bar1
-  local size = bar and tonumber(bar.icon_size)
-  if not size or size < 14 or size > 32 then size = 20 end
+local function Border()
   local border = 2
   if pfUI and pfUI.api and pfUI.api.GetBorderSize then
     local _, scaled = pfUI.api.GetBorderSize("actionbars")
     if scaled and scaled > 0 then border = scaled end
   end
-  -- Two borders, then a few pixels of air between them.
-  local gap = math.ceil(border * 2 + 4)
-  return size, gap
+  return border
+end
+
+-- `n` squares, each border drawn outside the button. The row stays inside
+-- the minimap width: a border of inset on the ends, and a gap that clears
+-- both borders plus a little air.
+local function Fit(n, frame)
+  local mapW = MapWidth(frame)
+  local border = Border()
+  local inset = math.ceil(border)
+  local gap = math.ceil(border * 2 + 2)
+  if n < 1 then return 16, gap, mapW, inset end
+  local size = math.floor((mapW - inset * 2 - (n - 1) * gap) / n)
+  if size < 14 then
+    gap = math.ceil(border * 2)
+    size = math.floor((mapW - inset * 2 - (n - 1) * gap) / n)
+  end
+  if size < 12 then size = 12 end
+  return size, gap, mapW, inset
+end
+
+local function IsItemIcon(path)
+  if type(path) ~= "string" then return end
+  local low = string.lower(path)
+  return strfind(low, "icons\\") or strfind(low, "icons/")
 end
 
 local function HideChrome(btn, keep)
@@ -64,10 +89,9 @@ end
 
 -- `crop` is for item icons. The character portrait already has its own
 -- coordinates from SetPortraitTexture; overwriting them shows the raw image.
-local function Square(btn, icon, crop)
+local function Square(btn, icon, crop, size)
   local A = pfUI and pfUI.api
   if not A or not A.CreateBackdrop or not btn then return end
-  local size = ButtonMetrics()
   btn:SetScale(1)
   btn:SetWidth(size)
   btn:SetHeight(size)
@@ -101,17 +125,33 @@ local function Square(btn, icon, crop)
   end
 end
 
-local function Pack(parent, buttons, size, gap, pad)
+local function Pack(parent, buttons, size, gap, mapW, inset)
   local n = table.getn(buttons)
   if n < 1 then return end
-  parent:SetWidth(pad * 2 + n * size + (n - 1) * gap)
-  parent:SetHeight(size + pad * 2)
+  parent:SetWidth(mapW)
+  parent:SetHeight(size + inset * 2)
+  local row = n * size + (n - 1) * gap
+  local spare = mapW - inset * 2 - row
+  if spare < 0 then spare = 0 end
+  local pad = inset + math.floor(spare / 2)
   local i = 1
   while buttons[i] do
     buttons[i]:ClearAllPoints()
     buttons[i]:SetPoint("LEFT", parent, "LEFT", pad + (i - 1) * (size + gap), 0)
     i = i + 1
   end
+end
+
+local function ShownAddon()
+  local abs = pfUI and pfUI.addonbuttons
+  local shown, i = {}, 1
+  if not abs then return shown end
+  while abs.buttons and abs.buttons[i] do
+    local btn = getglobal(abs.buttons[i])
+    if btn and btn:IsVisible() then table.insert(shown, btn) end
+    i = i + 1
+  end
+  return shown
 end
 
 local function SkinMicro()
@@ -121,7 +161,6 @@ local function SkinMicro()
     QuestLogMicroButton:Hide()
     QuestLogMicroButton:ClearAllPoints()
   end
-  local size, gap = ButtonMetrics()
   local shown, i = {}, 1
   while MICRO[i] do
     local name, path = MICRO[i][1], MICRO[i][2]
@@ -141,7 +180,6 @@ local function SkinMicro()
         end
         icon = btn.soloIcon
       end
-      Square(btn, icon, name ~= "CharacterMicroButton")
       if icon then
         if btn.IsEnabled and not btn:IsEnabled() then
           icon:SetVertexColor(.45, .45, .45)
@@ -153,7 +191,18 @@ local function SkinMicro()
     end
     i = i + 1
   end
-  Pack(micro, shown, size, gap, 0)
+  local n = table.getn(shown)
+  local addons = ShownAddon()
+  if table.getn(addons) > n then n = table.getn(addons) end
+  local size, gap, mapW, inset = Fit(n, micro)
+  i = 1
+  while shown[i] do
+    local name = shown[i]:GetName()
+    local icon = (name == "CharacterMicroButton") and getglobal("MicroButtonPortrait") or shown[i].soloIcon
+    Square(shown[i], icon, name ~= "CharacterMicroButton", size)
+    i = i + 1
+  end
+  Pack(micro, shown, size, gap, mapW, inset)
   if not talentHooked and UpdateTalentButton then
     talentHooked = true
     local old = UpdateTalentButton
@@ -188,9 +237,9 @@ local function AddonIcon(btn)
   end
 end
 
-local function SkinAddonButton(btn)
+local function SkinAddonButton(btn, size)
   local icon = AddonIcon(btn)
-  Square(btn, icon, true)
+  Square(btn, icon, true, size)
   if icon then icon:SetVertexColor(1, 1, 1) end
 end
 
@@ -232,17 +281,21 @@ local function DockAddonButtons()
 
   CenterMicroOnMinimap()
   SkinMicro()
-  local size, gap = ButtonMetrics()
-  local shown, i = {}, 1
-  while abs.buttons and abs.buttons[i] do
-    local btn = getglobal(abs.buttons[i])
-    if btn and btn:IsVisible() then
-      SkinAddonButton(btn)
-      table.insert(shown, btn)
-    end
+  local shown = ShownAddon()
+  local n, nMicro, i = table.getn(shown), 0, 1
+  while MICRO[i] do
+    local btn = getglobal(MICRO[i][1])
+    if btn and btn:IsShown() then nMicro = nMicro + 1 end
     i = i + 1
   end
-  Pack(abs, shown, size, gap, PAD)
+  if nMicro > n then n = nMicro end
+  local size, gap, mapW, inset = Fit(n, abs)
+  i = 1
+  while shown[i] do
+    SkinAddonButton(shown[i], size)
+    i = i + 1
+  end
+  Pack(abs, shown, size, gap, mapW, inset)
   abs:ClearAllPoints()
   abs:SetPoint("TOP", micro, "BOTTOM", 0, -4)
   if abs.minimapbutton then abs.minimapbutton:Hide() end
