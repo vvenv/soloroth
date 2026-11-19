@@ -1,13 +1,16 @@
 --[[--------------------------------------------------------------------------
-Category filter tabs above pfUI bags and bank: All / Gear / Consumable /
+Category filter tabs for pfUI bags and bank: All / Gear / Consumable /
 Recipe / Junk. Dim non-matching slots (same idea as pfUI's bag search).
-Does not edit pfUI; hooks CreateBags / UpdateSlot after bags exist.
+
+The bar lives on UIParent, glued to the top of pfBag / pfBank, so it is not
+clipped by the bag frame. No hooksecurefunc (that global is only in pfUI's
+env). Full client restart required after changing this file — /reload's hot
+swap keeps old OnUpdate / hooks.
 ----------------------------------------------------------------------------]]
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end
 
--- Keys match GetAuctionItemClasses() indices (locale-safe).
 local TABS = {
   { id = "all",         label = L("All", "全部") },
   { id = "gear",        label = L("Gear", "装备") },
@@ -18,9 +21,11 @@ local TABS = {
 
 local active = "all"
 local bars = {}
-local hookedUpdate
-local hookedCreate
 local classes
+
+local function Say(text)
+  DEFAULT_CHAT_FRAME:AddMessage("|cff44ddffSolo|r: " .. text)
+end
 
 local function AuctionClasses()
   if classes then return classes end
@@ -91,7 +96,7 @@ local function PaintTabs(bar)
       btn.backdrop:SetBackdropBorderColor(1, 1, .25, 1)
       if btn.label then btn.label:SetTextColor(1, 1, .25, 1) end
     else
-      if btn.label then btn.label:SetTextColor(.7, .7, .7, 1) end
+      if btn.label then btn.label:SetTextColor(.85, .85, .85, 1) end
     end
   end
 end
@@ -104,13 +109,12 @@ end
 
 local function LayoutTabs(bar)
   local n = table.getn(bar.buttons)
-  local border = bar.border
+  local border = bar.border or 3
   local gap = border * 2
-  local w = bar:GetWidth()
-  if not w or w < 40 then
-    local p = bar:GetParent()
-    w = p and p:GetWidth() or 200
-  end
+  local bag = bar.bag
+  local w = bag and bag:GetWidth() or bar:GetWidth()
+  if not w or w < 40 then w = 200 end
+  bar:SetWidth(w)
   local inner = w - border * 2 - gap * (n - 1)
   local tw = inner / n
   for i = 1, n do
@@ -131,31 +135,43 @@ local function SetFilter(id)
   ApplyAll()
 end
 
-local function MakeBar(parent, name)
-  if not parent then return end
-  if parent.soloBagFilter then
-    LayoutTabs(parent.soloBagFilter)
-    PaintTabs(parent.soloBagFilter)
-    return parent.soloBagFilter
+local function SyncBar(bar)
+  local bag = bar.bag
+  if not bag then return end
+  if bag:IsVisible() then
+    bar:Show()
+    LayoutTabs(bar)
+    bar:ClearAllPoints()
+    bar:SetPoint("BOTTOMLEFT", bag, "TOPLEFT", 0, 4)
+    bar:SetPoint("BOTTOMRIGHT", bag, "TOPRIGHT", 0, 4)
+  else
+    bar:Hide()
+  end
+end
+
+local function MakeBar(bag, name)
+  if not bag or not pfUI or not pfUI.api then return end
+  if bag.soloBagFilter then
+    SyncBar(bag.soloBagFilter)
+    PaintTabs(bag.soloBagFilter)
+    return bag.soloBagFilter
   end
 
   local A = pfUI.api
   local _, border = A.GetBorderSize("bags")
   if not border then border = 3 end
 
-  -- Child of the bag frame: hides with it. Sits above so CreateBags topspace
-  -- is left alone.
-  local bar = CreateFrame("Frame", name, parent)
+  -- On UIParent so the bag frame cannot clip it; glued to the bag's top edge.
+  local bar = CreateFrame("Frame", name, UIParent)
   bar.border = border
+  bar.bag = bag
   bar.buttons = {}
-  bar:SetHeight(18)
-  bar:SetFrameStrata(parent:GetFrameStrata() or "HIGH")
-  bar:SetFrameLevel((parent:GetFrameLevel() or 1) + 20)
+  bar:SetHeight(20)
   bar:EnableMouse(true)
-  bar:SetPoint("BOTTOMLEFT", parent, "TOPLEFT", 0, border * 3)
-  bar:SetPoint("BOTTOMRIGHT", parent, "TOPRIGHT", 0, border * 3)
+  bar:SetFrameStrata("HIGH")
+  bar:SetFrameLevel(100)
   A.CreateBackdrop(bar, border)
-  A.CreateBackdropShadow(bar)
+  if A.CreateBackdropShadow then A.CreateBackdropShadow(bar) end
 
   local fontSize = 12
   if pfUI_config and pfUI_config.global and pfUI_config.global.font_size then
@@ -163,12 +179,11 @@ local function MakeBar(parent, name)
   end
   local font = pfUI.font_default or "Fonts\\FRIZQT__.TTF"
 
-  local n = table.getn(TABS)
-  for i = 1, n do
+  for i = 1, table.getn(TABS) do
     local tab = TABS[i]
     local btn = CreateFrame("Button", name .. "Tab" .. i, bar)
     btn.filter = tab.id
-    btn:SetHeight(14)
+    btn:SetHeight(16)
     btn:EnableMouse(true)
     A.CreateBackdrop(btn, border)
     btn.label = btn:CreateFontString(nil, "OVERLAY")
@@ -176,7 +191,7 @@ local function MakeBar(parent, name)
     btn.label:SetAllPoints(btn)
     btn.label:SetJustifyH("CENTER")
     btn.label:SetText(tab.label)
-    btn.label:SetTextColor(.7, .7, .7, 1)
+    btn.label:SetTextColor(.85, .85, .85, 1)
     btn:SetScript("OnClick", function()
       SetFilter(this.filter)
     end)
@@ -191,62 +206,71 @@ local function MakeBar(parent, name)
     bar.buttons[i] = btn
   end
 
-  LayoutTabs(bar)
-  parent.soloBagFilter = bar
+  bag.soloBagFilter = bar
   table.insert(bars, bar)
   PaintTabs(bar)
+  SyncBar(bar)
   return bar
 end
 
-local function HookBags()
-  if not pfUI or not pfUI.bag then return end
-
-  -- pfUI's hooksecurefunc lives in pfUI's env, not as a file-scope global here.
-  if not hookedUpdate and pfUI.bag.UpdateSlot then
-    hookedUpdate = true
-    local prev = pfUI.bag.UpdateSlot
-    function pfUI.bag.UpdateSlot(self, bag, slot)
-      if type(self) == "number" then
-        bag, slot, self = self, bag, pfUI.bag
-      end
-      prev(self, bag, slot)
-      if active ~= "all" and bag and slot then ApplySlot(bag, slot) end
-    end
+local function TryAttach()
+  if not pfUI or not pfUI.bag then return false end
+  local ok = false
+  if pfUI.bag.right then
+    MakeBar(pfUI.bag.right, "SoloBagFilter")
+    ok = true
   end
-
-  if not hookedCreate and pfUI.bag.CreateBags then
-    hookedCreate = true
-    local prev = pfUI.bag.CreateBags
-    function pfUI.bag.CreateBags(self, object)
-      if type(self) == "string" or self == nil then
-        object, self = self, pfUI.bag
-      end
-      prev(self, object)
-      if pfUI.bag.right then MakeBar(pfUI.bag.right, "SoloBagFilter") end
-      if pfUI.bag.left then MakeBar(pfUI.bag.left, "SoloBankFilter") end
-      if active ~= "all" then ApplyAll() end
-    end
+  if pfUI.bag.left then
+    MakeBar(pfUI.bag.left, "SoloBankFilter")
   end
-
-  if pfUI.bag.right then MakeBar(pfUI.bag.right, "SoloBagFilter") end
-  if pfUI.bag.left then MakeBar(pfUI.bag.left, "SoloBankFilter") end
+  return ok
 end
 
-local ev = CreateFrame("Frame")
-ev:RegisterEvent("PLAYER_ENTERING_WORLD")
-ev:SetScript("OnEvent", function()
-  this:UnregisterAllEvents()
-  HookBags()
-  -- Bags may not exist until the module has run CreateBags once.
-  if not (pfUI and pfUI.bag and pfUI.bag.right) then
-    local wait = CreateFrame("Frame")
-    local t = 0
-    wait:SetScript("OnUpdate", function()
-      t = t + arg1
-      HookBags()
-      if (pfUI and pfUI.bag and pfUI.bag.right) or t > 30 then
-        this:SetScript("OnUpdate", nil)
-      end
-    end)
+-- Keep bars glued while bags move / show / hide. Do not ApplyAll here —
+-- that belongs on bag events and tab clicks.
+local driver = CreateFrame("Frame")
+local attachAt = 0
+driver:SetScript("OnUpdate", function()
+  if not pfUI or not pfUI.bag then return end
+  attachAt = attachAt + arg1
+  if attachAt > 0.25 then
+    attachAt = 0
+    if pfUI.bag.right and not pfUI.bag.right.soloBagFilter then
+      MakeBar(pfUI.bag.right, "SoloBagFilter")
+    end
+    if pfUI.bag.left and not pfUI.bag.left.soloBagFilter then
+      MakeBar(pfUI.bag.left, "SoloBankFilter")
+    end
+  end
+  for i = 1, table.getn(bars) do
+    SyncBar(bars[i])
   end
 end)
+
+local bagEv = CreateFrame("Frame")
+bagEv:RegisterEvent("BAG_UPDATE")
+bagEv:RegisterEvent("PLAYERBANKSLOTS_CHANGED")
+bagEv:RegisterEvent("BANKFRAME_OPENED")
+bagEv:RegisterEvent("PLAYER_ENTERING_WORLD")
+bagEv:SetScript("OnEvent", function()
+  TryAttach()
+  if active ~= "all" then ApplyAll() end
+end)
+
+-- /bagfilter — force attach + status (full restart still needed for code edits).
+SLASH_SOLOBAGFILTER1 = "/bagfilter"
+SLASH_SOLOBAGFILTER2 = "/bbfl"
+SlashCmdList["SOLOBAGFILTER"] = function()
+  local ok = TryAttach()
+  local right = pfUI and pfUI.bag and pfUI.bag.right
+  local bar = right and right.soloBagFilter
+  if not ok or not bar then
+    Say(L("Bag filters: pfUI bags not ready.", "背包分类：pfUI 背包还没好。"))
+    return
+  end
+  Say(L("Bag filters on top of the bag.", "背包分类在背包上方。")
+    .. " w=" .. math.floor(bar:GetWidth() or 0)
+    .. " shown=" .. tostring(bar:IsShown())
+    .. " bag=" .. tostring(right:IsShown()))
+  SetFilter(active)
+end
