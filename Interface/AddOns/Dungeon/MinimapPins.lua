@@ -1,66 +1,38 @@
 --[[--------------------------------------------------------------------------
 Atlas-style boss numbers on the minimap while inside a tracked instance.
 
-Positions come from SoloDun (P = player XY, K = boss XY). Indoor zoom radii
-match the 1.12 table. Numbers match the progress panel order (1..N).
+Positions come from SoloDun (P = player XY, K = boss XY). Placement matches
+Minimap:GetPingPosition: (-dy/D, dx/D) with D = 2 * view-radius, then times
+the Minimap frame size — same as the stock ping. Pins parent to Minimap
+(under pfUI's wrapper), not the wrapper itself.
 ----------------------------------------------------------------------------]]
-
-local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
-local function L(en, zh) if ZH and zh then return zh end return en end
 
 -- Indoor radii (yards) by Minimap:GetZoom(), table 0x8116e8.
 local INDOOR_RADII = { 150, 120, 90, 60, 40, 25 }
--- Outdoor: chunk count * 0.5 * 33.333332.
-local OUTDOOR_RADII = { 233.3333, 200, 166.6667, 133.3333, 100, 66.6667 }
 
 local pins = {}
 local MAX_PINS = 24
 local poll = 0
-
-local function MapFrame()
-  return (pfUI and pfUI.minimap) or Minimap
-end
-
-local function PlayerFacing()
-  if type(GetPlayerFacing) == "function" then
-    local f = GetPlayerFacing()
-    if f then return f end
-  end
-  local kids = { Minimap:GetChildren() }
-  local arrow = kids[9]
-  if arrow and arrow.GetFacing then
-    return arrow:GetFacing() or 0
-  end
-  return 0
-end
 
 local function RadiusYards()
   local z = 0
   if Minimap and Minimap.GetZoom then z = Minimap:GetZoom() or 0 end
   if z < 0 then z = 0 end
   if z > 5 then z = 5 end
-  local indoors = true
-  if type(IsInInstance) == "function" then
-    indoors = IsInInstance() and true or false
-  end
-  if indoors then
-    return INDOOR_RADII[z + 1]
-  end
-  return OUTDOOR_RADII[z + 1]
+  -- Snap only exists inside a tracked instance: always the indoor table.
+  return INDOOR_RADII[z + 1]
 end
 
 local function EnsurePins()
   if pins[1] then return end
-  local parent = MapFrame()
   local i
   for i = 1, MAX_PINS do
-    local b = CreateFrame("Frame", "DungeonBossPin" .. i, parent)
-    b:SetWidth(18)
-    b:SetHeight(18)
-    b:SetFrameLevel((parent.GetFrameLevel and parent:GetFrameLevel() or 0) + 8)
+    local b = CreateFrame("Frame", "DungeonBossPin" .. i, Minimap)
+    b:SetWidth(16)
+    b:SetHeight(16)
     local t = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     t:SetPoint("CENTER", b, "CENTER", 0, 0)
-    t:SetFont(GameFontNormal:GetFont(), 12, "OUTLINE")
+    t:SetFont(GameFontNormal:GetFont(), 11, "OUTLINE")
     b.text = t
     b:Hide()
     pins[i] = b
@@ -74,6 +46,26 @@ local function HideAll()
   end
 end
 
+-- World delta → Minimap CENTER offsets (pixels), same basis as GetPingPosition.
+local function WorldToMinimap(dx, dy)
+  local radius = RadiusYards()
+  if not radius or radius < 1 then radius = 90 end
+  local D = 2 * radius
+  local w = Minimap:GetWidth() or 140
+  local h = Minimap:GetHeight() or 140
+  local nx = -dy / D
+  local ny = dx / D
+  local ox = nx * w
+  local oy = ny * h
+  local dist = math.sqrt(ox * ox + oy * oy)
+  local maxr = math.min(w, h) * 0.5 - 4
+  if dist > maxr and dist > 0.001 then
+    ox = ox * maxr / dist
+    oy = oy * maxr / dist
+  end
+  return ox, oy
+end
+
 -- snap from Progress.lua: { player = {x,y}, bosses = { {down, name, x, y}, ... } }
 function DungeonPins_Update(snap)
   EnsurePins()
@@ -81,16 +73,15 @@ function DungeonPins_Update(snap)
     HideAll()
     return
   end
+  if not Minimap then
+    HideAll()
+    return
+  end
+
   local px, py = snap.player[1], snap.player[2]
   local bosses = snap.bosses
   local n = table.getn(bosses)
-  local radius = RadiusYards()
-  if not radius or radius < 1 then radius = 90 end
-  local map = MapFrame()
-  local half = (map:GetWidth() or 140) * 0.5 - 6
-  local facing = PlayerFacing()
-  local cos = math.cos(facing)
-  local sin = math.sin(facing)
+  local level = (Minimap.GetFrameLevel and Minimap:GetFrameLevel() or 0) + 8
 
   local firstUp = 0
   local i
@@ -101,23 +92,12 @@ function DungeonPins_Update(snap)
   for i = 1, MAX_PINS do
     local pin = pins[i]
     local b = bosses[i]
-    if i <= n and b and b[3] and b[4] then
-      local dx = b[3] - px
-      local dy = b[4] - py
-      -- Rotating minimap: player facing is "up".
-      local mx = dx * sin - dy * cos
-      local my = dx * cos + dy * sin
-      local dist = math.sqrt(mx * mx + my * my)
-      local ox, oy
-      if dist > radius and dist > 0.001 then
-        local f = half / dist
-        ox, oy = mx * f, my * f
-      else
-        local scale = half / radius
-        ox, oy = mx * scale, my * scale
-      end
+    if i <= n and b and type(b[3]) == "number" and type(b[4]) == "number" then
+      local ox, oy = WorldToMinimap(b[3] - px, b[4] - py)
+      if pin:GetParent() ~= Minimap then pin:SetParent(Minimap) end
+      pin:SetFrameLevel(level)
       pin:ClearAllPoints()
-      pin:SetPoint("CENTER", map, "CENTER", ox, oy)
+      pin:SetPoint("CENTER", Minimap, "CENTER", ox, oy)
       pin.text:SetText(tostring(i))
       if b[1] then
         pin.text:SetTextColor(0.45, 0.45, 0.45)
@@ -137,7 +117,6 @@ function DungeonPins_Clear()
   HideAll()
 end
 
--- Keep facing/zoom fresh; Progress.lua refreshes player XY via SoloDun.
 local ticker = CreateFrame("Frame")
 ticker:SetScript("OnUpdate", function()
   if type(DungeonProgress_Snap) ~= "function" then return end
