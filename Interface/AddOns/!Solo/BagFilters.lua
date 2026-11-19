@@ -33,17 +33,36 @@ local function AuctionClasses()
   return classes
 end
 
--- pfUI wraps GetItemInfo as name, link, quality, nil, minLevel, type, subType, stack.
+-- benilla / 1.12 GetItemInfo is nine values:
+--   name, link, quality, minLevel, type, subType, stack, equipLoc, texture
+-- pfUI's TBC-shaped wrap (nil itemLevel at 4) lives only in pfUI's env, so
+-- from !Solo we always see the native layout. Using the wrap's indices here
+-- made "type" read as subType, and every class tab matched nothing.
 local function SlotInfo(bag, slot)
+  local texture, _, _, bagQuality = GetContainerItemInfo(bag, slot)
+  if not texture then return end
   local link = GetContainerItemLink(bag, slot)
-  if not link then return end
-  local _, _, quality, _, _, itemType = GetItemInfo(link)
+  local quality, itemType
+  if link then
+    local _
+    _, _, quality, _, itemType = GetItemInfo(link)
+    if not itemType then
+      local _, _, id = string.find(link, "item:(%d+)")
+      if id then
+        _, _, quality, _, itemType = GetItemInfo(tonumber(id))
+      end
+    end
+  end
+  if quality == nil then quality = bagQuality end
   return quality, itemType
 end
 
 local function Matches(bag, slot, filter)
   if filter == "all" then return true end
   local quality, itemType = SlotInfo(bag, slot)
+  if filter == "junk" then
+    return quality == 0
+  end
   if not itemType then return false end
   local c = AuctionClasses()
   if filter == "gear" then
@@ -52,8 +71,6 @@ local function Matches(bag, slot, filter)
     return itemType == c[4]
   elseif filter == "recipe" then
     return itemType == c[8]
-  elseif filter == "junk" then
-    return quality == 0
   end
   return true
 end
@@ -268,9 +285,21 @@ SlashCmdList["SOLOBAGFILTER"] = function()
     Say(L("Bag filters: pfUI bags not ready.", "背包分类：pfUI 背包还没好。"))
     return
   end
+  local c = AuctionClasses()
+  local sample = "-"
+  for bag = 0, 4 do
+    for slot = 1, GetContainerNumSlots(bag) or 0 do
+      local q, t = SlotInfo(bag, slot)
+      if t then
+        sample = tostring(t) .. "/q" .. tostring(q)
+        break
+      end
+    end
+    if sample ~= "-" then break end
+  end
   Say(L("Bag filters on top of the bag.", "背包分类在背包上方。")
-    .. " w=" .. math.floor(bar:GetWidth() or 0)
-    .. " shown=" .. tostring(bar:IsShown())
-    .. " bag=" .. tostring(right:IsShown()))
+    .. " class1=" .. tostring(c[1])
+    .. " sample=" .. sample
+    .. " filter=" .. active)
   SetFilter(active)
 end
