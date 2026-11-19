@@ -29,6 +29,15 @@
   <a href="https://github.com/vvenv/soloroth/issues">问题反馈</a>
 </p>
 
+<p align="center">
+  <img src=".github/images/dungeon.jpg" alt="死亡矿井：机器人队友自动入队" width="400">
+  <img src=".github/images/wailing-caverns.jpg" alt="哀嚎洞穴里打怪升级" width="400">
+</p>
+<p align="center">
+  <img src=".github/images/world.jpg" alt="闪金镇：配好的 pfUI 界面" width="400">
+  <img src=".github/images/dungeon-hub.jpg" alt="副本中心 /gd：传送与重置" width="400">
+</p>
+
 ---
 
 ## 特色
