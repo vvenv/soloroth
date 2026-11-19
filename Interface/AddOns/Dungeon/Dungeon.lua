@@ -2,21 +2,22 @@
 Dungeon -- one hub for five-player instances on this solo realm.
 
   * list: click a name to `.go xyzo` just inside the entrance (GM)
-  * reset: one row resets that map; 「全部重置」clears every 5-man
-  * map / loot: Atlas layouts and AtlasLoot tables embedded in this window
-    (see MapLoot.lua; AtlasFrame is not opened)
+  * reset: one row resets that map only (right-click the minimap button
+    still clears every five-player instance)
+  * map: Atlas layout + AtlasLoot overlay in this window (see MapLoot.lua)
 
 Formerly the GMBox "Dungeons" tab plus the separate Atlas / AtlasLoot
-minimap buttons. `/gd` lands here.
+minimap buttons. `/gd` lands here; inside an instance it opens on the map.
 ----------------------------------------------------------------------------]]
 
-local VERSION = "1.3.0"
+local VERSION = "1.3.1"
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end
 
 local COL = "|cff44ddff"
-local FRAME_W, FRAME_H = 600, 440
+-- Same width as the map page (512 map + legend); height grows for the map.
+local FRAME_W, FRAME_H = 812, 440
 local PAD = 16
 local GAP = 8
 local BTN_H = 22
@@ -160,39 +161,17 @@ close:SetScript("OnClick", function()
   f:Hide()
 end)
 
--- List pane: reset-all + teleport rows (map/loot live in MapLoot.lua).
+-- List pane: teleport rows (map lives in MapLoot.lua).
 local listPane = CreateFrame("Frame", "DungeonListPane", f)
 listPane:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -(36 + BTN_H + 4))
 listPane:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
 
-local resetAll = CreateFrame("Button", "DungeonResetAll", listPane, "UIPanelButtonTemplate")
-resetAll:SetWidth(120)
-resetAll:SetHeight(BTN_H)
-resetAll:SetPoint("TOPLEFT", listPane, "TOPLEFT", PAD, -2)
-resetAll:SetText(L("Reset all", "全部重置"))
-resetAll:SetScript("OnClick", function()
-  if StaticPopup_Show then
-    StaticPopup_Show("CONFIRM_RESET_INSTANCES")
-  elseif ResetInstances then
-    ResetInstances()
-  else
-    msg(L("reset is not available", "当前无法重置副本"))
-  end
-end)
-resetAll:SetScript("OnEnter", function()
-  GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
-  GameTooltip:AddLine(L("Clear every five-player dungeon on this character. Nothing resets on its own. One row resets only that map.",
-    "清空本角色所有五人副本。副本不会自己重置。某一行的「重置」只清那一张。"))
-  GameTooltip:Show()
-end)
-resetAll:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
 local listLabel = listPane:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-listLabel:SetPoint("TOPLEFT", listPane, "TOPLEFT", PAD, -28)
+listLabel:SetPoint("TOPLEFT", listPane, "TOPLEFT", PAD, -4)
 listLabel:SetText(L("Name: teleport inside (GM). Reset: that map only.", "点名字传送（需 GM）。「重置」只清这一张。"))
 
 local lvlLabel = listPane:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-lvlLabel:SetPoint("TOPRIGHT", listPane, "TOPRIGHT", -(PAD + RESET_W + 8), -28)
+lvlLabel:SetPoint("TOPRIGHT", listPane, "TOPRIGHT", -(PAD + RESET_W + 8), -4)
 lvlLabel:SetText(L("Level", "等级"))
 
 local dui = { rows = {}, offset = 0, selected = nil }
@@ -247,8 +226,8 @@ for i = 1, DROWS do
   local b = CreateFrame("Button", "DungeonRow" .. i, listPane)
   b:SetHeight(ROW_H)
   if i == 1 then
-    b:SetPoint("TOPLEFT", listPane, "TOPLEFT", PAD, -46)
-    b:SetPoint("TOPRIGHT", listPane, "TOPRIGHT", -(PAD + RESET_W + GAP), -46)
+    b:SetPoint("TOPLEFT", listPane, "TOPLEFT", PAD, -22)
+    b:SetPoint("TOPRIGHT", listPane, "TOPRIGHT", -(PAD + RESET_W + GAP), -22)
   else
     b:SetPoint("TOPLEFT", dui.rows[i - 1], "BOTTOMLEFT", 0, -1)
     b:SetPoint("TOPRIGHT", dui.rows[i - 1], "BOTTOMRIGHT", 0, -1)
@@ -322,11 +301,6 @@ DungeonHub = {
 
 f:SetScript("OnShow", function()
   DungeonRefresh()
-  if type(Dungeon_SetMode) == "function" then
-    local m = Dungeon_CurrentMode and Dungeon_CurrentMode() or "list"
-    if m ~= "list" and m ~= "map" and m ~= "loot" then m = "list" end
-    Dungeon_SetMode(m)
-  end
 end)
 f:SetScript("OnHide", function()
   if AtlasLootItemsFrame and AtlasLootItemsFrame:IsVisible()
@@ -336,13 +310,24 @@ f:SetScript("OnHide", function()
   end
 end)
 
+-- Inside an instance → map page; otherwise list. Zone detect lives in MapLoot.
+local function OpenPreferred()
+  f:Show()
+  DungeonRefresh()
+  local inInst = type(Dungeon_InInstance) == "function" and Dungeon_InInstance()
+  local zone = type(Dungeon_DetectZone) == "function" and Dungeon_DetectZone() or nil
+  if inInst or zone then
+    if type(Dungeon_OpenMap) == "function" then Dungeon_OpenMap(zone) end
+  elseif type(Dungeon_SetMode) == "function" then
+    Dungeon_SetMode("list")
+  end
+end
+
 local function Toggle()
   if f:IsVisible() then
     f:Hide()
   else
-    f:Show()
-    DungeonRefresh()
-    if type(Dungeon_SetMode) == "function" then Dungeon_SetMode("list") end
+    OpenPreferred()
   end
 end
 
@@ -413,19 +398,14 @@ SlashCmdList["DUNGEON"] = function(a)
     if StaticPopup_Show then StaticPopup_Show("CONFIRM_RESET_INSTANCES") end
     return
   end
-  if a == "map" or a == "atlas" then
+  if a == "map" or a == "atlas" or a == "loot" or a == "al" then
     if type(Dungeon_OpenMap) == "function" then Dungeon_OpenMap()
     else msg(L("Map pane is not ready", "地图页未就绪")) end
     return
   end
-  if a == "loot" or a == "al" then
-    if type(Dungeon_OpenLoot) == "function" then Dungeon_OpenLoot()
-    else msg(L("Loot pane is not ready", "掉落页未就绪")) end
-    return
-  end
   if a == "help" or a == "?" then
-    msg(L("/gd open  /gd reset  /gd map  /gd loot. Boss progress shows while you are inside.",
-          "/gd 打开  /gd reset 重置  /gd map 地图  /gd loot 掉落。在副本里会显示首领进度。"))
+    msg(L("/gd open  /gd reset  /gd map. Inside an instance, /gd opens on the map. Click a gold legend line for loot.",
+          "/gd 打开  /gd reset 重置  /gd map 地图。在副本里 /gd 直接打开地图。点金色图例看掉落。"))
     return
   end
   Toggle()
@@ -441,7 +421,6 @@ local function SkinDungeon()
   SoloSkin.Backdrop(f)
   SoloSkin.Controls(f)
   SoloSkin.Button(close)
-  SoloSkin.Button(resetAll)
   local i = 1
   if DungeonHub and DungeonHub.modeButtons then
     while DungeonHub.modeButtons[i] do
@@ -492,9 +471,9 @@ ev:SetScript("OnEvent", function()
     f:Hide()
   elseif event == "PLAYER_LOGIN" then
     if ZH then
-      msg("就绪 -- /gd 打开副本中心（列表、地图、掉落）。在副本里显示首领进度。")
+      msg("就绪 -- /gd 打开副本中心（列表 / 地图）。在副本里默认打开地图，并显示首领进度。")
     else
-      msg("ready -- /gd opens the dungeon hub (list, map, loot). Boss progress shows inside.")
+      msg("ready -- /gd opens the dungeon hub (list / map). Inside an instance it opens on the map.")
     end
   end
 end)

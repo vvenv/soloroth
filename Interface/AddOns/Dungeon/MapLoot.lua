@@ -1,9 +1,9 @@
 --[[--------------------------------------------------------------------------
-Map and loot panes inside the dungeon hub (/gd).
+Map pane inside the dungeon hub (/gd).
 
 Uses Atlas map BLPs + AtlasMaps legend text, and AtlasLoot_ShowBossLoot for
-drop tables. Does not open AtlasFrame or AtlasLootDefaultFrame. Raids and
-world bosses appear in the map dropdown only (no teleport).
+drop tables over the map. Does not open AtlasFrame or AtlasLootDefaultFrame.
+Raids and world bosses appear in the map dropdown only (no teleport).
 ----------------------------------------------------------------------------]]
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
@@ -16,8 +16,9 @@ local ROW_H = 16
 local LEGEND_ROWS = 28
 local MAP_SIZE = 512
 local LEGEND_W = 260
-local LIST_W, LIST_H = 600, 440
-local MAP_W = PAD * 2 + MAP_SIZE + GAP + LEGEND_W
+-- Same width for list and map so the window does not jump sideways.
+local HUB_W = PAD * 2 + MAP_SIZE + GAP + LEGEND_W
+local LIST_H = 440
 local MAP_H = 36 + BTN_H + GAP + 22 + MAP_SIZE + PAD
 
 -- Atlas zone ids for each five-man teleport row (same order as DungeonList).
@@ -65,7 +66,7 @@ local EXTRA = {
   { "Dragons of Nightmare",  "梦魇之龙", "FourDragons" },
 }
 
-local mode = "list" -- list | map | loot
+local mode = "list" -- list | map
 local zoneId
 local catalog = {} -- { { en, zh, atlas }, ... }
 local catIndex = 1
@@ -130,7 +131,7 @@ local function DetectZone()
   for i = 1, table.getn(list) do
     local d = list[i]
     if z == d[1] or z == d[2] or string.find(z, d[1], 1, true) or string.find(z, d[2], 1, true) then
-      return FIVE_ATLAS[i]
+      return d[10] or FIVE_ATLAS[i]
     end
   end
   for i = 1, table.getn(EXTRA) do
@@ -151,6 +152,19 @@ local function DetectZone()
     end
   end
   return nil
+end
+
+-- Atlas zone id when the player is in a known instance, else nil.
+function Dungeon_DetectZone()
+  BuildCatalog()
+  return DetectZone()
+end
+
+-- True when standing in any instance (even if the Atlas id is unknown).
+function Dungeon_InInstance()
+  if DetectZone() then return true end
+  if type(IsInInstance) == "function" and IsInInstance() then return true end
+  return false
 end
 
 local function ResolveZone(prefer)
@@ -176,15 +190,6 @@ local function LootId(atlas, line)
       and AtlasLootWBBossButtons[atlas][line]
       and AtlasLootWBBossButtons[atlas][line] ~= "" then
     return AtlasLootWBBossButtons[atlas][line]
-  end
-  return nil
-end
-
-local function FirstLootLine(atlas)
-  local i = 1
-  while AtlasMaps and AtlasMaps[atlas] and AtlasMaps[atlas][i] do
-    if LootId(atlas, i) then return i end
-    i = i + 1
   end
   return nil
 end
@@ -257,14 +262,17 @@ local function HideLootFrame()
   if AtlasLootItemsFrame then AtlasLootItemsFrame:Hide() end
 end
 
-local function ResizeHub(w, h)
+local function ResizeHub(h)
   local hframe = Hub() and Hub().frame
   if not hframe then return end
-  hframe:SetWidth(w)
+  hframe:SetWidth(HUB_W)
   hframe:SetHeight(h)
+  local n = 0
+  while modeBtns[n + 1] do n = n + 1 end
+  if n < 1 then return end
+  local bw = (HUB_W - PAD * 2 - GAP * (n - 1)) / n
   local i = 1
   while modeBtns[i] do
-    local bw = (w - PAD * 2 - GAP * 2) / 3
     modeBtns[i]:SetWidth(bw)
     modeBtns[i]:ClearAllPoints()
     modeBtns[i]:SetPoint("TOPLEFT", hframe, "TOPLEFT", PAD + (i - 1) * (bw + GAP), -36)
@@ -288,14 +296,14 @@ end
 function Dungeon_SetMode(which, preferZone)
   local hub = Hub()
   if not hub or not hub.frame then return end
-  if which ~= "list" and which ~= "map" and which ~= "loot" then which = "list" end
+  if which ~= "list" and which ~= "map" then which = "list" end
   mode = which
 
   if which == "list" then
     HideLootFrame()
     if mapPane then mapPane:Hide() end
     if hub.listPane then hub.listPane:Show() end
-    ResizeHub(LIST_W, LIST_H)
+    ResizeHub(LIST_H)
     HighlightModes("list")
     return
   end
@@ -306,7 +314,7 @@ function Dungeon_SetMode(which, preferZone)
   catIndex = CatalogIndexFor(zoneId)
 
   if hub.listPane then hub.listPane:Hide() end
-  ResizeHub(MAP_W, MAP_H)
+  ResizeHub(MAP_H)
   if mapPane then mapPane:Show() end
   SetMapTexture(zoneId)
   if zoneLabel then zoneLabel:SetText(ZoneTitle(zoneId)) end
@@ -316,21 +324,8 @@ function Dungeon_SetMode(which, preferZone)
   if dropBtn and UIDropDownMenu_SetText then
     UIDropDownMenu_SetText(ZH and catalog[catIndex][2] or catalog[catIndex][1], dropBtn)
   end
-
-  if which == "loot" then
-    local line = FirstLootLine(zoneId)
-    if line and ShowLootForLine(zoneId, line) then
-      HighlightModes("loot")
-    else
-      HideLootFrame()
-      mode = "map"
-      HighlightModes("map")
-      Msg(L("No boss loot for this map.", "这张图没有首领掉落。"))
-    end
-  else
-    HideLootFrame()
-    HighlightModes("map")
-  end
+  HideLootFrame()
+  HighlightModes("map")
 end
 
 function Dungeon_SelectZone(atlas)
@@ -339,7 +334,7 @@ function Dungeon_SelectZone(atlas)
   if hub then hub.selectedZone = atlas end
   zoneId = atlas
   if mode == "list" then return end
-  Dungeon_SetMode(mode == "loot" and "loot" or "map", atlas)
+  Dungeon_SetMode("map", atlas)
 end
 
 function Dungeon_OpenMap(prefer)
@@ -348,14 +343,6 @@ function Dungeon_OpenMap(prefer)
     hub.frame:Show()
   end
   Dungeon_SetMode("map", prefer)
-end
-
-function Dungeon_OpenLoot(prefer)
-  local hub = Hub()
-  if hub and hub.frame then
-    hub.frame:Show()
-  end
-  Dungeon_SetMode("loot", prefer)
 end
 
 function Dungeon_CurrentMode()
@@ -376,7 +363,7 @@ local function DropDownInit()
       local v = this.value
       catIndex = CatalogIndexFor(v)
       Dungeon_SelectZone(v)
-      Dungeon_SetMode(mode == "loot" and "loot" or "map", v)
+      Dungeon_SetMode("map", v)
     end
     UIDropDownMenu_AddButton(info)
   end
@@ -437,8 +424,6 @@ local function BuildMapPane(parent)
     b:SetScript("OnClick", function()
       local line = this.line
       if not line or not line.loot then return end
-      mode = "loot"
-      HighlightModes("loot")
       ShowLootForLine(zoneId, line.index)
     end)
     b:SetScript("OnEnter", function()
@@ -458,11 +443,10 @@ end
 local function WireModeButtons(parent)
   local labels = {
     { "list", L("List", "列表"), L("Teleport and reset five-player dungeons.", "传送与重置五人副本。") },
-    { "map", L("Map", "地图"), L("Instance layout from Atlas.", "Atlas 副本地图。") },
-    { "loot", L("Loot", "掉落"), L("Boss drops from AtlasLoot.", "AtlasLoot 首领掉落。") },
+    { "map", L("Map", "地图"), L("Instance layout; click a gold legend line for loot.", "副本地图；点金色图例看掉落。") },
   }
   local i
-  for i = 1, 3 do
+  for i = 1, 2 do
     local info = labels[i]
     local b = CreateFrame("Button", "DungeonMode" .. i, parent, "UIPanelButtonTemplate")
     b:SetHeight(BTN_H)
@@ -480,20 +464,6 @@ local function WireModeButtons(parent)
     modeBtns[i] = b
   end
   if Hub() then Hub().modeButtons = modeBtns end
-end
-
-local function HookLootClose()
-  if type(AtlasLootItemsFrame_OnCloseButton) ~= "function" then return end
-  if AtlasLootItemsFrame_OnCloseButton_DungeonHooked then return end
-  local orig = AtlasLootItemsFrame_OnCloseButton
-  AtlasLootItemsFrame_OnCloseButton = function()
-    orig()
-    if Hub() and Hub().frame and Hub().frame:IsVisible() and mode == "loot" then
-      mode = "map"
-      HighlightModes("map")
-    end
-  end
-  AtlasLootItemsFrame_OnCloseButton_DungeonHooked = true
 end
 
 local function SkinModeButtons()
@@ -515,7 +485,6 @@ local function Init()
   BuildCatalog()
   WireModeButtons(hub.frame)
   BuildMapPane(hub.frame)
-  HookLootClose()
   SkinModeButtons()
   Dungeon_SetMode("list")
 end
@@ -526,11 +495,8 @@ ev:RegisterEvent("PLAYER_LOGIN")
 ev:SetScript("OnEvent", function()
   if event == "ADDON_LOADED" and arg1 == "Dungeon" then
     Init()
-  elseif event == "ADDON_LOADED" and arg1 == "AtlasLoot" then
-    HookLootClose()
   elseif event == "PLAYER_LOGIN" then
     Init()
-    HookLootClose()
   end
 end)
 
