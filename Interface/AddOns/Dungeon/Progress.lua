@@ -50,45 +50,79 @@ end
 -- ------------------------------------------------------------------- frame --
 
 local GAP = 4
+local WIDTH = 180
 local f
 
--- Right edge with the minimap, top edge just under the command strip.
--- The strip is centered and narrower than the map, so the two edges come
--- from different frames. GetBottom is in each frame's own scale.
-local function ScreenY(frame, method)
-  local v = frame[method](frame)
-  if not v then return end
-  return v * frame:GetEffectiveScale()
+-- Lowest visible party frame on the left (pfUI pfGroupN, else stock).
+-- Alone: the player frame. No frames yet: top-left fallback.
+local function PartyAnchor()
+  local best, bestBottom
+  local function consider(frame)
+    if not frame or not frame.IsVisible or not frame:IsVisible() then return end
+    if not frame.GetBottom then return end
+    local bottom = frame:GetBottom()
+    if not bottom then return end
+    -- Same parent scale family; prefer the lowest bottom edge.
+    if not bestBottom or bottom < bestBottom then
+      best, bestBottom = frame, bottom
+    end
+  end
+
+  if pfUI and pfUI.uf and pfUI.uf.group then
+    local i = 0
+    while i <= 4 do
+      consider(pfUI.uf.group[i])
+      i = i + 1
+    end
+  end
+  local i = 1
+  while i <= 4 do
+    consider(getglobal("pfGroup" .. i))
+    consider(getglobal("PartyMemberFrame" .. i))
+    i = i + 1
+  end
+  if not best then
+    consider(getglobal("pfPlayer"))
+    consider(PlayerFrame)
+  end
+  return best
 end
 
 local function PlaceProgress()
-  local map = (pfUI and pfUI.minimap) or Minimap
-  if not map or not f then return end
-  local bar = getglobal("SoloCommandStrip") or (pfUI and pfUI.addonbuttons)
-  local width = map:GetWidth() * map:GetEffectiveScale() / f:GetEffectiveScale()
-  if not width or width < 40 then width = 170 end
+  if not f then return end
+  local anchor = PartyAnchor()
+  local width = WIDTH
+  if anchor and anchor.GetWidth then
+    local w = anchor:GetWidth()
+    if w and w > 40 then
+      width = w * (anchor:GetEffectiveScale() or 1) / (f:GetEffectiveScale() or 1)
+    end
+  end
+  if width < 140 then width = 140 end
   if math.abs(f:GetWidth() - width) >= 0.5 then f:SetWidth(width) end
-  local mapBottom = ScreenY(map, "GetBottom")
-  local barBottom = bar and bar:IsShown() and ScreenY(bar, "GetBottom")
-  local y
-  if mapBottom and barBottom then
-    y = (barBottom - GAP * map:GetEffectiveScale() - mapBottom) / map:GetEffectiveScale()
+
+  local point, rel, relPoint, x, y = f:GetPoint()
+  if anchor then
+    if point == "TOPLEFT" and rel == anchor and relPoint == "BOTTOMLEFT"
+        and x == 0 and y == -GAP then
+      return
+    end
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -GAP)
   else
-    y = -GAP
+    if point == "TOPLEFT" and rel == UIParent and relPoint == "TOPLEFT"
+        and x == 12 and y == -180 then
+      return
+    end
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 12, -180)
   end
-  local point, rel, relPoint, x, cur = f:GetPoint()
-  if point == "TOPRIGHT" and rel == map and relPoint == "BOTTOMRIGHT"
-      and x == 0 and cur and math.abs(cur - y) < 0.5 then
-    return
-  end
-  f:ClearAllPoints()
-  f:SetPoint("TOPRIGHT", map, "BOTTOMRIGHT", 0, y)
 end
 
 f = CreateFrame("Frame", "DungeonProgressFrame", UIParent)
-f:SetWidth(170)
+f:SetWidth(WIDTH)
 f:SetHeight(80)
-f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -24, -180)
+f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 12, -180)
 f:SetBackdrop({
   bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
   edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",

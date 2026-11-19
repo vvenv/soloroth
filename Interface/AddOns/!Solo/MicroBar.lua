@@ -8,8 +8,9 @@ Stock micro buttons are 33×44; pfUI only scales that art. Feature buttons wear
 the round minimap ring. Both become cropped action-bar icons. pfUI still
 collects the feature buttons; after it places them they are packed here in a
 fixed order. Icons are chosen so none match the faces above (especially not
-the world-map tile). The strip and the dungeon progress panel match the
-minimap width; squares shrink to fit. Atlas / AtlasLoot open from /gd.
+the world-map tile). The strip matches the minimap width; squares shrink to
+fit. Dungeon progress sits under the left party frames. Atlas / AtlasLoot open
+from /gd.
 Social and Help are shut in NoSocial / NoHelp; Quest Log in NoQuest.
 ----------------------------------------------------------------------------]]
 
