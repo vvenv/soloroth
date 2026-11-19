@@ -16,4 +16,5 @@ SkinKit.lua
 Visual.lua
 AutoLoot.lua
 Farm.lua
+BagFilters.lua
 SkinAtlas.lua
