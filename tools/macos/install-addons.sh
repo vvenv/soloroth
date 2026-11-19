@@ -4,7 +4,7 @@
 # Dungeon, Bots, !Solo and Achievements (teleport points, items, GM tools, the dungeon hub,
 # the party button, the single-player defaults, and the achievement window)
 # and the vetted
-# third-party addons (pfUI, Atlas, AtlasLoot;
+# third-party addons (pfUI, Atlas, AtlasLoot, SortBags;
 # see THIRD-PARTY-NOTICES.md). localize-addons.py then adds Chinese
 # where an addon lacks it, on the installed copies.
 #

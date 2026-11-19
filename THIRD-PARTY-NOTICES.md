@@ -22,6 +22,7 @@ It is not affiliated with or endorsed by Blizzard Entertainment and ships no gam
 | pfUI | 5.5.4 | Eric Mauser (Shagu) | MIT (`pfUI/LICENSE`) | https://github.com/shagu/pfUI |
 | Atlas | 1.12.0 | Dan Gilbert | none shipped | http://www.atlasmod.com |
 | AtlasLoot | 4.06.06 | Daviesh | none shipped | AtlasLoot Enhanced for 1.12 |
+| SortBags | vanilla | shirsig | none shipped | https://github.com/shirsig/SortBags-vanilla |
 
 Teleport, Items, GMBox, Dungeon, Bots, Achievements and !Solo in the same folder are this project's own, under its GPL-3.0.
 

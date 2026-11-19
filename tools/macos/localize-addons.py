@@ -11,6 +11,7 @@ folder (../wow-data/addons) is never touched.
                which AceLocale allows only in the base locale, and TBC loot
                table titles in loottables.cn.lua for tables this 1.12 build
                lacks; either one stops the file on a Chinese client.
+  SortBags     Notes-zhCN on the .toc so pfUI's bag-sort tooltip is Chinese.
 """
 import os
 import re
@@ -61,11 +62,20 @@ def atlasloot(addons):
             print("localized AtlasLoot loot table titles")
 
 
+def sortbags(addons):
+    replace_all(os.path.join(addons, "SortBags", "SortBags.toc"), [
+        ("## Notes: Sorts and stacks your items\n",
+         "## Notes: Sorts and stacks your items\n"
+         "## Notes-zhCN: 整理并堆叠背包物品\n"),
+    ], "SortBags Notes-zhCN")
+
+
 def main():
     if len(sys.argv) != 2 or not os.path.isdir(sys.argv[1]):
         print(__doc__)
         return 2
     atlasloot(sys.argv[1])
+    sortbags(sys.argv[1])
     return 0
 
 
