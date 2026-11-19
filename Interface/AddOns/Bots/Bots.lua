@@ -144,7 +144,7 @@ local ORDERS = {
   { L("Come", "过来"), ".partybot cometome", L("Every bot runs to you", "所有机器人跑到你身边") },
   { L("Attack", "集火"), ".partybot attackstart", L("Every bot attacks your target", "所有机器人攻击你的目标") },
   { L("Stop", "停手"), ".partybot attackstop", L("Every bot stops attacking", "所有机器人停止攻击") },
-  { L("Pull", "拉怪"), ".partybot pull", L("The tank pulls your target; damage waits 10 s", "坦克去拉你的目标，输出等 10 秒") },
+  { L("Pull", "拉怪"), ".partybot pull", L("Ranged bot pulls your target; tank taunts when it arrives; damage waits 10 s", "远程先拉你的目标，怪靠近后再由坦克嘲讽，输出等 10 秒") },
   { L("Hold", "待命"), ".partybot pause", L("Wait here (target one bot to hold only it)", "原地待命（选中某个机器人则只对它）") },
   { L("Resume", "继续"), ".partybot unpause", L("Bots act again", "机器人恢复行动") },
 }

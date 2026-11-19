@@ -184,7 +184,7 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套
 | `.bots fill [2\|3\|5]` / `.bots dismiss` | 组成两人、三人或五人（不写人数就是五人）/ 解散 bot |
 | `.partybot cometome` | 所有 bot 到你身边 |
 | `.partybot attackstart` / `attackstop` | 集火你的目标 / 停手 |
-| `.partybot pull` | 坦克 bot 去拉你选中的怪 |
+| `.partybot pull` | 远程 bot（猎人/法师等，或盗贼投掷）先拉你选中的怪；坦克等怪靠近后再嘲讽，输出等 10 秒 |
 | `.partybot pause` / `unpause` | 原地待命 / 继续 |
 
 ### 单人设置
