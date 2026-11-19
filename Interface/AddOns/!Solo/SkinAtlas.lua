@@ -7,6 +7,9 @@ its button panel under the window.
     round the map and a panel behind the zone text and list;
   * AtlasLoot: its panel docks under the window, its standalone window
     (/atlasloot) and options get the same backdrop, its menus pfUI's colours.
+
+Solo also hides WishList (装备需求表) and PvP on the AtlasLoot panel: the
+dungeon hub (/gd) embeds map and loot, and this realm has no honor ladder.
 ----------------------------------------------------------------------------]]
 
 local GAP = 4
@@ -14,6 +17,29 @@ local GAP = 4
 local function FontStringWithText(frame, text)
   for _, r in ipairs({ frame:GetRegions() }) do
     if r:GetObjectType() == "FontString" and r:GetText() == text then return r end
+  end
+end
+
+local function TrimAtlasLootSolo()
+  local function Hide(name)
+    local b = getglobal(name)
+    if b then
+      b:Hide()
+      b:SetScript("OnShow", function() this:Hide() end)
+    end
+  end
+  Hide("AtlasLootPanel_WishList")
+  Hide("AtlasLootPanel_PvP")
+  Hide("AtlasLootDefaultFrameWishListButton")
+  if type(AtlasLoot_AddToWishlist) == "function"
+      and not AtlasLoot_AddToWishlist_SoloTrimmed then
+    AtlasLoot_AddToWishlist = function() end
+    AtlasLoot_AddToWishlist_SoloTrimmed = true
+  end
+  if type(AtlasLoot_ShowWishList) == "function"
+      and not AtlasLoot_ShowWishList_SoloTrimmed then
+    AtlasLoot_ShowWishList = function() end
+    AtlasLoot_ShowWishList_SoloTrimmed = true
   end
 end
 
@@ -70,6 +96,8 @@ end)
 
 SoloSkin.Register("AtlasLoot", function()
   HookAddonOrVariable("AtlasLoot", function()
+    TrimAtlasLootSolo()
+
     -- the panel under Atlas
     local panel = AtlasLootPanel
     SoloSkin.Backdrop(panel)

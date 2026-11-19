@@ -381,7 +381,7 @@ local function HideGuildUnderNames()
 end
 
 -- ---------------------------------------------------- Atlas / AtlasLoot MM --
--- Map and loot open from the Dungeon hub (/gd). Hide their own minimap
+-- Map and loot are embedded in the Dungeon hub (/gd). Hide their own minimap
 -- buttons so the strip stays Teleport / Items / GMBox / party / farm / Dungeon.
 
 local function HideDungeonRefButtons()

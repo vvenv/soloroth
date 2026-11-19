@@ -3,21 +3,19 @@ Dungeon -- one hub for five-player instances on this solo realm.
 
   * list: click a name to `.go xyzo` just inside the entrance (GM)
   * reset: one row resets that map; 「全部重置」clears every 5-man
-  * map / loot: open Atlas / AtlasLoot (third-party; not reimplemented)
-
-The window is the same 600×440 box as GMBox.
+  * map / loot: Atlas layouts and AtlasLoot tables embedded in this window
+    (see MapLoot.lua; AtlasFrame is not opened)
 
 Formerly the GMBox "Dungeons" tab plus the separate Atlas / AtlasLoot
 minimap buttons. `/gd` lands here.
 ----------------------------------------------------------------------------]]
 
-local VERSION = "1.2.0"
+local VERSION = "1.3.0"
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end
 
 local COL = "|cff44ddff"
--- Same box as GMBox so the two panels match.
 local FRAME_W, FRAME_H = 600, 440
 local PAD = 16
 local GAP = 8
@@ -70,35 +68,36 @@ end
 -- ------------------------------------------------------------- dungeon list --
 -- Spot just inside each entrance (areatrigger_teleport targets). The server
 -- still fills the party three seconds later; the Bots button sets the size.
+-- [10] is the Atlas zone id used by MapLoot.lua.
 
 local DUNGEONS = {
-  -- { english, chinese, min, max, map, x, y, z, o }
-  { "Ragefire Chasm",               "怒焰裂谷",           13, 18, 389,     0.8,    -8.2,  -15.5, 4.71 },
-  { "Wailing Caverns",              "哀嚎洞穴",           17, 24,  43,  -158.4,   131.6,  -74.3, 5.85 },
-  { "The Deadmines",                "死亡矿井",           17, 26,  36,   -14.6,  -385.5,   62.5, 1.57 },
-  { "Shadowfang Keep",              "影牙城堡",           22, 30,  33,  -228.2,  2111.4,   76.9, 1.22 },
-  { "Blackfathom Deeps",            "黑暗深渊",           24, 32,  48,  -150.2,   106.6,  -39.8, 4.45 },
-  { "The Stockade",                 "暴风城监狱",         24, 32,  34,    49.0,     0.5,  -16.4, 6.28 },
-  { "Scarlet Monastery: Graveyard", "血色修道院：墓地",   26, 36, 189,  1687.3,  1050.1,   18.7, 1.57 },
-  { "Gnomeregan",                   "诺莫瑞根",           29, 38,  90,  -329.1,    -3.2, -152.9, 2.97 },
-  { "Razorfen Kraul",               "剃刀沼泽",           29, 38,  47,  1942.3,  1544.2,   83.3, 1.31 },
-  { "Scarlet Monastery: Library",   "血色修道院：图书馆", 29, 39, 189,   253.7,  -206.6,   18.7, 4.71 },
-  { "Scarlet Monastery: Armory",    "血色修道院：军械库", 32, 42, 189,  1608.1,  -318.9,   18.7, 4.71 },
-  { "Scarlet Monastery: Cathedral", "血色修道院：大教堂", 35, 45, 189,   853.2,  1319.2,   18.7, 1.57 },
-  { "Razorfen Downs",               "剃刀高地",           37, 46, 129,  2593.7,  1111.2,   51.0, 4.71 },
-  { "Uldaman",                      "奥达曼",             41, 51,  70,  -228.9,    46.1,  -46.0, 1.57 },
-  { "Zul'Farrak",                   "祖尔法拉克",         42, 54, 209,  1212.7,   842.0,    8.9, 6.28 },
-  { "Maraudon: Orange",             "玛拉顿：橙色入口",   46, 55, 349,  1016.8,  -458.5,  -43.5, 6.28 },
-  { "Maraudon: Purple",             "玛拉顿：紫色入口",   46, 55, 349,   755.1,  -617.7,  -32.9, 1.57 },
-  { "Sunken Temple",                "沉没的神庙",         50, 60, 109,  -315.9,   100.2, -131.8, 3.14 },
-  { "Blackrock Depths",             "黑石深渊",           52, 60, 230,   456.9,    34.1,  -68.1, 4.71 },
-  { "Lower Blackrock Spire",        "黑石塔下层",         55, 60, 229,    78.4,  -226.8,   49.8, 4.71 },
-  { "Dire Maul: East",              "厄运之槌：东",       55, 60, 429,  -203.2,  -323.0,   -2.7, 4.71 },
-  { "Dire Maul: West",              "厄运之槌：西",       57, 60, 429,   -65.7,   159.6,   -3.5, 2.36 },
-  { "Dire Maul: North",             "厄运之槌：北",       57, 60, 429,   254.9,   -19.5,   -2.6, 5.50 },
-  { "Scholomance",                  "通灵学院",           58, 60, 289,   190.8,   126.3,  137.2, 6.28 },
-  { "Stratholme: Main Gate",        "斯坦索姆：正门",     58, 60, 329,  3392.9, -3395.0,  143.1, 1.57 },
-  { "Stratholme: Service Gate",     "斯坦索姆：后门",     58, 60, 329,  3590.9, -3643.2,  138.5, 5.50 },
+  -- { english, chinese, min, max, map, x, y, z, o, atlas }
+  { "Ragefire Chasm",               "怒焰裂谷",           13, 18, 389,     0.8,    -8.2,  -15.5, 4.71, "RagefireChasm" },
+  { "Wailing Caverns",              "哀嚎洞穴",           17, 24,  43,  -158.4,   131.6,  -74.3, 5.85, "WailingCaverns" },
+  { "The Deadmines",                "死亡矿井",           17, 26,  36,   -14.6,  -385.5,   62.5, 1.57, "TheDeadmines" },
+  { "Shadowfang Keep",              "影牙城堡",           22, 30,  33,  -228.2,  2111.4,   76.9, 1.22, "ShadowfangKeep" },
+  { "Blackfathom Deeps",            "黑暗深渊",           24, 32,  48,  -150.2,   106.6,  -39.8, 4.45, "BlackfathomDeeps" },
+  { "The Stockade",                 "暴风城监狱",         24, 32,  34,    49.0,     0.5,  -16.4, 6.28, "TheStockade" },
+  { "Scarlet Monastery: Graveyard", "血色修道院：墓地",   26, 36, 189,  1687.3,  1050.1,   18.7, 1.57, "SMGraveyard" },
+  { "Gnomeregan",                   "诺莫瑞根",           29, 38,  90,  -329.1,    -3.2, -152.9, 2.97, "Gnomeregan" },
+  { "Razorfen Kraul",               "剃刀沼泽",           29, 38,  47,  1942.3,  1544.2,   83.3, 1.31, "RazorfenKraul" },
+  { "Scarlet Monastery: Library",   "血色修道院：图书馆", 29, 39, 189,   253.7,  -206.6,   18.7, 4.71, "SMLibrary" },
+  { "Scarlet Monastery: Armory",    "血色修道院：军械库", 32, 42, 189,  1608.1,  -318.9,   18.7, 4.71, "SMArmory" },
+  { "Scarlet Monastery: Cathedral", "血色修道院：大教堂", 35, 45, 189,   853.2,  1319.2,   18.7, 1.57, "SMCathedral" },
+  { "Razorfen Downs",               "剃刀高地",           37, 46, 129,  2593.7,  1111.2,   51.0, 4.71, "RazorfenDowns" },
+  { "Uldaman",                      "奥达曼",             41, 51,  70,  -228.9,    46.1,  -46.0, 1.57, "Uldaman" },
+  { "Zul'Farrak",                   "祖尔法拉克",         42, 54, 209,  1212.7,   842.0,    8.9, 6.28, "ZulFarrak" },
+  { "Maraudon: Orange",             "玛拉顿：橙色入口",   46, 55, 349,  1016.8,  -458.5,  -43.5, 6.28, "Maraudon" },
+  { "Maraudon: Purple",             "玛拉顿：紫色入口",   46, 55, 349,   755.1,  -617.7,  -32.9, 1.57, "Maraudon" },
+  { "Sunken Temple",                "沉没的神庙",         50, 60, 109,  -315.9,   100.2, -131.8, 3.14, "TheSunkenTemple" },
+  { "Blackrock Depths",             "黑石深渊",           52, 60, 230,   456.9,    34.1,  -68.1, 4.71, "BlackrockDepths" },
+  { "Lower Blackrock Spire",        "黑石塔下层",         55, 60, 229,    78.4,  -226.8,   49.8, 4.71, "BlackrockSpireLower" },
+  { "Dire Maul: East",              "厄运之槌：东",       55, 60, 429,  -203.2,  -323.0,   -2.7, 4.71, "DireMaulEast" },
+  { "Dire Maul: West",              "厄运之槌：西",       57, 60, 429,   -65.7,   159.6,   -3.5, 2.36, "DireMaulWest" },
+  { "Dire Maul: North",             "厄运之槌：北",       57, 60, 429,   254.9,   -19.5,   -2.6, 5.50, "DireMaulNorth" },
+  { "Scholomance",                  "通灵学院",           58, 60, 289,   190.8,   126.3,  137.2, 6.28, "Scholomance" },
+  { "Stratholme: Main Gate",        "斯坦索姆：正门",     58, 60, 329,  3392.9, -3395.0,  143.1, 1.57, "Stratholme" },
+  { "Stratholme: Service Gate",     "斯坦索姆：后门",     58, 60, 329,  3590.9, -3643.2,  138.5, 5.50, "Stratholme" },
 }
 
 local function DungeonColor(d)
@@ -156,69 +155,47 @@ local close = CreateFrame("Button", "DungeonClose", f, "UIPanelButtonTemplate")
 close:SetWidth(22) close:SetHeight(22)
 close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -8, -8)
 close:SetText("x")
-close:SetScript("OnClick", function() f:Hide() end)
+close:SetScript("OnClick", function()
+  if type(Dungeon_SetMode) == "function" then Dungeon_SetMode("list") end
+  f:Hide()
+end)
 
--- Action row: three equal buttons across the same width as the list.
-local actions = {}
-local ACTION_W = (FRAME_W - PAD * 2 - GAP * 2) / 3
-local function Action(i, label, tip, click)
-  local b = CreateFrame("Button", "DungeonAction" .. i, f, "UIPanelButtonTemplate")
-  b:SetWidth(ACTION_W) b:SetHeight(BTN_H)
-  b:SetPoint("TOPLEFT", f, "TOPLEFT", PAD + (i - 1) * (ACTION_W + GAP), -36)
-  b:SetText(label)
-  b:SetScript("OnClick", click)
-  b:SetScript("OnEnter", function()
-    GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
-    GameTooltip:AddLine(tip)
-    GameTooltip:Show()
-  end)
-  b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-  actions[i] = b
-  return b
-end
+-- List pane: reset-all + teleport rows (map/loot live in MapLoot.lua).
+local listPane = CreateFrame("Frame", "DungeonListPane", f)
+listPane:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -(36 + BTN_H + 4))
+listPane:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
 
-Action(1, L("Reset all", "全部重置"),
-  L("Clear every five-player dungeon on this character. Nothing resets on its own. One row resets only that map.",
-    "清空本角色所有五人副本。副本不会自己重置。某一行的「重置」只清那一张。"),
-  function()
-    if StaticPopup_Show then
-      StaticPopup_Show("CONFIRM_RESET_INSTANCES")
-    elseif ResetInstances then
-      ResetInstances()
-    else
-      msg(L("reset is not available", "当前无法重置副本"))
-    end
-  end)
+local resetAll = CreateFrame("Button", "DungeonResetAll", listPane, "UIPanelButtonTemplate")
+resetAll:SetWidth(120)
+resetAll:SetHeight(BTN_H)
+resetAll:SetPoint("TOPLEFT", listPane, "TOPLEFT", PAD, -2)
+resetAll:SetText(L("Reset all", "全部重置"))
+resetAll:SetScript("OnClick", function()
+  if StaticPopup_Show then
+    StaticPopup_Show("CONFIRM_RESET_INSTANCES")
+  elseif ResetInstances then
+    ResetInstances()
+  else
+    msg(L("reset is not available", "当前无法重置副本"))
+  end
+end)
+resetAll:SetScript("OnEnter", function()
+  GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
+  GameTooltip:AddLine(L("Clear every five-player dungeon on this character. Nothing resets on its own. One row resets only that map.",
+    "清空本角色所有五人副本。副本不会自己重置。某一行的「重置」只清那一张。"))
+  GameTooltip:Show()
+end)
+resetAll:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-Action(2, L("Map", "地图"),
-  L("Open Atlas for the dungeon layout.", "打开 Atlas 副本地图。"),
-  function()
-    if type(Atlas_Toggle) == "function" then
-      Atlas_Toggle()
-    else
-      msg(L("Atlas is not loaded", "未加载 Atlas"))
-    end
-  end)
-
-Action(3, L("Loot", "掉落"),
-  L("Open AtlasLoot for boss drop tables.", "打开 AtlasLoot 首领掉落。"),
-  function()
-    if type(AtlasLoot_Toggle) == "function" then
-      AtlasLoot_Toggle()
-    else
-      msg(L("AtlasLoot is not loaded", "未加载 AtlasLoot"))
-    end
-  end)
-
-local listLabel = f:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-listLabel:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, -66)
+local listLabel = listPane:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+listLabel:SetPoint("TOPLEFT", listPane, "TOPLEFT", PAD, -28)
 listLabel:SetText(L("Name: teleport inside (GM). Reset: that map only.", "点名字传送（需 GM）。「重置」只清这一张。"))
 
-local lvlLabel = f:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-lvlLabel:SetPoint("TOPRIGHT", f, "TOPRIGHT", -(PAD + RESET_W + 8), -66)
+local lvlLabel = listPane:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+lvlLabel:SetPoint("TOPRIGHT", listPane, "TOPRIGHT", -(PAD + RESET_W + 8), -28)
 lvlLabel:SetText(L("Level", "等级"))
 
-local dui = { rows = {}, offset = 0 }
+local dui = { rows = {}, offset = 0, selected = nil }
 local resetBtns = {}
 
 local function DungeonRefresh()
@@ -234,28 +211,44 @@ local function DungeonRefresh()
       b.text:SetText(ZH and d[2] or d[1])
       b.text:SetTextColor(DungeonColor(d))
       b.info:SetText(d[3] .. "-" .. d[4])
+      if dui.selected == d then
+        b:LockHighlight()
+      else
+        b:UnlockHighlight()
+      end
       b:Show()
       r:Show()
     else
       b.d = nil
       r.d = nil
+      b:UnlockHighlight()
       b:Hide()
       r:Hide()
     end
   end
 end
 
+local function SelectDungeon(d)
+  dui.selected = d
+  if d and d[10] then
+    if DungeonHub then DungeonHub.selectedZone = d[10] end
+    if type(Dungeon_SelectZone) == "function" then Dungeon_SelectZone(d[10]) end
+  end
+  DungeonRefresh()
+end
+
 local function DungeonGo(d)
+  SelectDungeon(d)
   Cmd(string.format(".go xyzo %.1f %.1f %.1f %.2f %d", d[6], d[7], d[8], d[9], d[5]))
   msg("-> " .. (ZH and d[2] or d[1]))
 end
 
 for i = 1, DROWS do
-  local b = CreateFrame("Button", "DungeonRow" .. i, f)
+  local b = CreateFrame("Button", "DungeonRow" .. i, listPane)
   b:SetHeight(ROW_H)
   if i == 1 then
-    b:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, -84)
-    b:SetPoint("TOPRIGHT", f, "TOPRIGHT", -(PAD + RESET_W + GAP), -84)
+    b:SetPoint("TOPLEFT", listPane, "TOPLEFT", PAD, -46)
+    b:SetPoint("TOPRIGHT", listPane, "TOPRIGHT", -(PAD + RESET_W + GAP), -46)
   else
     b:SetPoint("TOPLEFT", dui.rows[i - 1], "BOTTOMLEFT", 0, -1)
     b:SetPoint("TOPRIGHT", dui.rows[i - 1], "BOTTOMRIGHT", 0, -1)
@@ -286,7 +279,7 @@ for i = 1, DROWS do
   end)
   b:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-  local r = CreateFrame("Button", "DungeonReset" .. i, f, "UIPanelButtonTemplate")
+  local r = CreateFrame("Button", "DungeonReset" .. i, listPane, "UIPanelButtonTemplate")
   r:SetWidth(RESET_W)
   r:SetHeight(ROW_H)
   r:SetPoint("LEFT", b, "RIGHT", GAP, 0)
@@ -308,15 +301,49 @@ for i = 1, DROWS do
   dui.rows[i] = b
 end
 
-f:EnableMouseWheel(true)
-f:SetScript("OnMouseWheel", function()
+listPane:EnableMouseWheel(true)
+listPane:SetScript("OnMouseWheel", function()
   dui.offset = dui.offset + ((arg1 > 0) and -3 or 3)
   DungeonRefresh()
 end)
-f:SetScript("OnShow", function() DungeonRefresh() end)
+
+-- Hub table for MapLoot.lua (mode buttons, map pane).
+DungeonHub = {
+  frame = f,
+  listPane = listPane,
+  dungeons = DUNGEONS,
+  selectedZone = nil,
+  msg = msg,
+  L = L,
+  ZH = ZH,
+  version = VERSION,
+  modeButtons = nil,
+}
+
+f:SetScript("OnShow", function()
+  DungeonRefresh()
+  if type(Dungeon_SetMode) == "function" then
+    local m = Dungeon_CurrentMode and Dungeon_CurrentMode() or "list"
+    if m ~= "list" and m ~= "map" and m ~= "loot" then m = "list" end
+    Dungeon_SetMode(m)
+  end
+end)
+f:SetScript("OnHide", function()
+  if AtlasLootItemsFrame and AtlasLootItemsFrame:IsVisible()
+      and AtlasLootItemsFrame:GetParent()
+      and AtlasLootItemsFrame:GetParent():GetName() == "DungeonLootHost" then
+    AtlasLootItemsFrame:Hide()
+  end
+end)
 
 local function Toggle()
-  if f:IsVisible() then f:Hide() else f:Show() DungeonRefresh() end
+  if f:IsVisible() then
+    f:Hide()
+  else
+    f:Show()
+    DungeonRefresh()
+    if type(Dungeon_SetMode) == "function" then Dungeon_SetMode("list") end
+  end
 end
 
 function Dungeon_Toggle() Toggle() end
@@ -387,13 +414,13 @@ SlashCmdList["DUNGEON"] = function(a)
     return
   end
   if a == "map" or a == "atlas" then
-    if type(Atlas_Toggle) == "function" then Atlas_Toggle()
-    else msg(L("Atlas is not loaded", "未加载 Atlas")) end
+    if type(Dungeon_OpenMap) == "function" then Dungeon_OpenMap()
+    else msg(L("Map pane is not ready", "地图页未就绪")) end
     return
   end
   if a == "loot" or a == "al" then
-    if type(AtlasLoot_Toggle) == "function" then AtlasLoot_Toggle()
-    else msg(L("AtlasLoot is not loaded", "未加载 AtlasLoot")) end
+    if type(Dungeon_OpenLoot) == "function" then Dungeon_OpenLoot()
+    else msg(L("Loot pane is not ready", "掉落页未就绪")) end
     return
   end
   if a == "help" or a == "?" then
@@ -414,10 +441,13 @@ local function SkinDungeon()
   SoloSkin.Backdrop(f)
   SoloSkin.Controls(f)
   SoloSkin.Button(close)
+  SoloSkin.Button(resetAll)
   local i = 1
-  while actions[i] do
-    SoloSkin.Button(actions[i])
-    i = i + 1
+  if DungeonHub and DungeonHub.modeButtons then
+    while DungeonHub.modeButtons[i] do
+      SoloSkin.Button(DungeonHub.modeButtons[i])
+      i = i + 1
+    end
   end
   i = 1
   while resetBtns[i] do
@@ -433,6 +463,9 @@ local function SkinDungeon()
     local ht = row:GetHighlightTexture()
     if ht then ht:SetVertexColor(c.r, c.g, c.b, .2) end
     i = i + 1
+  end
+  if DungeonMapDropDown and SoloSkin.Controls then
+    SoloSkin.Controls(DungeonMapPane)
   end
 end
 
@@ -459,9 +492,9 @@ ev:SetScript("OnEvent", function()
     f:Hide()
   elseif event == "PLAYER_LOGIN" then
     if ZH then
-      msg("就绪 -- /gd 打开副本中心（传送、重置、地图、掉落）。在副本里显示首领进度。")
+      msg("就绪 -- /gd 打开副本中心（列表、地图、掉落）。在副本里显示首领进度。")
     else
-      msg("ready -- /gd opens the dungeon hub (teleport, reset, map, loot). Boss progress shows inside.")
+      msg("ready -- /gd opens the dungeon hub (list, map, loot). Boss progress shows inside.")
     end
   end
 end)
