@@ -131,6 +131,26 @@ end
 local function Pack(parent, buttons, size, gap, mapW, inset)
   local n = table.getn(buttons)
   if n < 1 then return end
+  size = tonumber(size) or 16
+  gap = tonumber(gap) or 4
+  -- Hot-reload can keep an old SkinMicro that still calls Pack(..., pad).
+  if inset == nil then
+    local pad = tonumber(mapW) or 0
+    parent:SetWidth(pad * 2 + n * size + (n - 1) * gap)
+    parent:SetHeight(size + pad * 2)
+    local i = 1
+    while buttons[i] do
+      buttons[i]:ClearAllPoints()
+      buttons[i]:SetPoint("LEFT", parent, "LEFT", pad + (i - 1) * (size + gap), 0)
+      i = i + 1
+    end
+    return
+  end
+  mapW = tonumber(mapW)
+  inset = tonumber(inset) or 0
+  if not mapW or mapW < 40 then
+    mapW = inset * 2 + n * size + (n - 1) * gap
+  end
   parent:SetWidth(mapW)
   parent:SetHeight(size + inset * 2)
   local row = n * size + (n - 1) * gap
