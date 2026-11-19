@@ -327,6 +327,10 @@ SlashCmdList["BOTS"] = function(msg)
   Help()
 end
 
+BINDING_HEADER_BOTS = L("Party", "组队")
+BINDING_NAME_BOTS_TOGGLE = L("Toggle party menu", "开关组队菜单")
+function Bots_Toggle() ToggleMenu() end
+
 -- ----------------------------------------------------------- server line --
 -- `.bots status` starts with "[bots] role=tank playing=tank auto=1".
 -- Kept out of the chat window; the human lines after it still show.
@@ -383,6 +387,7 @@ end
 
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("VARIABLES_LOADED")
+ev:RegisterEvent("PLAYER_LOGIN")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:RegisterEvent("CHAT_MSG_SYSTEM")
 ev:SetScript("OnEvent", function()
@@ -393,6 +398,9 @@ ev:SetScript("OnEvent", function()
       panel:SetPoint(db.point[1], UIParent, db.point[2], db.point[3], db.point[4])
     end
     PlaceMinimapButton()
+  elseif event == "PLAYER_LOGIN" then
+    -- O was friends/social; Solo shuts that window, so the key is free to take.
+    if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("BOTS_TOGGLE", "O", db) end
   elseif event == "PLAYER_ENTERING_WORLD" then
     if not bots.known then Cmd(".bots status quiet") end
   elseif event == "CHAT_MSG_SYSTEM" and arg1 then

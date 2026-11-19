@@ -627,6 +627,8 @@ ev:SetScript("OnEvent", function()
     PlaceMinimapButton()
     f:Hide()
   elseif event == "PLAYER_LOGIN" then
+    -- I is free in 1.12 defaults (/gi).
+    if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("ITEMS_TOGGLE", "I", db) end
     local n = GMBox_ItemID and table.getn(GMBox_ItemID) or 0
     if ZH then
       msg("就绪 -- " .. n .. " 件物品。/gi 打开，/gi help 看用法。")

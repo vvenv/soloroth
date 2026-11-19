@@ -437,6 +437,7 @@ function SoloFarm_Start(mode)
 end
 
 BINDING_HEADER_SOLOFARM = L("Solo auto farming", "单人挂机")
+BINDING_NAME_SOLOFARM_TOGGLE = L("Toggle farming menu", "开关挂机菜单")
 BINDING_NAME_SOLOFARM_STOP = L("Stop auto farming", "停止自动挂机")
 
 local function Trim(msg)
@@ -537,6 +538,8 @@ local function ToggleMenu()
   if Solo_PlaceStripMenu then Solo_PlaceStripMenu(menu, menuBtns) end
   menu:Show()
 end
+
+function SoloFarm_Toggle() ToggleMenu() end
 
 local mm = CreateFrame("Button", "SoloFarmMinimapButton", Minimap)
 mm:SetWidth(31) mm:SetHeight(31)
@@ -735,6 +738,9 @@ ev:SetScript("OnEvent", function()
     PlaceMinimapButton()
   elseif event == "PLAYER_LOGIN" then
     EnsureMacros()
+    -- H was the honor tab; Solo remaps it to paperdoll (same as C), so take it.
+    if type(Solo_State) ~= "table" then Solo_State = {} end
+    if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("SOLOFARM_TOGGLE", "H", Solo_State) end
   elseif event == "PLAYER_ENTERING_WORLD" then
     XpBaseline()
     -- A /reload keeps the server's farming going: ask what it is doing.

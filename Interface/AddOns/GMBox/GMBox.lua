@@ -340,8 +340,8 @@ end
 
 mm:SetScript("OnClick", function() Toggle() end)
 
-BINDING_HEADER_GMBOX = "GM Box"
-BINDING_NAME_GMBOX_TOGGLE = "Toggle GM Box"
+BINDING_HEADER_GMBOX = L("GM Box", "GM 工具")
+BINDING_NAME_GMBOX_TOGGLE = L("Toggle GM Box", "开关 GM 工具")
 function GMBox_Toggle() Toggle() end
 
 -- ----------------------------------------------------------------- slash ---
@@ -399,6 +399,8 @@ ev:SetScript("OnEvent", function()
   elseif event == "CHAT_MSG_SYSTEM" then
     ParseXpLine(arg1 or "")
   elseif event == "PLAYER_LOGIN" then
+    -- G is free in 1.12 defaults (/gm).
+    if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("GMBOX_TOGGLE", "G", db) end
     SkinWithPfUI()
     if ZH then
       msg("就绪 -- /gm 打开工具。物品在 /gi，传送在 /gt。")

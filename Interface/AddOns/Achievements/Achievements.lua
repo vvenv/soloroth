@@ -517,19 +517,6 @@ SLASH_SOLOACHIEVEMENTS1 = "/ach"
 SLASH_SOLOACHIEVEMENTS2 = "/achievements"
 SlashCmdList["SOLOACHIEVEMENTS"] = function() Toggle() end
 
--- Y is free in 1.12 defaults and is Wrath's achievement key. Offer it once;
--- leave alone if the player already bound or unbound the command, or if Y is taken.
-local function EnsureDefaultKey()
-  if not db or db.defaultKey then return end
-  db.defaultKey = true
-  if GetBindingKey("SOLOACHIEVEMENTS_TOGGLE") then return end
-  local taken = GetBindingAction("Y")
-  if taken and taken ~= "" then return end
-  SetBinding("Y", "SOLOACHIEVEMENTS_TOGGLE")
-  local which = GetCurrentBindingSet and GetCurrentBindingSet() or 1
-  if which == 1 or which == 2 then SaveBindings(which) end
-end
-
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("VARIABLES_LOADED")
 ev:RegisterEvent("PLAYER_LOGIN")
@@ -547,7 +534,8 @@ ev:SetScript("OnEvent", function()
     end
   elseif event == "PLAYER_LOGIN" then
     -- After the binding readers (post VARIABLES_LOADED); SaveBindings before that is dropped.
-    EnsureDefaultKey()
+    -- Y is free in 1.12 defaults and is Wrath's achievement key.
+    if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("SOLOACHIEVEMENTS_TOGGLE", "Y", db) end
     SkinWithPfUI()
   elseif event == "PLAYER_ENTERING_WORLD" then
     if not synced then RequestSync() end

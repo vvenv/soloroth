@@ -470,6 +470,8 @@ ev:SetScript("OnEvent", function()
     PlaceMinimapButton()
     f:Hide()
   elseif event == "PLAYER_LOGIN" then
+    -- L was the quest log; Solo shuts that window, so the key is free to take.
+    if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("DUNGEON_TOGGLE", "L", db) end
     if ZH then
       msg("就绪 -- /gd 打开副本中心（列表 / 地图）。在副本里默认打开地图，并显示首领进度。")
     else

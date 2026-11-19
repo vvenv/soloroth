@@ -38,6 +38,37 @@ local function IsEmpty(t)
   return type(t) ~= "table" or next(t) == nil
 end
 
+-- One-shot default key for an addon binding. Marks db[flag] so a player who
+-- clears the bind is not given it again. Leaves the key alone when another
+-- command holds it, except stock binds Solo has made no-ops (social, quest,
+-- honor — H still opens the character frame, same as C after NoHonor).
+local DISPLACEABLE = {
+  TOGGLESOCIAL = true,
+  TOGGLEQUESTLOG = true,
+  TOGGLECHARACTER4 = true,
+}
+
+function Solo_EnsureDefaultKey(command, key, db, flag)
+  if type(command) ~= "string" or type(key) ~= "string" then return end
+  if type(db) ~= "table" then return end
+  flag = flag or "defaultKey"
+  if db[flag] then return end
+  db[flag] = true
+  if type(GetBindingKey) ~= "function" or type(SetBinding) ~= "function" then return end
+  if GetBindingKey(command) then return end
+  local taken = ""
+  if type(GetBindingAction) == "function" then taken = GetBindingAction(key) or "" end
+  if taken ~= "" and taken ~= command then
+    if not DISPLACEABLE[taken] then return end
+    SetBinding(key)
+  end
+  SetBinding(key, command)
+  if type(SaveBindings) == "function" and type(GetCurrentBindingSet) == "function" then
+    local which = GetCurrentBindingSet()
+    if which == 1 or which == 2 then SaveBindings(which) end
+  end
+end
+
 -- -------------------------------------------------------------------- pfUI --
 
 -- Set on every login, over whatever the character had.

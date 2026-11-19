@@ -230,6 +230,20 @@ mount_profile() {
         echo "visual profile: vanilla (empty $profile)"
         return 0
     fi
+    # Reforged/HD patch-C remaps Ghamoo-ra (display 5027) to AncientSeaTurtle,
+    # which benilla draws as a black box. patch-V sits above C and puts 5027
+    # back on SeaTurtle; rebuilt whenever this profile mounts.
+    if [ -L "$root/Data/patch-C.MPQ" ] || [ -e "$root/Data/patch-C.MPQ" ]; then
+        if python3 "$root/tools/macos/build-hd-overrides.py" --from-data "$root/Data" \
+            "$root/Data/patch-V.MPQ"; then
+            if [ -f "$root/Data/patch-V.MPQ" ]; then
+                printf '%s\n' "patch-V.MPQ" >> "$managed.tmp"
+            fi
+        else
+            echo "warning: build-hd-overrides.py failed; Ghamoo-ra may stay on AncientSeaTurtle" >&2
+        fi
+    fi
+
     mv "$managed.tmp" "$managed"
     echo "visual profile: $profile"
 }

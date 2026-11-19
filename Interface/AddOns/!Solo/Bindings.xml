@@ -1,5 +1,8 @@
 <Bindings>
-  <Binding name="SOLOFARM_STOP" header="SOLOFARM">
+  <Binding name="SOLOFARM_TOGGLE" header="SOLOFARM">
+    SoloFarm_Toggle()
+  </Binding>
+  <Binding name="SOLOFARM_STOP">
     SoloFarm_Stop()
   </Binding>
 </Bindings>

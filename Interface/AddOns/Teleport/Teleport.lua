@@ -557,6 +557,8 @@ ev:SetScript("OnEvent", function()
     PlaceMinimapButton()
     f:Hide()
   elseif event == "PLAYER_LOGIN" then
+    -- J is free in 1.12 defaults.
+    if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("TELEPORT_TOGGLE", "J", db) end
     if ZH then
       msg("就绪 -- " .. table.getn(TELE) .. " 个地点。/gt 打开，/gt help 看用法。")
     else
