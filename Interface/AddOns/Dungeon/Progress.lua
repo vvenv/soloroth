@@ -41,7 +41,40 @@ end
 
 -- ------------------------------------------------------------------- frame --
 
-local f = CreateFrame("Frame", "DungeonProgressFrame", UIParent)
+local GAP = 4
+local f
+
+-- Right edge with the minimap, top edge just under the addon-button strip.
+-- The strip is centered and narrower than the map, so the two edges come
+-- from different frames. GetBottom is in each frame's own scale.
+local function ScreenY(frame, method)
+  local v = frame[method](frame)
+  if not v then return end
+  return v * frame:GetEffectiveScale()
+end
+
+local function PlaceProgress()
+  local map = (pfUI and pfUI.minimap) or Minimap
+  if not map or not f then return end
+  local bar = pfUI and pfUI.addonbuttons
+  local mapBottom = ScreenY(map, "GetBottom")
+  local barBottom = bar and bar:IsShown() and ScreenY(bar, "GetBottom")
+  local y
+  if mapBottom and barBottom then
+    y = (barBottom - GAP * map:GetEffectiveScale() - mapBottom) / map:GetEffectiveScale()
+  else
+    y = -GAP
+  end
+  local point, rel, relPoint, x, cur = f:GetPoint()
+  if point == "TOPRIGHT" and rel == map and relPoint == "BOTTOMRIGHT"
+      and x == 0 and cur and math.abs(cur - y) < 0.5 then
+    return
+  end
+  f:ClearAllPoints()
+  f:SetPoint("TOPRIGHT", map, "BOTTOMRIGHT", 0, y)
+end
+
+f = CreateFrame("Frame", "DungeonProgressFrame", UIParent)
 f:SetWidth(FRAME_W)
 f:SetHeight(80)
 f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -24, -180)
@@ -54,16 +87,10 @@ f:SetBackdrop({
 f:SetBackdropColor(0, 0, 0, .85)
 f:EnableMouse(true)
 f:EnableMouseWheel(true)
-f:SetMovable(true)
-f:RegisterForDrag("LeftButton")
-f:SetScript("OnDragStart", function() this:StartMoving() end)
-f:SetScript("OnDragStop", function()
-  this:StopMovingOrSizing()
-  local point, _, relPoint, x, y = this:GetPoint()
-  if type(DungeonDB) ~= "table" then DungeonDB = {} end
-  DungeonDB.prog = { point, relPoint, x, y }
-end)
 if f.SetClampedToScreen then f:SetClampedToScreen(true) end
+f:SetScript("OnUpdate", function()
+  if this:IsShown() then PlaceProgress() end
+end)
 f:SetFrameStrata("MEDIUM")
 f:Hide()
 
@@ -155,6 +182,7 @@ local function Layout()
   local h = 52 + n * ROW_H
   if h < 52 then h = 52 end
   f:SetHeight(h)
+  PlaceProgress()
   if not dismissed then f:Show() else f:Hide() end
 end
 
@@ -244,19 +272,12 @@ end
 -- ------------------------------------------------------------------ events --
 
 local ev = CreateFrame("Frame")
-ev:RegisterEvent("VARIABLES_LOADED")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 ev:RegisterEvent("CHAT_MSG_ADDON")
 ev:SetScript("OnEvent", function()
   if event == "CHAT_MSG_ADDON" then
     if arg1 == PREFIX then OnAddon(arg2 or "") end
-  elseif event == "VARIABLES_LOADED" then
-    if type(DungeonDB) == "table" and type(DungeonDB.prog) == "table" then
-      local p = DungeonDB.prog
-      f:ClearAllPoints()
-      f:SetPoint(p[1], UIParent, p[2], p[3], p[4])
-    end
   elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
     dismissed = false
     Request()
