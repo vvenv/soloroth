@@ -534,7 +534,7 @@ local function ToggleMenu()
     menu:Hide()
     return
   end
-  -- Under the addon-button strip, the same width as that strip.
+  -- Under the command strip, the same width as that strip.
   if Solo_PlaceStripMenu then Solo_PlaceStripMenu(menu, menuBtns) end
   menu:Show()
 end

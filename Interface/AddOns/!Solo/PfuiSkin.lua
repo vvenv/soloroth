@@ -3,13 +3,17 @@ benilla's own ESC menu rungs and options window in pfUI's look, registered as
 a pfUI skin (so pfUI's "disable skin" setting covers it too):
 
   * the ESC menu: no Edit Mode rung (benilla has nothing behind it) and no
-    Support / Help rung (NoHelp.lua shuts that window);
+    Support / Help rung (NoHelp.lua shuts that window); pfUI's own config
+    rung is relabelled "Interface" / 「界面」 so players open settings as a
+    product feature, not a third-party addon panel;
   * the options window: no Game/AddOns tabs (AddOns has nothing behind it,
     Game alone is the whole window), and pfUI's backdrops, buttons,
     checkboxes, sliders, dropdowns, scroll bars and search box;
   * the script error log (/errors): pfUI's backdrop over the class trainer
     art it borrows, its list and detail panes bordered.
 ----------------------------------------------------------------------------]]
+
+local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 
 local function Texture(region)
   local path = region and region.GetTexture and region:GetTexture()
@@ -34,6 +38,22 @@ local function SkinGameMenu()
   end
   if drop > 0 then
     GameMenuFrame:SetHeight(GameMenuFrame:GetHeight() - drop)
+  end
+  -- pfUI's Game Menu skin already inserts GameMenuButtonPFUI → pfUI.gui.
+  local function LabelUI()
+    local ui = GameMenuButtonPFUI
+    if ui and ui.SetText then
+      ui:SetText(ZH and "界面" or "Interface")
+    end
+  end
+  LabelUI()
+  if GameMenuFrame and not GameMenuFrame.soloUILabel then
+    GameMenuFrame.soloUILabel = true
+    local prev = GameMenuFrame:GetScript("OnShow")
+    GameMenuFrame:SetScript("OnShow", function()
+      if prev then prev() end
+      LabelUI()
+    end)
   end
 end
 

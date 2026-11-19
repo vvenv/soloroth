@@ -52,7 +52,7 @@ end
 local GAP = 4
 local f
 
--- Right edge with the minimap, top edge just under the addon-button strip.
+-- Right edge with the minimap, top edge just under the command strip.
 -- The strip is centered and narrower than the map, so the two edges come
 -- from different frames. GetBottom is in each frame's own scale.
 local function ScreenY(frame, method)
@@ -64,7 +64,7 @@ end
 local function PlaceProgress()
   local map = (pfUI and pfUI.minimap) or Minimap
   if not map or not f then return end
-  local bar = pfUI and pfUI.addonbuttons
+  local bar = getglobal("SoloCommandStrip") or (pfUI and pfUI.addonbuttons)
   local width = map:GetWidth() * map:GetEffectiveScale() / f:GetEffectiveScale()
   if not width or width < 40 then width = 170 end
   if math.abs(f:GetWidth() - width) >= 0.5 then f:SetWidth(width) end

@@ -104,7 +104,7 @@ if f.SetClampedToScreen then f:SetClampedToScreen(true) end
 f:Hide()
 tinsert(UISpecialFrames, "GMBoxFrame")
 
-Label(f, L("GM Box ", "GM 工具箱 ") .. VERSION, "GameFontNormal", "TOP", f, "TOP", 0, -14)
+Label(f, L("GM Tools ", "GM 工具 ") .. VERSION, "GameFontNormal", "TOP", f, "TOP", 0, -14)
 
 local close = CreateFrame("Button", "GMBoxClose", f, "UIPanelCloseButton")
 close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -6, -6)
@@ -302,7 +302,7 @@ end)
 mm:SetScript("OnDragStop", function() this:SetScript("OnUpdate", nil) end)
 mm:SetScript("OnEnter", function()
   GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-  GameTooltip:AddLine(L("GM Box", "GM 工具箱"))
+  GameTooltip:AddLine(L("GM Tools", "GM 工具"))
   GameTooltip:AddLine(L("Left click: open or close", "左键：打开/关闭"), 0.8, 0.8, 0.8)
   GameTooltip:Show()
 end)
@@ -316,42 +316,55 @@ local function Toggle()
 end
 
 -- ------------------------------------------------------------- pfUI skin ---
+-- pfUI loads before this addon (AtlasLoot pulls it in). !Solo only hands
+-- its skin list over on ADDON_LOADED "pfUI", which has already fired, so
+-- Register here too or the gold panel buttons stay.
 
-local function SkinWithPfUI()
-  if skin.on or not (pfUI and pfUI.api and pfUI.api.CreateBackdrop) then return end
-  local api = pfUI.api
+local function SkinGMBox()
+  if skin.on or not SoloSkin then return end
   skin.on = true
-
-  f:SetBackdrop(nil)
-  api.CreateBackdrop(f, nil, nil, .75)
-  if api.CreateBackdropShadow then api.CreateBackdropShadow(f) end
-  api.SkinCloseButton(close, f, -6, -6)
-
-  for i = 1, table.getn(skin.buttons) do api.SkinButton(skin.buttons[i]) end
-  for i = 1, table.getn(skin.edits) do
+  SoloSkin.Backdrop(f)
+  SoloSkin.Close(close)
+  SoloSkin.Controls(f)
+  local i = 1
+  while skin.buttons[i] do
+    SoloSkin.Button(skin.buttons[i])
+    i = i + 1
+  end
+  i = 1
+  while skin.edits[i] do
     local e = skin.edits[i]
     e:DisableDrawLayer("BACKGROUND")
-    api.CreateBackdrop(e, nil, true)
+    if pfUI and pfUI.api and pfUI.api.CreateBackdrop then
+      pfUI.api.CreateBackdrop(e, nil, true)
+    end
     e:SetTextInsets(5, 5, 3, 3)
+    i = i + 1
   end
-
   if f:IsVisible() then XpRefresh() end
+end
+
+if SoloSkin and SoloSkin.Register then
+  SoloSkin.Register("GMBox", SkinGMBox)
+end
+if pfUI and pfUI.RegisterSkin and not (pfUI.skin and pfUI.skin["GMBox"]) then
+  pfUI:RegisterSkin("GMBox", "vanilla", SkinGMBox)
 end
 
 mm:SetScript("OnClick", function() Toggle() end)
 
-BINDING_HEADER_GMBOX = L("GM Box", "GM 工具")
-BINDING_NAME_GMBOX_TOGGLE = L("Toggle GM Box", "开关 GM 工具")
+BINDING_HEADER_GMBOX = L("GM Tools", "GM 工具")
+BINDING_NAME_GMBOX_TOGGLE = L("Toggle GM Tools", "开关 GM 工具")
 function GMBox_Toggle() Toggle() end
 
 -- ----------------------------------------------------------------- slash ---
 
 local function Help()
   if ZH then
-    msg("/gm 开关工具窗口（小地图上也有按钮）")
+    msg("/gm 开关工具窗口（命令条上也有）")
     msg("物品在 /gi，传送在 /gt，副本中心在 /gd")
   else
-    msg("/gm opens or closes the tools window (or the minimap button)")
+    msg("/gm opens or closes the tools window (also on the command strip)")
     msg("items are /gi, teleport is /gt, dungeon hub is /gd")
   end
 end
@@ -401,12 +414,7 @@ ev:SetScript("OnEvent", function()
   elseif event == "PLAYER_LOGIN" then
     -- G is free in 1.12 defaults (/gm).
     if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("GMBOX_TOGGLE", "G", db) end
-    SkinWithPfUI()
-    if ZH then
-      msg("就绪 -- /gm 打开工具。物品在 /gi，传送在 /gt。")
-    else
-      msg("ready -- /gm opens the tools. Items are /gi, teleport is /gt.")
-    end
+    if not skin.on then SkinGMBox() end
   end
 end)
 

@@ -533,11 +533,11 @@ mm:SetScript("OnClick", function() Toggle() end)
 
 local function Help()
   if ZH then
-    msg("/gi 开关窗口（小地图上也有按钮）")
+    msg("/gi 开关窗口（命令条上也有）")
     msg("/gi <文字|id> [数量]  唯一匹配直接进包，多个就开列表")
     msg("左键放入背包，Shift+左键只放 1 个，右键收藏")
   else
-    msg("/gi opens or closes the window (or the minimap button)")
+    msg("/gi opens or closes the window (also on the command strip)")
     msg("/gi <text|id> [count]  one match goes straight into your bags")
     msg("left click adds it, shift+click adds 1, right click favourites")
   end
@@ -629,12 +629,6 @@ ev:SetScript("OnEvent", function()
   elseif event == "PLAYER_LOGIN" then
     -- I is free in 1.12 defaults (/gi).
     if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("ITEMS_TOGGLE", "I", db) end
-    local n = GMBox_ItemID and table.getn(GMBox_ItemID) or 0
-    if ZH then
-      msg("就绪 -- " .. n .. " 件物品。/gi 打开，/gi help 看用法。")
-    else
-      msg("ready -- " .. n .. " items. /gi to open, /gi help for the rest.")
-    end
   end
 end)
 

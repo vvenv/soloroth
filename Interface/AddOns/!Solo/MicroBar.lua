@@ -1,24 +1,19 @@
 --[[--------------------------------------------------------------------------
-Micro bar and addon-button strip, both drawn as pfUI action-bar squares.
+Soloroth command strip under the minimap: one chrome frame holding two rows of
+pfUI action-bar squares — character / book / talent / map / menu above, then
+travel → gear → tools → party → farm → dungeon. Same size, same border; the
+rows are layout only, not "system vs addon".
 
-Stock micro buttons are 33×44 with the glyph in the lower half; pfUI only
-scales that art. Addon buttons wear the round minimap ring, which is drawn
-larger than the button itself (pfUI sizes the cell from the button, so the
-ring spills out). This file replaces both with the action-bar icon: cropped,
-border from the action-bar setting, same size as bar 1. The gap is wider than
-bar 1's: that spacing is 1, and the border is drawn outside the frame, so a
-gap of 1 leaves the squares touching.
-
-pfUI still collects the addon buttons. After it places them, they are packed
-into a row under the micro buttons in a fixed order (travel → gear → tools →
-party → farm → dungeon). Icons are chosen so none match the micro-bar faces
-above (especially not the world-map tile). Both strips, and the dungeon
-progress panel, are the minimap's width; the squares shrink to fit that width.
-Atlas / AtlasLoot open from /gd. Social and Help are shut in NoSocial /
-NoHelp; Quest Log in NoQuest.
+Stock micro buttons are 33×44; pfUI only scales that art. Feature buttons wear
+the round minimap ring. Both become cropped action-bar icons. pfUI still
+collects the feature buttons; after it places them they are packed here in a
+fixed order. Icons are chosen so none match the faces above (especially not
+the world-map tile). The strip and the dungeon progress panel match the
+minimap width; squares shrink to fit. Atlas / AtlasLoot open from /gd.
+Social and Help are shut in NoSocial / NoHelp; Quest Log in NoQuest.
 ----------------------------------------------------------------------------]]
 
--- System strip: character / book / talent / map / menu. No letter, no "?".
+-- Top row: character / book / talent / map / menu. No letter, no "?".
 local MICRO = {
   { "CharacterMicroButton" },
   { "SpellbookMicroButton", "Interface\\Icons\\INV_Misc_Book_09" },
@@ -27,9 +22,8 @@ local MICRO = {
   { "MainMenuMicroButton", "Interface\\Icons\\INV_Misc_Gear_01" },
 }
 
--- Addon strip order under the micro bar. Discovery order from pfUI varies
--- with load order; pack in this sequence instead.
-local ADDON_ORDER = {
+-- Feature row order. Discovery order from pfUI varies with load order.
+local FEATURE_ORDER = {
   "TeleportMinimapButton",
   "ItemsMinimapButton",
   "GMBoxMinimapButton",
@@ -39,6 +33,7 @@ local ADDON_ORDER = {
 }
 
 local talentHooked
+local strip  -- SoloCommandStrip: one backdrop around both rows
 
 local function MapWidth(frame)
   local map = pfUI and pfUI.minimap
@@ -178,7 +173,7 @@ local function Pack(parent, buttons, size, gap, mapW, inset)
   end
 end
 
-local function ShownAddon()
+local function ShownFeatures()
   local abs = pfUI and pfUI.addonbuttons
   local shown, byName, i = {}, {}, 1
   if not abs then return shown end
@@ -189,8 +184,8 @@ local function ShownAddon()
     i = i + 1
   end
   i = 1
-  while ADDON_ORDER[i] do
-    local name = ADDON_ORDER[i]
+  while FEATURE_ORDER[i] do
+    local name = FEATURE_ORDER[i]
     if byName[name] then
       table.insert(shown, byName[name])
       byName[name] = nil
@@ -211,6 +206,31 @@ local function DropStockMicro(name)
   if btn then
     btn:Hide()
     btn:ClearAllPoints()
+  end
+end
+
+local function EnsureStrip()
+  if strip then return strip end
+  local A = pfUI and pfUI.api
+  if not A or not A.CreateBackdrop then return end
+  strip = CreateFrame("Frame", "SoloCommandStrip", UIParent)
+  strip:SetFrameStrata("MEDIUM")
+  A.CreateBackdrop(strip, nil, nil, .75)
+  if A.CreateBackdropShadow then A.CreateBackdropShadow(strip) end
+  return strip
+end
+
+-- Drop the feature row's own panel chrome so only SoloCommandStrip shows.
+local function ClearFeatureChrome(abs)
+  if not abs then return end
+  if abs.SetBackdrop then abs:SetBackdrop(nil) end
+  if abs.backdrop then
+    abs.backdrop:Hide()
+    abs.backdrop.Show = function() end
+  end
+  if abs.backdrop_shadow then
+    abs.backdrop_shadow:Hide()
+    abs.backdrop_shadow.Show = function() end
   end
 end
 
@@ -251,8 +271,8 @@ local function SkinMicro()
     i = i + 1
   end
   local n = table.getn(shown)
-  local addons = ShownAddon()
-  if table.getn(addons) > n then n = table.getn(addons) end
+  local feats = ShownFeatures()
+  if table.getn(feats) > n then n = table.getn(feats) end
   local size, gap, mapW, inset = Fit(n, micro)
   i = 1
   while shown[i] do
@@ -272,20 +292,7 @@ local function SkinMicro()
   end
 end
 
-local function CenterMicroOnMinimap()
-  local micro = pfUI and pfUI.panel and pfUI.panel.microbutton
-  local map = pfUI and pfUI.minimap
-  if not micro or not map then return end
-  local zone = pfUI.panel and pfUI.panel.minimap
-  micro:ClearAllPoints()
-  if zone and zone:IsShown() then
-    micro:SetPoint("TOP", zone, "BOTTOM", 0, -2)
-  else
-    micro:SetPoint("TOP", map, "BOTTOM", 0, -2)
-  end
-end
-
-local function AddonIcon(btn)
+local function FeatureIcon(btn)
   if btn.soloIcon then return btn.soloIcon end
   local _, region
   for _, region in ipairs({ btn:GetRegions() }) do
@@ -296,14 +303,14 @@ local function AddonIcon(btn)
   end
 end
 
-local function SkinAddonButton(btn, size)
-  local icon = AddonIcon(btn)
+local function SkinFeatureButton(btn, size)
+  local icon = FeatureIcon(btn)
   Square(btn, icon, true, size)
   if icon then icon:SetVertexColor(1, 1, 1) end
 end
 
--- A menu dropped from the addon-button strip: same width, sitting on its
--- bottom edge. `buttons` is the list of rows, widened to the strip.
+-- A menu dropped from the command strip: same width, sitting on its bottom
+-- edge. `buttons` is the list of rows, widened to the strip.
 function Solo_PlaceStripMenu(menu, buttons)
   local names = { "SoloFarmMenu", "BotsMenu" }
   local i = 1
@@ -312,7 +319,7 @@ function Solo_PlaceStripMenu(menu, buttons)
     if other and other ~= menu and other:IsShown() then other:Hide() end
     i = i + 1
   end
-  local bar = pfUI and pfUI.addonbuttons
+  local bar = strip or (pfUI and pfUI.addonbuttons)
   local map = (pfUI and pfUI.minimap) or Minimap
   local w = bar and bar:GetWidth() or 0
   if w < 40 then w = (map and map:GetWidth()) or 170 end
@@ -332,15 +339,27 @@ function Solo_PlaceStripMenu(menu, buttons)
   end
 end
 
-local function DockAddonButtons()
+local function DockCommandStrip()
   local micro = pfUI and pfUI.panel and pfUI.panel.microbutton
   local abs = pfUI and pfUI.addonbuttons
   local map = pfUI and pfUI.minimap
   if not micro or not abs or not map then return end
 
-  CenterMicroOnMinimap()
+  local shell = EnsureStrip()
+  if not shell then return end
+
+  ClearFeatureChrome(abs)
+
+  local zone = pfUI.panel and pfUI.panel.minimap
+  shell:ClearAllPoints()
+  if zone and zone:IsShown() then
+    shell:SetPoint("TOP", zone, "BOTTOM", 0, -2)
+  else
+    shell:SetPoint("TOP", map, "BOTTOM", 0, -2)
+  end
+
   SkinMicro()
-  local shown = ShownAddon()
+  local shown = ShownFeatures()
   local n, nMicro, i = table.getn(shown), 0, 1
   while MICRO[i] do
     local btn = getglobal(MICRO[i][1])
@@ -351,17 +370,38 @@ local function DockAddonButtons()
   local size, gap, mapW, inset = Fit(n, abs)
   i = 1
   while shown[i] do
-    SkinAddonButton(shown[i], size)
+    SkinFeatureButton(shown[i], size)
     i = i + 1
   end
   Pack(abs, shown, size, gap, mapW, inset)
+
+  -- Chrome only: do not reparent micro or the feature row into the shell.
+  -- pfUI's addonbuttons walker would then SetParent the shell back onto the
+  -- feature row and hit a parenting loop.
+  local rowGap = 4
+  local h = micro:GetHeight() + rowGap + abs:GetHeight()
+  shell:SetWidth(mapW)
+  shell:SetHeight(h)
+  local behind = math.max((micro:GetFrameLevel() or 2) - 1, 0)
+  if (abs:GetFrameLevel() or 0) <= behind then
+    behind = math.max((abs:GetFrameLevel() or 2) - 1, 0)
+  end
+  shell:SetFrameLevel(behind)
+
+  micro:ClearAllPoints()
+  micro:SetPoint("TOP", shell, "TOP", 0, 0)
+
   abs:ClearAllPoints()
-  abs:SetPoint("TOP", micro, "BOTTOM", 0, -4)
-  if abs.minimapbutton then abs.minimapbutton:Hide() end
+  abs:SetPoint("TOP", micro, "BOTTOM", 0, -rowGap)
+  if abs.minimapbutton then
+    abs.minimapbutton:Hide()
+    abs.minimapbutton.Show = function() end
+  end
   if not abs:IsShown() then abs:Show() end
+  if not shell:IsShown() then shell:Show() end
 end
 
-local function HookAddonButtons()
+local function HookFeatureButtons()
   local abs = pfUI and pfUI.addonbuttons
   if not abs or type(abs.ProcessButtons) ~= "function" then return end
   if not abs.soloDocked then
@@ -369,10 +409,10 @@ local function HookAddonButtons()
     local old = abs.ProcessButtons
     abs.ProcessButtons = function(self)
       old(self)
-      DockAddonButtons()
+      DockCommandStrip()
     end
   end
-  DockAddonButtons()
+  DockCommandStrip()
 end
 
 local ORPHAN_N = {
@@ -403,14 +443,14 @@ ev:SetScript("OnEvent", function()
     return
   end
   if event == "ADDON_LOADED" and arg1 ~= "pfUI" then return end
-  HookAddonButtons()
+  HookFeatureButtons()
   SkinMicro()
   if event == "PLAYER_ENTERING_WORLD" then
     RestoreTalentKey()
     this.soloMicroWait = 0
     this:SetScript("OnUpdate", function()
       this.soloMicroWait = this.soloMicroWait + arg1
-      HookAddonButtons()
+      HookFeatureButtons()
       SkinMicro()
       if this.soloMicroWait < 4 then return end
       this:SetScript("OnUpdate", nil)

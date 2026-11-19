@@ -239,7 +239,7 @@ local function ToggleMenu()
     return
   end
   panel:Hide()
-  -- Same drop-down as the farming menu: under the addon-button strip.
+  -- Same drop-down as the farming menu: under the command strip.
   if Solo_PlaceStripMenu then Solo_PlaceStripMenu(menu, menuBtns) end
   menu:Show()
 end

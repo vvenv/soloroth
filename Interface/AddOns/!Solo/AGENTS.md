@@ -4,6 +4,15 @@ Loads first (`!` sorts before every other folder) and applies the single-player 
 (`Solo.lua`) and every look change to other addons. Third-party addon sources are never
 edited; anything they should do differently is done from here.
 
+Player-facing copy treats Soloroth windows as one product (command strip under the
+minimap, ESC「界面」for settings). Keep that in README; this file stays in addon terms.
+
+## Command strip
+
+`MicroBar.lua` wraps the micro row and the feature row in `SoloCommandStrip` (one
+pfUI backdrop). Menus use `Solo_PlaceStripMenu`; dungeon progress anchors under that
+frame. Do not present the two rows as "system vs addon" in player docs.
+
 ## pfUI skins
 
 - Each window set is one pfUI skin, so pfUI's "disable skin" setting covers it:
@@ -11,7 +20,8 @@ edited; anything they should do differently is done from here.
   `ADDON_LOADED "pfUI"`. pfUI is not last: AtlasLoot loads it first, before Bots,
   GMBox, Items and Teleport. An addon that loads after that event must also call `pfUI:RegisterSkin` itself when
   `pfUI` is already there, or the skin never runs and stock buttons stay gold.
-  `PfuiSkin.lua` registers benilla's own windows ("Benilla").
+  `PfuiSkin.lua` registers benilla's own windows ("Benilla") and relabels
+  `GameMenuButtonPFUI` to Interface / 「界面」.
 - A skin body runs in pfUI's environment, so `CreateBackdrop`, `SkinButton`, … are globals
   there. A file-scope local function is not: call `pfUI.api.X` in helpers, or `setfenv` them
   as `PfuiSkin.lua` does.

@@ -473,11 +473,11 @@ mm:SetScript("OnClick", function() Toggle() end)
 
 local function Help()
   if ZH then
-    msg("/gt 开关窗口（小地图上也有按钮）")
+    msg("/gt 开关窗口（命令条上也有）")
     msg("/gt <文字>  唯一匹配直接过去，多个就开列表")
     msg("左键传送，Shift+左键按坐标，右键收藏")
   else
-    msg("/gt opens or closes the window (or the minimap button)")
+    msg("/gt opens or closes the window (also on the command strip)")
     msg("/gt <text>  one match goes instantly, otherwise the list opens")
     msg("left click teleports, shift+click uses .go xyz, right click favourites")
   end
@@ -559,11 +559,6 @@ ev:SetScript("OnEvent", function()
   elseif event == "PLAYER_LOGIN" then
     -- J is free in 1.12 defaults.
     if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("TELEPORT_TOGGLE", "J", db) end
-    if ZH then
-      msg("就绪 -- " .. table.getn(TELE) .. " 个地点。/gt 打开，/gt help 看用法。")
-    else
-      msg("ready -- " .. table.getn(TELE) .. " places. /gt to open, /gt help for the rest.")
-    end
   end
 end)
 

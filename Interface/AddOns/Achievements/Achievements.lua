@@ -497,18 +497,25 @@ local function OnAddonMessage(text)
 end
 
 -- ------------------------------------------------------------ pfUI skin ---
+-- Same dual-register pattern as Teleport/Bots: pfUI may already be loaded.
 
-local function SkinWithPfUI()
-  if not (pfUI and pfUI.api and pfUI.api.CreateBackdrop) then return end
-  local api = pfUI.api
-  f:SetBackdrop(nil)
-  api.CreateBackdrop(f, nil, nil, .75)
-  if api.CreateBackdropShadow then api.CreateBackdropShadow(f) end
-  api.SkinCloseButton(close, f, -6, -6)
-  toast:SetBackdrop(nil)
-  api.CreateBackdrop(toast, nil, nil, .85)
-  if api.CreateBackdropShadow then api.CreateBackdropShadow(toast) end
+local skinOn
+
+local function SkinAchievements()
+  if skinOn or not SoloSkin then return end
+  skinOn = true
+  SoloSkin.Backdrop(f)
+  SoloSkin.Close(close)
+  SoloSkin.Controls(f)
+  SoloSkin.Backdrop(toast, .85)
   if toast.backdrop then toast.backdrop:SetBackdropBorderColor(1, .82, 0, 1) end
+end
+
+if SoloSkin and SoloSkin.Register then
+  SoloSkin.Register("Achievements", SkinAchievements)
+end
+if pfUI and pfUI.RegisterSkin and not (pfUI.skin and pfUI.skin["Achievements"]) then
+  pfUI:RegisterSkin("Achievements", "vanilla", SkinAchievements)
 end
 
 -- ------------------------------------------------------------- events ---
@@ -536,7 +543,7 @@ ev:SetScript("OnEvent", function()
     -- After the binding readers (post VARIABLES_LOADED); SaveBindings before that is dropped.
     -- Y is free in 1.12 defaults and is Wrath's achievement key.
     if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("SOLOACHIEVEMENTS_TOGGLE", "Y", db) end
-    SkinWithPfUI()
+    if not skinOn then SkinAchievements() end
   elseif event == "PLAYER_ENTERING_WORLD" then
     if not synced then RequestSync() end
   end

@@ -31,6 +31,7 @@ local ZH = {
   ["Apply"] = "应用",
   ["Support"] = "帮助",
   ["Edit Mode"] = "编辑模式",
+  ["|cff33ffccpf|cffffffffUI|cffcccccc Config"] = "界面",
 
   -- categories
   ["Controls"] = "控制",
