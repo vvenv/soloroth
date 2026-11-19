@@ -92,6 +92,9 @@ end
 local function Square(btn, icon, crop, size)
   local A = pfUI and pfUI.api
   if not A or not A.CreateBackdrop or not btn then return end
+  -- Hot-reload can keep an old SkinMicro that still calls Square without size.
+  size = tonumber(size)
+  if not size or size < 1 then size = 16 end
   btn:SetScale(1)
   btn:SetWidth(size)
   btn:SetHeight(size)
