@@ -8,6 +8,9 @@ click sends the bots home.
 five on its own. Raids are 20 (Zul'Gurub, Ruins of Ahn'Qiraj) or 40 (Molten
 Core, Blackwing Lair, Temple of Ahn'Qiraj, Naxxramas); the server does not
 fill a raid, so the menu has no raid row.
+
+While in a party, a movable strip (冷静 / 奔放 and the common orders) sits
+on screen, and each member frame gets Revive / Come on its right.
 ----------------------------------------------------------------------------]]
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
@@ -35,7 +38,7 @@ local function InitDB()
 end
 
 -- What `.bots status` last reported. `role` is the choice, `playing` the guess.
-local bots = { role = "auto", playing = nil, auto = true, known = false }
+local bots = { role = "auto", playing = nil, auto = true, style = "calm", known = false }
 
 local ROLES = {
   { key = "auto",   en = "Auto",   zh = "自动" },
@@ -66,7 +69,7 @@ end
 local panel = CreateFrame("Frame", "BotsPanel", UIParent)
 panel:SetFrameStrata("DIALOG")
 panel:SetWidth(336)
-panel:SetHeight(168)
+panel:SetHeight(196)
 panel:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
 panel:SetBackdrop({
   bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -140,6 +143,33 @@ local autoLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 autoLabel:SetPoint("LEFT", auto, "RIGHT", 0, 0)
 autoLabel:SetText(L("Fill to five in dungeons", "进五人副本时补满五人"))
 
+local STYLES = {
+  { key = "calm",       en = "Calm",       zh = "冷静",
+    tipEn = "Wait until mobs are near the party before engaging",
+    tipZh = "等怪靠近队伍再上前，避免冲出去多拉" },
+  { key = "aggressive", en = "Aggressive", zh = "奔放",
+    tipEn = "Charge in as soon as there is a target",
+    tipZh = "有目标就直接冲上去打" },
+}
+local styleButtons = {}
+for i = 1, table.getn(STYLES) do
+  local s = STYLES[i]
+  local b = CreateFrame("Button", "BotsStyle" .. i, panel, "UIPanelButtonTemplate")
+  b:SetWidth(100) b:SetHeight(20)
+  b:SetText(L(s.en, s.zh))
+  b:SetPoint("TOPLEFT", panel, "TOPLEFT", 12 + (i - 1) * 106, -96)
+  b.style = s.key
+  b.tip = L(s.tipEn, s.tipZh)
+  b:SetScript("OnClick", function() Cmd(".bots engage " .. this.style) end)
+  b:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
+    GameTooltip:AddLine(this.tip)
+    GameTooltip:Show()
+  end)
+  b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  styleButtons[i] = b
+end
+
 local ORDERS = {
   { L("Come", "过来"), ".partybot cometome", L("Every bot runs to you", "所有机器人跑到你身边") },
   { L("Attack", "集火"), ".partybot attackstart", L("Every bot attacks your target", "所有机器人攻击你的目标") },
@@ -155,7 +185,7 @@ for i = 1, table.getn(ORDERS) do
   local b = CreateFrame("Button", "BotsOrder" .. i, panel, "UIPanelButtonTemplate")
   b:SetWidth(100) b:SetHeight(20)
   b:SetText(c[1])
-  b:SetPoint("TOPLEFT", panel, "TOPLEFT", 12 + col * 106, -104 - row * 24)
+  b:SetPoint("TOPLEFT", panel, "TOPLEFT", 12 + col * 106, -124 - row * 24)
   b.cmd, b.tip = c[2], c[3]
   b:SetScript("OnClick", function() Cmd(this.cmd) end)
   b:SetScript("OnEnter", function()
@@ -166,17 +196,205 @@ for i = 1, table.getn(ORDERS) do
   b:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
+-- ----------------------------------------------------------- party HUD --
+-- While in a party the engage style and common orders sit on screen (no
+-- menu), and each member frame gets Revive / Come on its right.
+
+local function TinyBtn(name, parent, w, text)
+  local b = CreateFrame("Button", name, parent, "UIPanelButtonTemplate")
+  b:SetWidth(w) b:SetHeight(18)
+  b:SetText(text)
+  b:SetScript("OnEnter", function()
+    if this.tip then
+      GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+      GameTooltip:AddLine(this.tip)
+      GameTooltip:Show()
+    end
+  end)
+  b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  return b
+end
+
+local function CmdOnUnit(unit, cmd)
+  if not unit or not UnitExists(unit) then return end
+  TargetUnit(unit)
+  Cmd(cmd)
+end
+
+local quick = CreateFrame("Frame", "BotsQuickBar", UIParent)
+quick:SetFrameStrata("MEDIUM")
+quick:SetWidth(52)
+quick:SetHeight(214)
+quick:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 340, -8)
+quick:SetBackdrop({
+  bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+  edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+  tile = true, tileSize = 16, edgeSize = 12,
+  insets = { left = 3, right = 3, top = 3, bottom = 3 },
+})
+quick:SetBackdropColor(0, 0, 0, .65)
+quick:EnableMouse(true)
+quick:SetMovable(true)
+quick:RegisterForDrag("LeftButton")
+quick:SetScript("OnDragStart", function() this:StartMoving() end)
+quick:SetScript("OnDragStop", function()
+  this:StopMovingOrSizing()
+  local point, _, relPoint, x, y = this:GetPoint()
+  if type(BotsDB) ~= "table" then BotsDB = {} end
+  BotsDB.quick = { point, relPoint, x, y }
+end)
+if quick.SetClampedToScreen then quick:SetClampedToScreen(true) end
+quick:Hide()
+
+local quickStyle, quickOrder = {}, {}
+local qy = -6
+for i = 1, table.getn(STYLES) do
+  local s = STYLES[i]
+  local b = TinyBtn("BotsQuickStyle" .. i, quick, 44, L(s.en, s.zh))
+  b:SetPoint("TOP", quick, "TOP", 0, qy)
+  b.style = s.key
+  b.tip = L(s.tipEn, s.tipZh)
+  b:SetScript("OnClick", function()
+    bots.style = this.style
+    Cmd(".bots engage " .. this.style)
+    local j = 1
+    while quickStyle[j] do
+      MarkCurrent(quickStyle[j], STYLES[j].key == bots.style)
+      j = j + 1
+    end
+  end)
+  quickStyle[i] = b
+  qy = qy - 20
+end
+qy = qy - 4
+local QUICK_ORDERS = {
+  { L("Come", "过来"), ".partybot cometome",
+    L("Every bot runs to you", "所有机器人跑到你身边") },
+  { L("Attack", "集火"), ".partybot attackstart",
+    L("Every bot attacks your target", "所有机器人攻击你的目标") },
+  { L("Stop", "停手"), ".partybot attackstop",
+    L("Every bot stops attacking", "所有机器人停止攻击") },
+  { L("Pull", "拉怪"), ".partybot pull",
+    L("Ranged bot pulls your target; tank taunts when it arrives; damage waits 10 s",
+      "远程先拉你的目标，怪靠近后再由坦克嘲讽，输出等 10 秒") },
+  { L("Hold", "待命"), ".partybot pause",
+    L("Wait here (target one bot to hold only it)", "原地待命（选中某个机器人则只对它）") },
+  { L("Resume", "继续"), ".partybot unpause",
+    L("Bots act again", "机器人恢复行动") },
+  { L("Revive", "复活"), ".group revive",
+    L("Revive every dead party member", "复活所有倒下的队友") },
+}
+for i = 1, table.getn(QUICK_ORDERS) do
+  local c = QUICK_ORDERS[i]
+  local b = TinyBtn("BotsQuickOrder" .. i, quick, 44, c[1])
+  b:SetPoint("TOP", quick, "TOP", 0, qy)
+  b.cmd, b.tip = c[2], c[3]
+  b:SetScript("OnClick", function() Cmd(this.cmd) end)
+  quickOrder[i] = b
+  qy = qy - 20
+end
+quick:SetHeight(-qy + 8)
+
+local memberBars = {}
+for i = 1, 4 do
+  local bar = CreateFrame("Frame", "BotsMemberBar" .. i, UIParent)
+  bar:SetWidth(74) bar:SetHeight(18)
+  bar:SetFrameStrata("MEDIUM")
+  bar.unit = "party" .. i
+  bar:Hide()
+  local res = TinyBtn("BotsMemberRes" .. i, bar, 36, L("Revive", "复活"))
+  res:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
+  res.tip = L("Revive this party member", "复活这名队友")
+  res:SetScript("OnClick", function()
+    CmdOnUnit(this:GetParent().unit, ".revive")
+  end)
+  local come = TinyBtn("BotsMemberCome" .. i, bar, 36, L("Come", "过来"))
+  come:SetPoint("TOPLEFT", res, "TOPRIGHT", 2, 0)
+  come.tip = L("This bot runs to you", "这名机器人跑到你身边")
+  come:SetScript("OnClick", function()
+    CmdOnUnit(this:GetParent().unit, ".partybot cometome")
+  end)
+  bar.res, bar.come = res, come
+  memberBars[i] = bar
+end
+
+local function PlaceMemberBar(bar, i)
+  local frame = getglobal("pfGroup" .. i)
+  if not frame or not frame.IsVisible or not frame:IsVisible() then
+    frame = getglobal("PartyMemberFrame" .. i)
+  end
+  local anchor = frame
+  local tgt = getglobal("pfParty" .. i .. "Target")
+  if tgt and tgt.IsVisible and tgt:IsVisible() then
+    anchor = tgt
+  end
+  bar:ClearAllPoints()
+  if anchor and anchor.IsVisible and anchor:IsVisible() then
+    bar:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 4, 0)
+  else
+    bar:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 175, -8 - (i - 1) * 75)
+  end
+end
+
+local function InParty()
+  return (GetNumPartyMembers() or 0) > 0
+end
+
+local function RefreshQuick()
+  if not InParty() then
+    quick:Hide()
+    local i = 1
+    while memberBars[i] do
+      memberBars[i]:Hide()
+      i = i + 1
+    end
+    return
+  end
+  quick:Show()
+  local i = 1
+  while quickStyle[i] do
+    MarkCurrent(quickStyle[i], STYLES[i].key == bots.style)
+    i = i + 1
+  end
+  i = 1
+  while memberBars[i] do
+    local bar = memberBars[i]
+    local unit = bar.unit
+    if UnitExists(unit) then
+      PlaceMemberBar(bar, i)
+      bar:Show()
+      if UnitIsDeadOrGhost(unit) then
+        bar.res:Enable()
+        bar.res:SetAlpha(1)
+      else
+        bar.res:Disable()
+        bar.res:SetAlpha(.4)
+      end
+    else
+      bar:Hide()
+    end
+    i = i + 1
+  end
+end
+
 local function RefreshPanel()
   for i = 1, table.getn(ROLES) do
     MarkCurrent(roleButtons[i], ROLES[i].key == bots.role)
   end
+  for i = 1, table.getn(STYLES) do
+    MarkCurrent(styleButtons[i], STYLES[i].key == bots.style)
+  end
   auto:SetChecked(bots.auto and 1 or nil)
   if bots.known then
     local guessed = (bots.role == "auto") and L(" (guessed)", "（自动判断）") or ""
-    status:SetText(L("You play ", "你是") .. RoleText(bots.playing) .. guessed)
+    local styleZh = { calm = "冷静", aggressive = "奔放" }
+    local styleText = ZH and (styleZh[bots.style] or bots.style) or bots.style
+    status:SetText(L("You play ", "你是") .. RoleText(bots.playing) .. guessed
+      .. L(" · ", " · ") .. styleText)
   else
     status:SetText(L("Asking the server...", "正在向服务器查询..."))
   end
+  RefreshQuick()
 end
 
 local function ShowPanel()
@@ -332,15 +550,24 @@ BINDING_NAME_BOTS_TOGGLE = L("Toggle party menu", "开关组队菜单")
 function Bots_Toggle() ToggleMenu() end
 
 -- ----------------------------------------------------------- server line --
--- `.bots status` starts with "[bots] role=tank playing=tank auto=1".
+-- `.bots status` starts with "[bots] role=tank playing=tank auto=1 style=calm".
 -- Kept out of the chat window; the human lines after it still show.
 
 local function ParseBotsLine(text)
-  local _, _, role, playing, autoOn = string.find(text, "^%[bots%] role=(.-) playing=(.-) auto=(%d)")
+  local _, _, role, playing, autoOn, style =
+    string.find(text, "^%[bots%] role=(.-) playing=(.-) auto=(%d) style=(%S+)")
+  if not role then
+    _, _, role, playing, autoOn = string.find(text, "^%[bots%] role=(.-) playing=(.-) auto=(%d)")
+  end
   if not role then return false end
   if role == "melee dps" or role == "ranged dps" then role = "dps" end
   bots.role, bots.playing, bots.auto, bots.known = role, playing, autoOn == "1", true
-  if panel:IsVisible() then RefreshPanel() end
+  if style and style ~= "" then bots.style = style end
+  if panel:IsVisible() then
+    RefreshPanel()
+  else
+    RefreshQuick()
+  end
   return true
 end
 
@@ -372,8 +599,30 @@ local function SkinBots()
     i = i + 1
   end
   i = 1
+  while styleButtons[i] do
+    SoloSkin.Button(styleButtons[i])
+    i = i + 1
+  end
+  i = 1
   while i <= table.getn(ORDERS) do
     SoloSkin.Button(getglobal("BotsOrder" .. i))
+    i = i + 1
+  end
+  SoloSkin.Backdrop(quick)
+  i = 1
+  while quickStyle[i] do
+    SoloSkin.Button(quickStyle[i])
+    i = i + 1
+  end
+  i = 1
+  while quickOrder[i] do
+    SoloSkin.Button(quickOrder[i])
+    i = i + 1
+  end
+  i = 1
+  while memberBars[i] do
+    SoloSkin.Button(memberBars[i].res)
+    SoloSkin.Button(memberBars[i].come)
     i = i + 1
   end
 end
@@ -390,6 +639,11 @@ ev:RegisterEvent("VARIABLES_LOADED")
 ev:RegisterEvent("PLAYER_LOGIN")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:RegisterEvent("CHAT_MSG_SYSTEM")
+ev:RegisterEvent("PARTY_MEMBERS_CHANGED")
+ev:RegisterEvent("PARTY_MEMBER_ENABLE")
+ev:RegisterEvent("PARTY_MEMBER_DISABLE")
+ev:RegisterEvent("UNIT_HEALTH")
+ev:RegisterEvent("PLAYER_UNGHOST")
 ev:SetScript("OnEvent", function()
   if event == "VARIABLES_LOADED" then
     InitDB()
@@ -397,14 +651,37 @@ ev:SetScript("OnEvent", function()
       panel:ClearAllPoints()
       panel:SetPoint(db.point[1], UIParent, db.point[2], db.point[3], db.point[4])
     end
+    if db.quick then
+      quick:ClearAllPoints()
+      quick:SetPoint(db.quick[1], UIParent, db.quick[2], db.quick[3], db.quick[4])
+    end
     PlaceMinimapButton()
   elseif event == "PLAYER_LOGIN" then
     -- O was friends/social; Solo shuts that window, so the key is free to take.
     if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("BOTS_TOGGLE", "O", db) end
   elseif event == "PLAYER_ENTERING_WORLD" then
     if not bots.known then Cmd(".bots status quiet") end
+    RefreshQuick()
   elseif event == "CHAT_MSG_SYSTEM" and arg1 then
     ParseBotsLine(arg1)
+  elseif event == "PARTY_MEMBERS_CHANGED"
+      or event == "PARTY_MEMBER_ENABLE"
+      or event == "PARTY_MEMBER_DISABLE"
+      or event == "PLAYER_UNGHOST" then
+    RefreshQuick()
+  elseif event == "UNIT_HEALTH" and arg1 then
+    local _, _, n = string.find(arg1, "^party(%d)")
+    n = n and tonumber(n)
+    local bar = n and memberBars[n]
+    if bar and bar:IsVisible() then
+      if UnitIsDeadOrGhost(arg1) then
+        bar.res:Enable()
+        bar.res:SetAlpha(1)
+      else
+        bar.res:Disable()
+        bar.res:SetAlpha(.4)
+      end
+    end
   end
 end)
 
