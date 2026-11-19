@@ -51,17 +51,19 @@ local PFUI = {
   { { "appearance", "minimap", "coordstext" }, "on" },
   { { "appearance", "border", "shadow" }, "1" },
   -- pfUI kills the stock MainMenuBar; without this the character / spellbook /
-  -- talent / social micro buttons have nowhere to sit.
+  -- talent / map / menu micro buttons have nowhere to sit. Social and Help
+  -- are shut in NoSocial / NoHelp.
   { { "panel", "micro", "enable" }, "1" },
-  -- Addon minimap buttons (Teleport, Items, GMBox, party, farm, Dungeon, …) sit in one strip
-  -- under that micro bar (MicroBar.lua docks the strip). Always shown, not
-  -- combat-hidden. Atlas / AtlasLoot icons are hidden; open them from /gd.
+  -- Addon minimap buttons sit in one strip under that micro bar
+  -- (MicroBar.lua docks them in order: Teleport, Items, GMBox, party, farm,
+  -- Dungeon). Always shown, not combat-hidden. Atlas / AtlasLoot icons are
+  -- hidden; open them from /gd.
   { { "abuttons", "enable" }, "1" },
   { { "abuttons", "position" }, "bottom" },
   { { "abuttons", "showdefault" }, "1" },
   { { "abuttons", "hideincombat" }, "0" },
-  -- Teleport, Items, GMBox, party, farm, Dungeon. MicroBar.lua redraws them
-  -- as action-bar squares and packs the row to however many are showing.
+  -- Six solo buttons. MicroBar.lua redraws them as action-bar squares and
+  -- packs the row to however many are showing.
   { { "abuttons", "rowsize" }, "6" },
   -- Info panels: no guild or friends to count.
   { { "panel", "left", "left" }, "exp" },

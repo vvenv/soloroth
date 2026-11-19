@@ -10,19 +10,32 @@ bar 1's: that spacing is 1, and the border is drawn outside the frame, so a
 gap of 1 leaves the squares touching.
 
 pfUI still collects the addon buttons. After it places them, they are packed
-into a row under the micro buttons. Both strips, and the dungeon progress
-panel, are the minimap's width; the squares shrink to fit that width.
-Atlas / AtlasLoot open from /gd.
+into a row under the micro buttons in a fixed order (travel → gear → tools →
+party → farm → dungeon). Icons are chosen so none match the micro-bar faces
+above (especially not the world-map tile). Both strips, and the dungeon
+progress panel, are the minimap's width; the squares shrink to fit that width.
+Atlas / AtlasLoot open from /gd. Social and Help are shut in NoSocial /
+NoHelp; Quest Log in NoQuest.
 ----------------------------------------------------------------------------]]
 
+-- System strip: character / book / talent / map / menu. No letter, no "?".
 local MICRO = {
   { "CharacterMicroButton" },
   { "SpellbookMicroButton", "Interface\\Icons\\INV_Misc_Book_09" },
   { "TalentMicroButton", "Interface\\Icons\\Ability_Marksmanship" },
-  { "SocialsMicroButton", "Interface\\Icons\\INV_Letter_15" },
   { "WorldMapMicroButton", "Interface\\Icons\\INV_Misc_Map_01" },
   { "MainMenuMicroButton", "Interface\\Icons\\INV_Misc_Gear_01" },
-  { "HelpMicroButton", "Interface\\Icons\\INV_Misc_QuestionMark" },
+}
+
+-- Addon strip order under the micro bar. Discovery order from pfUI varies
+-- with load order; pack in this sequence instead.
+local ADDON_ORDER = {
+  "TeleportMinimapButton",
+  "ItemsMinimapButton",
+  "GMBoxMinimapButton",
+  "BotsMinimapButton",
+  "SoloFarmMinimapButton",
+  "DungeonMinimapButton",
 }
 
 local talentHooked
@@ -167,23 +180,46 @@ end
 
 local function ShownAddon()
   local abs = pfUI and pfUI.addonbuttons
-  local shown, i = {}, 1
+  local shown, byName, i = {}, {}, 1
   if not abs then return shown end
   while abs.buttons and abs.buttons[i] do
-    local btn = getglobal(abs.buttons[i])
-    if btn and btn:IsVisible() then table.insert(shown, btn) end
+    local name = abs.buttons[i]
+    local btn = getglobal(name)
+    if btn and btn:IsVisible() then byName[name] = btn end
+    i = i + 1
+  end
+  i = 1
+  while ADDON_ORDER[i] do
+    local name = ADDON_ORDER[i]
+    if byName[name] then
+      table.insert(shown, byName[name])
+      byName[name] = nil
+    end
+    i = i + 1
+  end
+  i = 1
+  while abs.buttons and abs.buttons[i] do
+    local name = abs.buttons[i]
+    if byName[name] then table.insert(shown, byName[name]) end
     i = i + 1
   end
   return shown
 end
 
+local function DropStockMicro(name)
+  local btn = getglobal(name)
+  if btn then
+    btn:Hide()
+    btn:ClearAllPoints()
+  end
+end
+
 local function SkinMicro()
   local micro = pfUI and pfUI.panel and pfUI.panel.microbutton
   if not micro or not (pfUI.api and pfUI.api.CreateBackdrop) then return end
-  if QuestLogMicroButton then
-    QuestLogMicroButton:Hide()
-    QuestLogMicroButton:ClearAllPoints()
-  end
+  DropStockMicro("QuestLogMicroButton")
+  DropStockMicro("SocialsMicroButton")
+  DropStockMicro("HelpMicroButton")
   local shown, i = {}, 1
   while MICRO[i] do
     local name, path = MICRO[i][1], MICRO[i][2]

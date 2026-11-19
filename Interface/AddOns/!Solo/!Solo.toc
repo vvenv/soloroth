@@ -7,6 +7,8 @@
 Solo.lua
 NoQuest.lua
 NoHonor.lua
+NoSocial.lua
+NoHelp.lua
 MicroBar.lua
 BenillaOptions_zhCN.lua
 PfuiSkin.lua

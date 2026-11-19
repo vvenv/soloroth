@@ -2,8 +2,8 @@
 benilla's own ESC menu rungs and options window in pfUI's look, registered as
 a pfUI skin (so pfUI's "disable skin" setting covers it too):
 
-  * the ESC menu: no Edit Mode rung (benilla has nothing behind it), Help
-    in pfUI's button style;
+  * the ESC menu: no Edit Mode rung (benilla has nothing behind it) and no
+    Support / Help rung (NoHelp.lua shuts that window);
   * the options window: no Game/AddOns tabs (AddOns has nothing behind it,
     Game alone is the whole window), and pfUI's backdrops, buttons,
     checkboxes, sliders, dropdowns, scroll bars and search box;
@@ -19,13 +19,21 @@ end
 local function SkinGameMenu()
   local editMode = BenillaGameMenuButtonEditMode
   local support = BenillaGameMenuButtonSupport
-  if editMode and support then
-    local point, relativeTo, relativePoint, x, y = editMode:GetPoint()
-    editMode:Hide()
-    support:ClearAllPoints()
-    support:SetPoint(point, relativeTo, relativePoint, x, y)
-    GameMenuFrame:SetHeight(GameMenuFrame:GetHeight() - editMode:GetHeight())
-    SkinButton(support)
+  local macros = GameMenuButtonMacros
+  if not editMode then return end
+  local point, relativeTo, relativePoint, x, y = editMode:GetPoint()
+  local drop = editMode:GetHeight() or 0
+  editMode:Hide()
+  if support then
+    drop = drop + (support:GetHeight() or 0)
+    support:Hide()
+  end
+  if macros and point then
+    macros:ClearAllPoints()
+    macros:SetPoint(point, relativeTo, relativePoint, x, y)
+  end
+  if drop > 0 then
+    GameMenuFrame:SetHeight(GameMenuFrame:GetHeight() - drop)
   end
 end
 
