@@ -89,9 +89,9 @@ local function PaintTabs(bar)
     end
     if on and btn.backdrop then
       btn.backdrop:SetBackdropBorderColor(1, 1, .25, 1)
-      btn:SetTextColor(1, 1, .25, 1)
+      if btn.label then btn.label:SetTextColor(1, 1, .25, 1) end
     else
-      btn:SetTextColor(.7, .7, .7, 1)
+      if btn.label then btn.label:SetTextColor(.7, .7, .7, 1) end
     end
   end
 end
@@ -148,7 +148,10 @@ local function MakeBar(parent, name)
   local bar = CreateFrame("Frame", name, parent)
   bar.border = border
   bar.buttons = {}
-  bar:SetHeight(16)
+  bar:SetHeight(18)
+  bar:SetFrameStrata(parent:GetFrameStrata() or "HIGH")
+  bar:SetFrameLevel((parent:GetFrameLevel() or 1) + 20)
+  bar:EnableMouse(true)
   bar:SetPoint("BOTTOMLEFT", parent, "TOPLEFT", 0, border * 3)
   bar:SetPoint("BOTTOMRIGHT", parent, "TOPRIGHT", 0, border * 3)
   A.CreateBackdrop(bar, border)
@@ -158,19 +161,22 @@ local function MakeBar(parent, name)
   if pfUI_config and pfUI_config.global and pfUI_config.global.font_size then
     fontSize = tonumber(pfUI_config.global.font_size) or 12
   end
+  local font = pfUI.font_default or "Fonts\\FRIZQT__.TTF"
 
   local n = table.getn(TABS)
   for i = 1, n do
     local tab = TABS[i]
     local btn = CreateFrame("Button", name .. "Tab" .. i, bar)
     btn.filter = tab.id
-    btn:SetHeight(12)
-    btn:SetText(tab.label)
-    btn:SetTextColor(.7, .7, .7, 1)
-    if pfUI.font_default then
-      btn:SetFont(pfUI.font_default, fontSize, "OUTLINE")
-    end
+    btn:SetHeight(14)
+    btn:EnableMouse(true)
     A.CreateBackdrop(btn, border)
+    btn.label = btn:CreateFontString(nil, "OVERLAY")
+    btn.label:SetFont(font, fontSize, "OUTLINE")
+    btn.label:SetAllPoints(btn)
+    btn.label:SetJustifyH("CENTER")
+    btn.label:SetText(tab.label)
+    btn.label:SetTextColor(.7, .7, .7, 1)
     btn:SetScript("OnClick", function()
       SetFilter(this.filter)
     end)
@@ -195,23 +201,31 @@ end
 local function HookBags()
   if not pfUI or not pfUI.bag then return end
 
+  -- pfUI's hooksecurefunc lives in pfUI's env, not as a file-scope global here.
   if not hookedUpdate and pfUI.bag.UpdateSlot then
     hookedUpdate = true
-    -- Distinct closure: pfUI keys hooks by the function identity.
-    hooksecurefunc(pfUI.bag, "UpdateSlot", function(a1, a2, a3)
-      local bag, slot = a2, a3
-      if type(a1) == "number" then bag, slot = a1, a2 end
+    local prev = pfUI.bag.UpdateSlot
+    function pfUI.bag.UpdateSlot(self, bag, slot)
+      if type(self) == "number" then
+        bag, slot, self = self, bag, pfUI.bag
+      end
+      prev(self, bag, slot)
       if active ~= "all" and bag and slot then ApplySlot(bag, slot) end
-    end)
+    end
   end
 
   if not hookedCreate and pfUI.bag.CreateBags then
     hookedCreate = true
-    hooksecurefunc(pfUI.bag, "CreateBags", function()
+    local prev = pfUI.bag.CreateBags
+    function pfUI.bag.CreateBags(self, object)
+      if type(self) == "string" or self == nil then
+        object, self = self, pfUI.bag
+      end
+      prev(self, object)
       if pfUI.bag.right then MakeBar(pfUI.bag.right, "SoloBagFilter") end
       if pfUI.bag.left then MakeBar(pfUI.bag.left, "SoloBankFilter") end
       if active ~= "all" then ApplyAll() end
-    end)
+    end
   end
 
   if pfUI.bag.right then MakeBar(pfUI.bag.right, "SoloBagFilter") end
