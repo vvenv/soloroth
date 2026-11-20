@@ -13,8 +13,8 @@ so this asks with ".dungeon progress" and reads addon messages, prefix
   X                 not in a tracked instance; hide
 
 UI: a square button on the left of the minimap, under pfUI's herb/mineral
-tracking icon (same size as tracking). Hover shows the boss list; click
-toggles the panel.
+tracking icon (same size as tracking). The panel stays hidden by default;
+hover shows the boss list, click pins the panel open.
 
 A new addon file needs a full client restart, not /reload.
 ----------------------------------------------------------------------------]]
@@ -30,7 +30,7 @@ local GAP = 4
 
 local building
 local snap          -- { name, clears, bosses = { { down, name, x?, y? }, ... }, player, sig }
-local dismissed = false
+local dismissed = true   -- panel off until the player clicks the button
 local offset = 0
 
 local function Cmd(s)
@@ -326,7 +326,6 @@ local function Apply()
   end
   if not snap or snap.sig ~= sig then
     if not snap or snap.name ~= building.name then offset = 0 end
-    dismissed = false
   end
   snap = {
     name = building.name,
@@ -346,7 +345,7 @@ local function OnAddon(msg)
   elseif tag == "X" then
     building = nil
     snap = nil
-    dismissed = false
+    dismissed = true
     btn:Hide()
     f:Hide()
     if type(DungeonPins_Clear) == "function" then DungeonPins_Clear() end
@@ -402,7 +401,6 @@ ev:SetScript("OnEvent", function()
   if event == "CHAT_MSG_ADDON" then
     if arg1 == PREFIX then OnAddon(arg2 or "") end
   elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
-    dismissed = false
     Request()
   end
 end)
