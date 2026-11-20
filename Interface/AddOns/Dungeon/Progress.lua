@@ -13,7 +13,8 @@ so this asks with ".dungeon progress" and reads addon messages, prefix
   X                 not in a tracked instance; hide
 
 UI: a square button on the left of the minimap, under pfUI's herb/mineral
-tracking icon. Click toggles the boss list; hover shows a short summary.
+tracking icon (same size as tracking). Hover shows the boss list; click
+toggles the panel.
 
 A new addon file needs a full client restart, not /reload.
 ----------------------------------------------------------------------------]]
@@ -90,11 +91,9 @@ local function PlaceButton()
   local map = MapFrame()
   local track = TrackingFrame()
   local size = TrackingSize()
-  -- Same height as tracking; wider so "12/12" fits.
-  local w, h = size * 2 + 4, size
-  if math.abs(btn:GetWidth() - w) >= 0.5 or math.abs(btn:GetHeight() - h) >= 0.5 then
-    btn:SetWidth(w)
-    btn:SetHeight(h)
+  if math.abs(btn:GetWidth() - size) >= 0.5 or math.abs(btn:GetHeight() - size) >= 0.5 then
+    btn:SetWidth(size)
+    btn:SetHeight(size)
   end
   btn:ClearAllPoints()
   if track and track.IsShown and track:IsShown() then
@@ -137,6 +136,7 @@ btn:SetScript("OnEnter", function()
   GameTooltip:SetOwner(this, "ANCHOR_LEFT")
   GameTooltip:AddLine(L("Dungeon progress", "副本进度"), 1, .82, 0)
   if type(DungeonProgress_Tooltip) == "function" then DungeonProgress_Tooltip() end
+  GameTooltip:AddLine(" ")
   GameTooltip:AddLine(L("Left: toggle list", "左键：开关列表"), .7, .7, .7)
   GameTooltip:Show()
 end)
@@ -290,10 +290,26 @@ end)
 
 function DungeonProgress_Tooltip()
   if not snap then return end
+  local bosses = snap.bosses
   local killed, total = Counts()
+  local firstUp = 0
+  for i = 1, total do
+    if not bosses[i][1] and firstUp == 0 then firstUp = i end
+  end
   GameTooltip:AddLine(snap.name, 1, .82, 0)
   GameTooltip:AddLine(string.format(L("Cleared %d. Bosses %d/%d.", "通过 %d 次，首领 %d/%d。"),
     snap.clears, killed, total), .8, .8, .8)
+  for i = 1, total do
+    local b = bosses[i]
+    local num = i .. ". "
+    if b[1] then
+      GameTooltip:AddLine(num .. L("down", "已") .. "  " .. b[2], .24, .73, .42)
+    elseif i == firstUp then
+      GameTooltip:AddLine(num .. ">> " .. b[2], 1, .8, 0)
+    else
+      GameTooltip:AddLine(num .. L("up", "未") .. "  " .. b[2], .47, .47, .47)
+    end
+  end
 end
 
 -- ------------------------------------------------------------------ parse --

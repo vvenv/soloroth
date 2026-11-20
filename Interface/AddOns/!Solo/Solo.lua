@@ -135,6 +135,51 @@ local PFUI = {
   { { "disabled", "chatcopy" }, "1" },            -- copy chat lines
   -- Re-enable if an older !Solo left bags off for Bagshui.
   { { "disabled", "bags" }, "0" },
+  -- HUD seats on a 10px grid (pfUI unlock grid ≈ screen/128), mutually
+  -- aligned: player | pet | target on one row (20px gaps), ToT under pet,
+  -- chat/vertical bar share a column, pet bar centred under the cluster.
+  -- New / empty layouts pick these up via LoadMovable; a dragged frame
+  -- keeps its layout-cache.txt row.
+  { { "position", "pfPlayer", "anchor" }, "TOPLEFT" },
+  { { "position", "pfPlayer", "xpos" }, "490" },
+  { { "position", "pfPlayer", "ypos" }, "-650" },
+  { { "position", "pfPlayer", "parent" }, "UIParent" },
+  { { "position", "pfTarget", "anchor" }, "TOPLEFT" },
+  { { "position", "pfTarget", "xpos" }, "832" },
+  { { "position", "pfTarget", "ypos" }, "-650" },
+  { { "position", "pfTarget", "parent" }, "UIParent" },
+  { { "position", "pfPet", "anchor" }, "TOPLEFT" },
+  { { "position", "pfPet", "xpos" }, "712" },
+  { { "position", "pfPet", "ypos" }, "-650" },
+  { { "position", "pfPet", "parent" }, "UIParent" },
+  { { "position", "pfTargetTarget", "anchor" }, "TOPLEFT" },
+  { { "position", "pfTargetTarget", "xpos" }, "712" },
+  { { "position", "pfTargetTarget", "ypos" }, "-680" },
+  { { "position", "pfTargetTarget", "parent" }, "UIParent" },
+  { { "position", "pfChatInputBox", "anchor" }, "TOPLEFT" },
+  { { "position", "pfChatInputBox", "xpos" }, "610" },
+  { { "position", "pfChatInputBox", "ypos" }, "-620" },
+  { { "position", "pfChatInputBox", "parent" }, "UIParent" },
+  { { "position", "pfTotems", "anchor" }, "TOPLEFT" },
+  { { "position", "pfTotems", "xpos" }, "700" },
+  { { "position", "pfTotems", "ypos" }, "-700" },
+  { { "position", "pfTotems", "parent" }, "UIParent" },
+  { { "position", "pfActionBarVertical", "anchor" }, "TOPLEFT" },
+  { { "position", "pfActionBarVertical", "xpos" }, "610" },
+  { { "position", "pfActionBarVertical", "ypos" }, "-740" },
+  { { "position", "pfActionBarVertical", "parent" }, "UIParent" },
+  { { "position", "pfActionBarPet", "anchor" }, "TOPLEFT" },
+  { { "position", "pfActionBarPet", "xpos" }, "660" },
+  { { "position", "pfActionBarPet", "ypos" }, "-770" },
+  { { "position", "pfActionBarPet", "parent" }, "UIParent" },
+  { { "position", "pfDurability", "anchor" }, "TOPLEFT" },
+  { { "position", "pfDurability", "xpos" }, "1260" },
+  { { "position", "pfDurability", "ypos" }, "-180" },
+  { { "position", "pfDurability", "parent" }, "UIParent" },
+  { { "position", "WorldMapFrame", "anchor" }, "TOPLEFT" },
+  { { "position", "WorldMapFrame", "xpos" }, "310" },
+  { { "position", "WorldMapFrame", "ypos" }, "-70" },
+  { { "position", "WorldMapFrame", "scale" }, "0.7" },
 }
 
 -- The steps of pfUI's first-run wizard. Its profile step would copy the
