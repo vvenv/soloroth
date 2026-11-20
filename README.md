@@ -129,7 +129,7 @@
 |---|---|
 | 开始玩 | 双击 Soloroth.app，或 `./do.sh play` |
 | 开 / 关服务器 | `./do.sh server` / `./do.sh stop`，或启动器的 ··· 菜单 |
-| 管理界面（账号 / 角色 / SQL） | 启动器 ··· →「打开管理界面」，或 `./do.sh admin`（`http://127.0.0.1:8765`，仅本机） |
+| 管理界面（账号 / 角色 / SQL） | 启动器 ··· →「打开管理界面」，或 `./do.sh admin`（`http://127.0.0.1:8765`，仅本机；可切中英文 / 深浅色） |
 | 拉代码后更新 | `./do.sh build`，再 `./do.sh setup`；插件用 `./do.sh addons` 后**完全重启**客户端 |
 | 改了服务端设置 | 改 `config/mangosd.overrides.conf`，然后 `./do.sh config`，重启服务器 |
 | 原版 / HD 模型 | 选项 → 图形 →「怪物模型」，或 `./do.sh visual`；重启生效 |
