@@ -40,6 +40,8 @@ if [ "${1:-}" = "--migrate-only" ]; then
     migrate classic_characters characters
     migrate classic_logs logs
     migrate classic_world world
+    # Solo: Ahn'Qiraj gates already open (skip the war-effort unlock).
+    "${db[@]}" classic_world < "$core/custom/repack/AQ-SET_GATES_OPEN.sql"
     exit 0
 fi
 
@@ -69,6 +71,8 @@ migrate classic_logs logs
 echo "classic_world <- $(basename "$world_dump") (a minute or two)"
 "${db[@]}" classic_world < "$world_dump"
 migrate classic_world world
+# Solo: Ahn'Qiraj gates already open (skip the war-effort unlock).
+"${db[@]}" classic_world < "$core/custom/repack/AQ-SET_GATES_OPEN.sql"
 
 "${db[@]}" classic_realmd -e "
     DELETE FROM realmlist;

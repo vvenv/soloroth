@@ -3,9 +3,11 @@ Category filter tabs for pfUI bags and bank: All / Gear / Consumable /
 Recipe / Junk. Dim non-matching slots (same idea as pfUI's bag search).
 
 The bar lives on UIParent, glued to the top of pfBag / pfBank, so it is not
-clipped by the bag frame. No hooksecurefunc (that global is only in pfUI's
-env). Full client restart required after changing this file — /reload's hot
-swap keeps old OnUpdate / hooks.
+clipped by the bag frame. When pfUI's bag-slot strip is open (the up-arrow
+next to close), the bar lifts above that strip — same screen spot would
+otherwise cover the bank "+" purchase button. No hooksecurefunc (that
+global is only in pfUI's env). Full client restart required after changing
+this file — /reload's hot swap keeps old OnUpdate / hooks.
 ----------------------------------------------------------------------------]]
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
@@ -158,9 +160,17 @@ local function SyncBar(bar)
   if bag:IsVisible() then
     bar:Show()
     LayoutTabs(bar)
+    -- pfUI bagslots sit at TOP of the bag (y = border*3). Lift the filter
+    -- clear of them so bank purchase / bag equip clicks still land.
+    local gap = 4
+    local slots = bag.bagslots
+    if slots and slots:IsShown() then
+      local border = bar.border or 3
+      gap = 4 + (slots:GetHeight() or 0) + border * 3
+    end
     bar:ClearAllPoints()
-    bar:SetPoint("BOTTOMLEFT", bag, "TOPLEFT", 0, 4)
-    bar:SetPoint("BOTTOMRIGHT", bag, "TOPRIGHT", 0, 4)
+    bar:SetPoint("BOTTOMLEFT", bag, "TOPLEFT", 0, gap)
+    bar:SetPoint("BOTTOMRIGHT", bag, "TOPRIGHT", 0, gap)
   else
     bar:Hide()
   end
