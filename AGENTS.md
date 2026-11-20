@@ -17,11 +17,13 @@ each script does, the directory table and upstream merging.
   SortBags) are kept as shipped: never edit their sources. Change
   their defaults or looks from `!Solo` (see its `AGENTS.md`).
 - `tools/macos/` — build, install, run scripts. `tools/macos/launcher/` — Soloroth.app's
- launcher window (AppKit, built by `make-app.sh`): the art with no text over it but the
- logo, the slogan, the bottom bar and the promo slot. Heroes (picked at random, each
- placing the logo and slogan), logo, slogan, links and promo come from `launcher.json`,
- so new art or an ad changes there, not in Swift. `logo.png` is drawn by
- `render-logo.swift`. Check it with `--snapshot out.png`. `tools/glue-skin/` — login/character screens.
+  launcher window (AppKit, built by `make-app.sh`): the art with no text over it but the
+  logo, the slogan, the bottom bar and the promo slot. Heroes (picked at random, each
+  placing the logo and slogan), logo, slogan, links and promo come from `launcher.json`,
+  so new art or an ad changes there, not in Swift. `logo.png` is drawn by
+  `render-logo.swift`. Check it with `--snapshot out.png`. The window stays open while
+  the game runs (`start-client.sh`); ··· →「打开管理界面」starts
+  `tools/macos/admin/server.py` on `127.0.0.1:8765`. `tools/glue-skin/` — login/character screens.
   `tools/lib/` — shared menu/log helpers for `do.sh`.
 - `do.sh` — interactive entry (first install, play, build, visual, …); wraps `tools/macos/`.
 - `Data/` (links to the client MPQs plus generated patches), `benilla-config/`, `server/run`,

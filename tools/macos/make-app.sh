@@ -1,11 +1,11 @@
 #!/bin/bash
 # Builds Soloroth.app, a double-click launcher for tools/macos/play.sh: it
 # opens the launcher window (tools/macos/launcher/), which starts the server
-# while it shows the news, and on 开始游戏 the client, which logs in by itself
-# (see play.sh). Quitting the client returns to the launcher; closing the
-# launcher window (or ⌘Q) leaves the app. The app runs this checkout in place,
-# so it stays current with builds and pulls; rerun this when the checkout
-# moves or Launcher.swift / this script's launch body changes.
+# while it shows the news, and on 开始游戏 starts the client itself so the
+# window stays open. Closing the launcher window (or ⌘Q) leaves the app; the
+# server (and a running client) keep going. The app runs this checkout in
+# place, so it stays current with builds and pulls; rerun this when the
+# checkout moves or Launcher.swift / this script's launch body changes.
 #
 #   tools/macos/make-app.sh              into /Applications (~/Applications if not writable)
 #   tools/macos/make-app.sh <folder>     into <folder>
@@ -13,13 +13,11 @@
 # The icon is tools/macos/AppIcon.png (1024x1024; render-icon.swift draws it).
 # Launcher output goes to server/logs/launcher.log. SOLOROTH_SKIP_LAUNCHER=1
 # (or "skip": true in launcher.json) goes straight to the game and exits with
-# the client (no return to the window), as does a launcher that failed to
-# build or crashed.
+# the client (no window), as does a launcher that failed to build or crashed.
 #
 # The bundle's executable is a shell script named "launch". It runs the
-# launcher window, then runs a copy of the client at Contents/MacOS/Soloroth
-# (so the Dock name, menu bar and icon stay Soloroth) and loops back to the
-# launcher when the game exits.
+# launcher window (which owns the client); when the launcher is skipped or
+# missing it falls through to play.sh.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 dest="${1:-}"
@@ -59,9 +57,8 @@ cat > "$app/Contents/Info.plist" <<EOF
 </plist>
 EOF
 
-# "launch" is the bundle executable. The game binary is copied to
-# Contents/MacOS/Soloroth and run from there so macOS keeps this bundle's
-# name and icon; after the game exits the script shows the launcher again.
+# "launch" is the bundle executable. The launcher window stages the client
+# into Contents/MacOS/Soloroth (Dock name / icon) via start-client.sh.
 cat > "$app/Contents/MacOS/launch" <<EOF
 #!/bin/bash
 root="$root"
@@ -83,47 +80,37 @@ APPLESCRIPT
 [ -d "$root/tools/macos" ] || { alert "找不到游戏目录：$root。重新运行 tools/macos/make-app.sh。"; exit 1; }
 bundle="$(cd "$(dirname "$0")/../.." && pwd)"
 client="$root/release/build/macos/client-target/release/benilla"
-# shellcheck source=bundle.sh
-source "$root/tools/macos/bundle.sh"
 
-# 0 = play from the window (loop back after the client); anything else that
-# still starts the game (skip / no Launcher) exits with the client.
-while true; do
-    if pgrep -f "^$bundle/Contents/MacOS/Soloroth" >/dev/null \
-        || pgrep -f "^$client" >/dev/null; then
+# Already in game (e.g. double-clicked again): leave the running session alone.
+if pgrep -f "^$bundle/Contents/MacOS/Soloroth" >/dev/null \
+    || pgrep -f "^$client" >/dev/null; then
+    exit 0
+fi
+
+# The window starts the server and the client itself, and stays open until
+# the player closes it (1) or Force Quit (>=128). Skip / missing Launcher /
+# any other exit falls through to play.sh without the window.
+if [ "${SOLOROTH_SKIP_LAUNCHER:-}" != 1 ] && [ -x "$bundle/Contents/MacOS/Launcher" ]; then
+    "$bundle/Contents/MacOS/Launcher" --root "$root"
+    status=$?
+    if [ "$status" = 1 ] || [ "$status" -ge 128 ] || [ "$status" = 0 ]; then
         exit 0
     fi
-    # The window starts the server itself: 0 is play; 1, or a signal (Force
-    # Quit), means the player closed it. Any other code (skipped, failed to
-    # run, not built) starts the game without the window.
-    status=2
-    if [ "${SOLOROTH_SKIP_LAUNCHER:-}" != 1 ] && [ -x "$bundle/Contents/MacOS/Launcher" ]; then
-        "$bundle/Contents/MacOS/Launcher" --root "$root"
-        status=$?
-    fi
-    if [ "$status" = 1 ] || [ "$status" -ge 128 ]; then exit 0; fi
-    if [ "$status" != 0 ]; then
-        if ! lsof -nP -iTCP:8085 -sTCP:LISTEN >/dev/null 2>&1; then
-            osascript -e 'display notification "第一次启动服务器要一点时间" with title "Soloroth" subtitle "正在启动服务器…"'
-        fi
-        bash "$root/tools/macos/play.sh" --no-client
-        start=$?
-        if [ "$start" != 0 ]; then
-            alert "启动失败（退出码 $start）。详情见 server/logs/launcher.log：
+fi
+
+if ! lsof -nP -iTCP:8085 -sTCP:LISTEN >/dev/null 2>&1; then
+    osascript -e 'display notification "第一次启动服务器要一点时间" with title "Soloroth" subtitle "正在启动服务器…"'
+fi
+bash "$root/tools/macos/play.sh"
+start=$?
+if [ "$start" != 0 ]; then
+    alert "启动失败（退出码 $start）。详情见 server/logs/launcher.log：
 $(tail -n 8 "$logs/launcher.log")"
-            exit "$start"
-        fi
-    fi
-    export_client_env
-    cd "$root"
-    target="$(stage_client "$bundle" "$client")"
-    [ -x "$target" ] || { alert "找不到客户端。先运行 tools/macos/build-classic.sh client。"; exit 1; }
-    # Not exec: the client may exit non-zero on Quit, and we want the launcher back.
-    "$target" || true
-    [ "$status" = 0 ] || exit 0
-done
+    exit "$start"
+fi
 EOF
 chmod +x "$app/Contents/MacOS/launch"
+
 
 if ! swiftc -O -o "$app/Contents/MacOS/Launcher" "$root/tools/macos/launcher/Launcher.swift"; then
     rm -f "$app/Contents/MacOS/Launcher"

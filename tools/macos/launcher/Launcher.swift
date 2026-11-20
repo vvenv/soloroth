@@ -1,17 +1,16 @@
 // Soloroth.app's launcher window. It starts the server (play.sh --no-client)
-// as soon as it opens, shows the art and an optional promo, and exits when
-// the player is done with it; the app's launch script then runs the client
-// and brings this window back when the game quits.
+// as soon as it opens, shows the art and an optional promo, and stays open
+// while the game runs (start-client.sh). Closing the window or ⌘Q leaves
+// the app; the server and an already-running client keep going.
 //
 //   Launcher --root <checkout>                         the window
 //   Launcher --root <checkout> --snapshot out.png      render it to a PNG and exit
 //            [--config extra.json]                     with extra keys on top
 //            [--hero N]                                show heroes[N], not a random one
 //
-// Exit codes: 0 play (the server is up), 1 the player closed the window,
-// 2 skipped ("skip": true in the config), 64 bad arguments. The launch script
-// starts the game without the window on any code but 0, 1 and a signal, and
-// only loops back here after a 0.
+// Exit codes: 1 the player closed the window, 2 skipped ("skip": true in the
+// config), 64 bad arguments. The launch script starts the game without the
+// window on any code but 1 and a signal (skip / missing Launcher).
 //
 // Content comes from tools/macos/launcher/launcher.json; benilla-config/launcher.json
 // replaces any of its top-level keys. The promo shows only when it has a title or text.
@@ -365,7 +364,7 @@ func linkButton(_ title: String, target: AnyObject, action: Selector) -> NSButto
 // MARK: - The window
 
 enum ServerState {
-    case starting, ready, stopping, stopped
+    case starting, ready, playing, stopping, stopped
     case failed(Int32)
 }
 
@@ -380,6 +379,7 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let play = PlayButton(title: "开始游戏", target: nil, action: nil)
     var state = ServerState.stopped
     var wantsPlay = false
+    var clientRunning = false
     var links: [String] = []
 
     func build() {
@@ -539,7 +539,11 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
             status.stringValue = "服务器已就绪"
             play.title = "开始游戏"
             play.isEnabled = true
-            if wantsPlay { exit(0) }
+            if wantsPlay { startClient() }
+        case .playing:
+            status.stringValue = "游戏运行中"
+            play.title = "游戏中…"
+            play.isEnabled = false
         case .stopping:
             status.stringValue = "正在关闭服务器…"
             play.isEnabled = false
@@ -592,18 +596,35 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return last.isEmpty ? "详情见 server/logs/launcher.log" : last
     }
 
+    func startClient() {
+        wantsPlay = false
+        guard !clientRunning else { return }
+        clientRunning = true
+        set(.playing)
+        run("start-client.sh") { code in
+            self.clientRunning = false
+            if case .playing = self.state {
+                if code == 0 {
+                    self.set(.ready)
+                } else {
+                    self.set(.ready, detail: "客户端退出（\(code)）")
+                }
+            }
+        }
+    }
+
     // MARK: Actions
 
     @objc func playPressed() {
         switch state {
-        case .ready: exit(0)
+        case .ready: startClient()
         case .starting:
             wantsPlay = true
             set(.starting)
         case .stopped, .failed:
             wantsPlay = true
             startServer()
-        case .stopping: break
+        case .playing, .stopping: break
         }
     }
 
@@ -613,15 +634,23 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc func showMenu(_ sender: NSButton) {
         let menu = NSMenu()
+        menu.addItem(withTitle: "打开管理界面", action: #selector(openAdmin), keyEquivalent: "").target = self
         menu.addItem(withTitle: "打开日志文件夹", action: #selector(openLogs), keyEquivalent: "").target = self
         menu.addItem(withTitle: "打开插件文件夹", action: #selector(openAddOns), keyEquivalent: "").target = self
         menu.addItem(withTitle: "编辑启动器设置", action: #selector(editConfig), keyEquivalent: "").target = self
         menu.addItem(.separator())
         let stop = menu.addItem(withTitle: "关闭服务器", action: #selector(stopServer), keyEquivalent: "")
         stop.target = self
-        if case .ready = state {} else { stop.isEnabled = false }
+        switch state {
+        case .ready, .playing: break
+        default: stop.isEnabled = false
+        }
         menu.autoenablesItems = false
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
+    }
+
+    @objc func openAdmin() {
+        run("start-admin.sh") { _ in }
     }
 
     @objc func openLogs() { NSWorkspace.shared.open(URL(fileURLWithPath: "\(root)/server/logs")) }
@@ -648,6 +677,19 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
         run("stop-server.sh") { _ in self.set(.stopped) }
     }
 
+    func stopAdmin() {
+        let pidFile = "\(root)/server/logs/admin.pid"
+        guard let text = try? String(contentsOfFile: pidFile, encoding: .utf8),
+              let pid = Int32(text.trimmingCharacters(in: .whitespacesAndNewlines)), pid > 0 else { return }
+        kill(pid, SIGTERM)
+        try? FileManager.default.removeItem(atPath: pidFile)
+    }
+
+    func quitLauncher() -> Never {
+        stopAdmin()
+        exit(1)
+    }
+
     // MARK: App
 
     func applicationDidFinishLaunching(_ note: Notification) {
@@ -667,9 +709,11 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
         startServer()
     }
 
-    // Quitting here never starts the game: the launch script reads 1 as "stop".
-    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply { exit(1) }
-    func windowWillClose(_ note: Notification) { exit(1) }
+    // Quitting leaves the app; the launch script treats 1 as "stop".
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        quitLauncher()
+    }
+    func windowWillClose(_ note: Notification) { quitLauncher() }
 }
 
 // MARK: - Main

@@ -117,9 +117,9 @@ fi
 # shellcheck source=bundle.sh
 source "$root/tools/macos/bundle.sh"
 export_client_env
-# Soloroth.app starts the server and the account itself, then runs the
-# client from Contents/MacOS/Soloroth so the Dock keeps a single Soloroth
-# icon; its launch script loops back to the launcher when the client exits.
+# Soloroth.app's launcher window starts the server and the account itself,
+# then runs the client via start-client.sh (staged as Contents/MacOS/Soloroth
+# so the Dock keeps a single Soloroth icon) while the window stays open.
 [ "${1:-}" = "--no-client" ] && exit 0
 cd "$root"
 exec "$(resolve_client "$client")" "$@"

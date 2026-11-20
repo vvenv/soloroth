@@ -12,6 +12,7 @@
 #   ./do.sh build [all|server|client]
 #   ./do.sh setup [--reset-db]
 #   ./do.sh account [账号 密码 [gm]]
+#   ./do.sh admin                   # 打开本地 Web 管理台（账号 / 角色 / SQL）
 #   ./do.sh app [目标目录]          # 生成 Soloroth.app（默认 /Applications）
 #   ./do.sh addons                  # 安装 / 更新插件
 #   ./do.sh visual                  # 外观：下载补丁或切换方案
@@ -370,6 +371,12 @@ cmd_account() {
   log_success "账号已处理"
 }
 
+cmd_admin() {
+  log_info "打开管理界面 http://127.0.0.1:8765"
+  run_macos start-admin.sh
+  log_success "管理台已就绪（仅本机；关启动器窗口会停掉）"
+}
+
 cmd_app() {
   local dest="${1:-}"
   if [ -z "$dest" ] && [ -t 0 ]; then
@@ -496,6 +503,7 @@ run_main_menu() {
       "build:编译（增量）" \
       "setup:配置（库 / 数据 / 插件）" \
       "account:建账号" \
+      "admin:管理界面（Web）" \
       "app:生成 App" \
       "addons:更新插件" \
       "visual:外观补丁" \
@@ -506,7 +514,7 @@ run_main_menu() {
       __back__|quit)
         exit 0
         ;;
-      play|server|stop|first|build|setup|account|app|addons|visual|config|status)
+      play|server|stop|first|build|setup|account|admin|app|addons|visual|config|status)
         "cmd_$choice" || log_error "执行失败（${choice}）"
         # status 只是看一眼，不必再按回车
         if [ "$choice" != "status" ]; then
@@ -524,7 +532,7 @@ CMD=""
 if [ $# -gt 0 ]; then
   case "$1" in
     -h|--help|help) usage 0 ;;
-    play|server|stop|first|build|setup|account|app|addons|visual|config|status|hint|doctor)
+    play|server|stop|first|build|setup|account|admin|app|addons|visual|config|status|hint|doctor)
       CMD="$1"
       [ "$CMD" = "hint" ] || [ "$CMD" = "doctor" ] && CMD=status
       shift
