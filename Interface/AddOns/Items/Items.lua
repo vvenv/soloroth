@@ -6,9 +6,10 @@ Formerly the GMBox "Items" tab and /gi. Teleports are the Teleport addon
 (/gd).
 
 Data_Items.lua (loaded first) still publishes GMBox_ItemID, GMBox_ItemName,
-GMBox_ItemNameZH and the packed filter columns. Those names are what the
-generator writes. A zhCN client shows and searches the Chinese name when
-there is one; the id is what `.additem` sends.
+GMBox_ItemNameZH, GMBox_ItemNamePY and the packed filter columns. Those names
+are what the generator writes. A zhCN client shows the Chinese name when
+there is one; search matches English, Chinese, or pinyin (initials or full);
+the id is what `.additem` sends.
 ----------------------------------------------------------------------------]]
 
 local VERSION = "1.0.0"
@@ -101,12 +102,15 @@ end
 
 -- ------------------------------------------------------------- search ------
 
-local itemLower, itemById, itemZH
+local itemLower, itemById, itemAlts
 
 local function BuildItems()
   if itemLower then return end
   itemLower, itemById = {}, {}
-  itemZH = GMBox_ItemNameZH and { GMBox_ItemNameZH } or nil
+  -- Same shape as Teleport's TELE_ALTS: Chinese names + "initials fullpinyin".
+  itemAlts = {}
+  if GMBox_ItemNameZH then table.insert(itemAlts, GMBox_ItemNameZH) end
+  if GMBox_ItemNamePY then table.insert(itemAlts, GMBox_ItemNamePY) end
   local names = GMBox_ItemName or {}
   for i = 1, table.getn(names) do
     itemLower[i] = string.lower(names[i])
@@ -176,11 +180,12 @@ local function Search(q, limit)
   local res = {}
   local hits = 0
   local n = table.getn(itemLower)
+  local nAlt = table.getn(itemAlts)
   for i = 1, n do
     local at = string.find(itemLower[i], q, 1, true)
-    if not at and itemZH then
-      for k = 1, table.getn(itemZH) do
-        local a = itemZH[k][i]
+    if not at then
+      for k = 1, nAlt do
+        local a = itemAlts[k][i]
         if a and a ~= "" then
           at = string.find(a, q, 1, true)
           if at then break end
@@ -468,7 +473,7 @@ function Refresh()
   if shown > ROWS then shown = ROWS end
   if n == 0 then
     ui.status:SetText(L("no match -- type part of an item name, or an item id",
-                        "没有匹配 -- 输入物品名（中英文都行）或物品 id"))
+                        "没有匹配 -- 输入中文名、拼音首字母/全拼、英文名或物品 id"))
   else
     ui.status:SetText(n .. L(" match(es), showing ", " 个匹配，显示第 ") .. (view.offset + 1) .. "-" ..
       (view.offset + shown) .. L("   (mouse wheel scrolls)", " 个   (滚轮翻页)"))
