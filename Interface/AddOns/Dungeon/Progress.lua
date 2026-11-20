@@ -12,6 +12,9 @@ so this asks with ".dungeon progress" and reads addon messages, prefix
   D                 show
   X                 not in a tracked instance; hide
 
+UI: a square button on the left of the minimap, under pfUI's herb/mineral
+tracking icon. Click toggles the boss list; hover shows a short summary.
+
 A new addon file needs a full client restart, not /reload.
 ----------------------------------------------------------------------------]]
 
@@ -21,6 +24,8 @@ local function L(en, zh) if ZH and zh then return zh end return en end
 local PREFIX = "SoloDun"
 local VISIBLE = 12
 local ROW_H = 16
+local BTN = 18
+local GAP = 4
 
 local building
 local snap          -- { name, clears, bosses = { { down, name, x?, y? }, ... }, player, sig }
@@ -47,82 +52,112 @@ function DungeonProgress_Snap()
   return snap
 end
 
--- ------------------------------------------------------------------- frame --
+-- ------------------------------------------------------------------- frames --
 
-local GAP = 4
 local WIDTH = 180
 local f
+local btn
+local btnLabel
 
--- Lowest visible party frame on the left (pfUI pfGroupN, else stock).
--- Alone: the player frame. No frames yet: top-left fallback.
-local function PartyAnchor()
-  local best, bestBottom
-  local function consider(frame)
-    if not frame or not frame.IsVisible or not frame:IsVisible() then return end
-    if not frame.GetBottom then return end
-    local bottom = frame:GetBottom()
-    if not bottom then return end
-    -- Same parent scale family; prefer the lowest bottom edge.
-    if not bestBottom or bottom < bestBottom then
-      best, bestBottom = frame, bottom
-    end
-  end
+local function MapFrame()
+  if pfUI and pfUI.minimap then return pfUI.minimap end
+  return Minimap
+end
 
-  if pfUI and pfUI.uf and pfUI.uf.group then
-    local i = 0
-    while i <= 4 do
-      consider(pfUI.uf.group[i])
-      i = i + 1
-    end
+local function TrackingFrame()
+  if pfUI and pfUI.tracking then return pfUI.tracking end
+  return getglobal("MiniMapTrackingFrame")
+end
+
+local function TrackingSize()
+  if pfUI and pfUI_config and pfUI_config.appearance
+      and pfUI_config.appearance.minimap then
+    local n = tonumber(pfUI_config.appearance.minimap.tracking_size)
+    if n and n > 0 then return n end
   end
-  local i = 1
-  while i <= 4 do
-    consider(getglobal("pfGroup" .. i))
-    consider(getglobal("PartyMemberFrame" .. i))
-    i = i + 1
+  local t = TrackingFrame()
+  if t and t.GetWidth then
+    local w = t:GetWidth()
+    if w and w > 0 then return w end
   end
-  if not best then
-    consider(getglobal("pfPlayer"))
-    consider(PlayerFrame)
+  return BTN
+end
+
+-- Left of the minimap, under the herb / mineral tracking square when that
+-- square is up; otherwise the same corner tracking would use.
+local function PlaceButton()
+  if not btn then return end
+  local map = MapFrame()
+  local track = TrackingFrame()
+  local size = TrackingSize()
+  -- Same height as tracking; wider so "12/12" fits.
+  local w, h = size * 2 + 4, size
+  if math.abs(btn:GetWidth() - w) >= 0.5 or math.abs(btn:GetHeight() - h) >= 0.5 then
+    btn:SetWidth(w)
+    btn:SetHeight(h)
   end
-  return best
+  btn:ClearAllPoints()
+  if track and track.IsShown and track:IsShown() then
+    btn:SetPoint("TOPLEFT", track, "BOTTOMLEFT", 0, -GAP)
+  else
+    btn:SetPoint("TOPLEFT", map, "TOPLEFT", -10, -10)
+  end
 end
 
 local function PlaceProgress()
-  if not f then return end
-  local anchor = PartyAnchor()
-  local width = WIDTH
-  if anchor and anchor.GetWidth then
-    local w = anchor:GetWidth()
-    if w and w > 40 then
-      width = w * (anchor:GetEffectiveScale() or 1) / (f:GetEffectiveScale() or 1)
-    end
-  end
-  if width < 140 then width = 140 end
-  if math.abs(f:GetWidth() - width) >= 0.5 then f:SetWidth(width) end
-
+  if not f or not btn then return end
   local point, rel, relPoint, x, y = f:GetPoint()
-  if anchor then
-    if point == "TOPLEFT" and rel == anchor and relPoint == "BOTTOMLEFT"
-        and x == 0 and y == -GAP then
-      return
-    end
-    f:ClearAllPoints()
-    f:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -GAP)
-  else
-    if point == "TOPLEFT" and rel == UIParent and relPoint == "TOPLEFT"
-        and x == 12 and y == -180 then
-      return
-    end
-    f:ClearAllPoints()
-    f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 12, -180)
+  if point == "TOPRIGHT" and rel == btn and relPoint == "TOPLEFT"
+      and x == -GAP and y == 0 then
+    return
   end
+  f:ClearAllPoints()
+  f:SetPoint("TOPRIGHT", btn, "TOPLEFT", -GAP, 0)
 end
+
+btn = CreateFrame("Button", "DungeonProgressButton", UIParent)
+btn:SetWidth(BTN)
+btn:SetHeight(BTN)
+btn:SetFrameStrata("MEDIUM")
+btn:SetFrameLevel(8)
+btn:RegisterForClicks("LeftButtonUp")
+btn:Hide()
+
+local btnIcon = btn:CreateTexture(nil, "ARTWORK")
+btnIcon:SetTexture("Interface\\Icons\\INV_Misc_Key_03")
+btnIcon:SetTexCoord(.08, .92, .08, .92)
+btnIcon:SetAllPoints(btn)
+btnIcon:SetVertexColor(1, 1, 1, .35)
+
+btnLabel = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+btnLabel:SetPoint("CENTER", btn, "CENTER", 0, 0)
+btnLabel:SetTextColor(1, .82, 0)
+
+btn:SetScript("OnEnter", function()
+  GameTooltip:SetOwner(this, "ANCHOR_LEFT")
+  GameTooltip:AddLine(L("Dungeon progress", "副本进度"), 1, .82, 0)
+  if type(DungeonProgress_Tooltip) == "function" then DungeonProgress_Tooltip() end
+  GameTooltip:AddLine(L("Left: toggle list", "左键：开关列表"), .7, .7, .7)
+  GameTooltip:Show()
+end)
+btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+btn:SetScript("OnClick", function()
+  if f:IsShown() then
+    dismissed = true
+    f:Hide()
+  elseif snap then
+    dismissed = false
+    f:Show()
+    PlaceProgress()
+  end
+end)
+btn:SetScript("OnUpdate", function()
+  if this:IsShown() then PlaceButton() end
+end)
 
 f = CreateFrame("Frame", "DungeonProgressFrame", UIParent)
 f:SetWidth(WIDTH)
 f:SetHeight(80)
-f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 12, -180)
 f:SetBackdrop({
   bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
   edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -133,9 +168,6 @@ f:SetBackdropColor(0, 0, 0, .85)
 f:EnableMouse(true)
 f:EnableMouseWheel(true)
 if f.SetClampedToScreen then f:SetClampedToScreen(true) end
-f:SetScript("OnUpdate", function()
-  if this:IsShown() then PlaceProgress() end
-end)
 f:SetFrameStrata("MEDIUM")
 f:Hide()
 
@@ -181,11 +213,24 @@ local function ShownCount(total)
   return n
 end
 
+local function Counts()
+  if not snap then return 0, 0 end
+  local bosses = snap.bosses
+  local total = table.getn(bosses)
+  local killed = 0
+  for i = 1, total do
+    if bosses[i][1] then killed = killed + 1 end
+  end
+  return killed, total
+end
+
 local function Layout()
   if not snap then
+    btn:Hide()
     f:Hide()
     return
   end
+
   local bosses = snap.bosses
   local total = table.getn(bosses)
   local maxOff = total - VISIBLE
@@ -193,12 +238,15 @@ local function Layout()
   if offset < 0 then offset = 0 end
   if offset > maxOff then offset = maxOff end
 
-  local killed = 0
-  local firstUp = 0
+  local killed, firstUp = 0, 0
   for i = 1, total do
     if bosses[i][1] then killed = killed + 1
     elseif firstUp == 0 then firstUp = i end
   end
+
+  btnLabel:SetText(string.format("%d/%d", killed, total))
+  PlaceButton()
+  btn:Show()
 
   title:SetText(snap.name)
   if total > 0 and killed == total then
@@ -242,10 +290,7 @@ end)
 
 function DungeonProgress_Tooltip()
   if not snap then return end
-  local killed, total = 0, table.getn(snap.bosses)
-  for i = 1, total do
-    if snap.bosses[i][1] then killed = killed + 1 end
-  end
+  local killed, total = Counts()
   GameTooltip:AddLine(snap.name, 1, .82, 0)
   GameTooltip:AddLine(string.format(L("Cleared %d. Bosses %d/%d.", "通过 %d 次，首领 %d/%d。"),
     snap.clears, killed, total), .8, .8, .8)
@@ -286,6 +331,7 @@ local function OnAddon(msg)
     building = nil
     snap = nil
     dismissed = false
+    btn:Hide()
     f:Hide()
     if type(DungeonPins_Clear) == "function" then DungeonPins_Clear() end
   elseif tag == "H" and building then
@@ -320,6 +366,7 @@ local function SkinProgress()
   if not SoloSkin then return end
   SoloSkin.Backdrop(f)
   SoloSkin.Button(close)
+  SoloSkin.IconButton(btn, btnIcon)
 end
 
 if SoloSkin and SoloSkin.Register then

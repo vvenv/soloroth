@@ -218,6 +218,14 @@ end
 
 local function DungeonGo(d)
   SelectDungeon(d)
+  -- Same-map .go to the stock entrance would move you there, then leaving
+  -- would save the entrance as the resume spot. Skip when already inside.
+  local z = GetRealZoneText() or ""
+  if z == d[1] or z == d[2] then
+    msg(L("Already inside — leave and re-enter (or /gd from outside) to resume.",
+          "已在副本内；出去再进（或在外面点列表）才会按离开坐标恢复。"))
+    return
+  end
   Cmd(string.format(".go xyzo %.1f %.1f %.1f %.2f %d", d[6], d[7], d[8], d[9], d[5]))
   msg("-> " .. (ZH and d[2] or d[1]))
 end

@@ -10,9 +10,9 @@ minimap, ESC「界面」for settings). Keep that in README; this file stays in a
 ## Command strip
 
 `MicroBar.lua` wraps the micro row and the feature row in `SoloCommandStrip` (one
-pfUI backdrop). Menus use `Solo_PlaceStripMenu`. Dungeon progress anchors under the
-left party frames (`Dungeon/Progress.lua`), not under the strip. Do not present the
-two rows as "system vs addon" in player docs.
+pfUI backdrop). Menus use `Solo_PlaceStripMenu`. Dungeon progress is a button on the
+left of the minimap under pfUI tracking (`Dungeon/Progress.lua`), not under the
+strip. Do not present the two rows as "system vs addon" in player docs.
 
 ## pfUI skins
 
