@@ -138,54 +138,69 @@ local PFUI = {
   -- HUD seats on a 10px grid (pfUI unlock grid ≈ screen/128), mutually
   -- aligned: player | pet | target on one row (20px gaps), ToT under pet,
   -- chat/vertical bar share a column, pet bar centred under the cluster.
-  -- New / empty layouts pick these up via LoadMovable; a dragged frame
-  -- keeps its layout-cache.txt row.
+  -- xpos/ypos/scale must be numbers: LoadMovable does SetPoint(anchor, x, y),
+  -- and a string "610" is read as a region name. SavedVariables rewrite them
+  -- as strings on logout; CoercePositions turns them back each login.
   { { "position", "pfPlayer", "anchor" }, "TOPLEFT" },
-  { { "position", "pfPlayer", "xpos" }, "490" },
-  { { "position", "pfPlayer", "ypos" }, "-650" },
+  { { "position", "pfPlayer", "xpos" }, 490 },
+  { { "position", "pfPlayer", "ypos" }, -650 },
   { { "position", "pfPlayer", "parent" }, "UIParent" },
   { { "position", "pfTarget", "anchor" }, "TOPLEFT" },
-  { { "position", "pfTarget", "xpos" }, "832" },
-  { { "position", "pfTarget", "ypos" }, "-650" },
+  { { "position", "pfTarget", "xpos" }, 832 },
+  { { "position", "pfTarget", "ypos" }, -650 },
   { { "position", "pfTarget", "parent" }, "UIParent" },
   { { "position", "pfPet", "anchor" }, "TOPLEFT" },
-  { { "position", "pfPet", "xpos" }, "712" },
-  { { "position", "pfPet", "ypos" }, "-650" },
+  { { "position", "pfPet", "xpos" }, 712 },
+  { { "position", "pfPet", "ypos" }, -650 },
   { { "position", "pfPet", "parent" }, "UIParent" },
   { { "position", "pfTargetTarget", "anchor" }, "TOPLEFT" },
-  { { "position", "pfTargetTarget", "xpos" }, "712" },
-  { { "position", "pfTargetTarget", "ypos" }, "-680" },
+  { { "position", "pfTargetTarget", "xpos" }, 712 },
+  { { "position", "pfTargetTarget", "ypos" }, -680 },
   { { "position", "pfTargetTarget", "parent" }, "UIParent" },
   { { "position", "pfChatInputBox", "anchor" }, "TOPLEFT" },
-  { { "position", "pfChatInputBox", "xpos" }, "610" },
-  { { "position", "pfChatInputBox", "ypos" }, "-620" },
+  { { "position", "pfChatInputBox", "xpos" }, 610 },
+  { { "position", "pfChatInputBox", "ypos" }, -620 },
   { { "position", "pfChatInputBox", "parent" }, "UIParent" },
   { { "position", "pfTotems", "anchor" }, "TOPLEFT" },
-  { { "position", "pfTotems", "xpos" }, "700" },
-  { { "position", "pfTotems", "ypos" }, "-700" },
+  { { "position", "pfTotems", "xpos" }, 700 },
+  { { "position", "pfTotems", "ypos" }, -700 },
   { { "position", "pfTotems", "parent" }, "UIParent" },
   { { "position", "pfActionBarVertical", "anchor" }, "TOPLEFT" },
-  { { "position", "pfActionBarVertical", "xpos" }, "610" },
-  { { "position", "pfActionBarVertical", "ypos" }, "-740" },
+  { { "position", "pfActionBarVertical", "xpos" }, 610 },
+  { { "position", "pfActionBarVertical", "ypos" }, -740 },
   { { "position", "pfActionBarVertical", "parent" }, "UIParent" },
   { { "position", "pfActionBarPet", "anchor" }, "TOPLEFT" },
-  { { "position", "pfActionBarPet", "xpos" }, "660" },
-  { { "position", "pfActionBarPet", "ypos" }, "-770" },
+  { { "position", "pfActionBarPet", "xpos" }, 660 },
+  { { "position", "pfActionBarPet", "ypos" }, -770 },
   { { "position", "pfActionBarPet", "parent" }, "UIParent" },
   { { "position", "pfDurability", "anchor" }, "TOPLEFT" },
-  { { "position", "pfDurability", "xpos" }, "1260" },
-  { { "position", "pfDurability", "ypos" }, "-180" },
+  { { "position", "pfDurability", "xpos" }, 1260 },
+  { { "position", "pfDurability", "ypos" }, -180 },
   { { "position", "pfDurability", "parent" }, "UIParent" },
   { { "position", "WorldMapFrame", "anchor" }, "TOPLEFT" },
-  { { "position", "WorldMapFrame", "xpos" }, "310" },
-  { { "position", "WorldMapFrame", "ypos" }, "-70" },
-  { { "position", "WorldMapFrame", "scale" }, "0.7" },
+  { { "position", "WorldMapFrame", "xpos" }, 310 },
+  { { "position", "WorldMapFrame", "ypos" }, -70 },
+  { { "position", "WorldMapFrame", "scale" }, 0.7 },
 }
 
 -- The steps of pfUI's first-run wizard. Its profile step would copy the
 -- Modern profile, which is what a new character gets here; the chat steps
 -- would set up channels this realm does not have.
 local PFUI_WIZARD = { "init", "profile", "cvars", "chat_right", "chat_position", "chat_channels", "finalize" }
+
+-- pfUI's SavedVariables dump every value as a string. LoadMovable then does
+-- SetPoint(anchor, xpos, ypos); a string offset is treated as a region name.
+local function CoercePositions()
+  local pos = pfUI_config and pfUI_config.position
+  if type(pos) ~= "table" then return end
+  for _, cfg in pairs(pos) do
+    if type(cfg) == "table" then
+      if cfg.xpos ~= nil then cfg.xpos = tonumber(cfg.xpos) or cfg.xpos end
+      if cfg.ypos ~= nil then cfg.ypos = tonumber(cfg.ypos) or cfg.ypos end
+      if cfg.scale ~= nil then cfg.scale = tonumber(cfg.scale) or cfg.scale end
+    end
+  end
+end
 
 local function PreparePfUI()
   if type(pfUI_config) ~= "table" then pfUI_config = {} end
@@ -200,6 +215,7 @@ local function PreparePfUI()
   for i = 1, table.getn(PFUI) do
     Set(pfUI_config, PFUI[i][1], PFUI[i][2])
   end
+  CoercePositions()
 end
 
 -- -------------------------------------------------------------------- chat --
@@ -465,11 +481,13 @@ local function HideDungeonRefButtons()
     AtlasOptions.AtlasButtonShown = false
     if type(AtlasButton_Init) == "function" then AtlasButton_Init() end
   end
-  if type(AtlasLootCharDB) == "table" then
-    AtlasLootCharDB.MinimapButton = false
-    if type(AtlasLootMinimapButton_Init) == "function" then
-      AtlasLootMinimapButton_Init()
-    end
+  -- Create the table early so FirstTime is set before AtlasLoot's
+  -- VARIABLES_LOADED shows ATLASLOOT_SETUP on a brand-new character.
+  if type(AtlasLootCharDB) ~= "table" then AtlasLootCharDB = {} end
+  AtlasLootCharDB.MinimapButton = false
+  AtlasLootCharDB.FirstTime = false
+  if type(AtlasLootMinimapButton_Init) == "function" then
+    AtlasLootMinimapButton_Init()
   end
 end
 
