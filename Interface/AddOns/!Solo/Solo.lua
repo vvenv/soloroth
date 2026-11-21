@@ -472,6 +472,17 @@ local function HideGuildUnderNames()
   SetCVar("UnitNamePlayerGuild", "0")
 end
 
+-- Loading-screen tip-of-the-day (GameTips.dbc) only appears on glue→world.
+-- setup-classic.sh writes showGameTips=0 into config.toml; this once-shot
+-- covers installs that never re-ran setup. Options → 界面 → 显示游戏提示
+-- stays the player's afterwards.
+local function HideGameTips()
+  if type(Solo_State) ~= "table" then Solo_State = {} end
+  if Solo_State.nogametips then return end
+  Solo_State.nogametips = true
+  SetCVar("showGameTips", "0")
+end
+
 -- ---------------------------------------------------- Atlas / AtlasLoot MM --
 -- Map and loot are embedded in the Dungeon hub (/gd). Hide their own minimap
 -- buttons so the strip stays Teleport / Items / GMBox / party / farm / Dungeon.
@@ -507,6 +518,7 @@ ev:SetScript("OnEvent", function()
   elseif event == "VARIABLES_LOADED" then
     EnableCombatText()
     HideGuildUnderNames()
+    HideGameTips()
     HideDungeonRefButtons()
   elseif event == "PLAYER_ENTERING_WORLD" then
     AssignChatGroups()

@@ -145,7 +145,13 @@ python3 - "$toml" <<'PY'
 import re, sys
 p = sys.argv[1]
 s = open(p, encoding="utf-8").read()
-want = {"realmList": "127.0.0.1", "realmName": "Azeroth", "scriptMemory": "0"}
+want = {
+    "realmList": "127.0.0.1",
+    "realmName": "Azeroth",
+    "scriptMemory": "0",
+    # Loading-screen tip-of-the-day: only drawn on glue→world (character enter).
+    "showGameTips": "0",
+}
 for key, value in want.items():
     line = '%s = "%s"' % (key, value)
     if re.search(r'^%s\s*=' % key, s, re.M):
@@ -154,7 +160,7 @@ for key, value in want.items():
         s = s.replace("[cvars]\n", "[cvars]\n" + line + "\n", 1)
 open(p, "w", encoding="utf-8").write(s)
 PY
-echo "benilla-config/config.toml: realm Azeroth, scriptMemory 0"
+echo "benilla-config/config.toml: realm Azeroth, scriptMemory 0, showGameTips 0"
 
 # ---------------------------------------------------------------- addons ---
 step "addons"
