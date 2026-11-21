@@ -15,9 +15,13 @@ The login, realm, character select and character create screens in pfUI's look.
   launcher back. `play.sh` passes `--show-login-ui` when there is no `login.env`, or
   when `WOW_SHOW_LOGIN_UI=1`. Glue Lua cannot read the process env, so the choice is
   baked into the MPQ each launch.
-- Character select's AddOns button (`CharacterSelectAddonsButton`) stays hidden: the
-  skin replaces `UpdateAddonButton` so the stock Show on a non-empty addon folder
-  never runs.
+- Character select hides the solo-irrelevant chrome (AddOns button, change-realm /
+  realm name, billing / remaining-time frames, WoW logo). `LayoutCharSelect`
+  runs after stock `CharacterSelect_OnShow` / `UpdateCharacterList` (and
+  `UpdateAddonButton` only re-hides chrome): a mid-right rail sized to the
+  roster, Enter World optically centered in the free area (shift left of the
+  rail) with rotate arrows beside it, Back bottom-left and Delete to the right
+  of Enter.
 - The skin runs once on `FRAMES_LOADED` (wrapping `GlueParent_OnEvent`), which fires after
   benilla's own glue file, so its Realmlist button is there too.
 - Backdrops go on a child one level below the owner, inset to where the stock art drew.

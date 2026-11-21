@@ -209,24 +209,112 @@ local function SkinLogin()
   end
 end
 
+-- Solo has one local realm and a fixed addon set: no AddOns list, no realm
+-- switch, no billing / remaining-time chrome, no stock WoW logo. Stock OnShow
+-- and UpdateAddonButton re-Show some of these, so this runs after them too.
+local CHAR_SELECT_HIDE = {
+  "CharacterSelectAddonsButton", "CharacterSelectAddonsButtonGlow",
+  "CharSelectChangeRealmButton", "CharSelectRealmName",
+  "GameRoomBillingFrame", "BillingWarningFrame", "CharacterSelectLogo",
+}
+
+local function HideCharSelectChrome()
+  for _, name in ipairs(CHAR_SELECT_HIDE) do
+    local f = getglobal(name)
+    if f then f:Hide() end
+  end
+end
+
+-- Stock select is top-heavy and right-crowded once the realm row is gone. Solo
+-- layout: a right rail sized to the roster, a centered enter cluster under the
+-- model, and Back / Delete as a balanced bottom pair outside that rail.
+local function LayoutCharSelect()
+  HideCharSelectChrome()
+  local ui = CharacterSelectUI
+  local rail = CharacterSelectCharacterFrame
+  if not ui or not rail then return end
+
+  local num = GetNumCharacters() or 0
+  local maxPer = MAX_CHARACTERS_PER_REALM or 10
+  local showCreate = (num < maxPer) and IsConnectedToServer()
+  -- Row pitch matches stock: next button TOP = previous BOTTOM + 13 → 57px.
+  local pitch, rowH, padTop = 57, 70, 28
+  local padBot = showCreate and 58 or 24
+  local listH = rowH
+  if num > 1 then listH = rowH + (num - 1) * pitch end
+  if num == 0 then listH = 0 end
+  local h = padTop + listH + padBot
+  if h < 160 then h = 160 end
+  if h > 600 then h = 600 end
+
+  rail:SetWidth(272)
+  rail:SetHeight(h)
+  -- Mid-right rail (above the action row) so the roster is not pinned to the floor.
+  rail:ClearAllPoints()
+  rail:SetPoint("RIGHT", ui, "RIGHT", -28, 36)
+
+  if CharSelectCharacterButton1 then
+    CharSelectCharacterButton1:ClearAllPoints()
+    CharSelectCharacterButton1:SetPoint("TOPLEFT", rail, "TOPLEFT", 22, -padTop)
+  end
+  if CharSelectCreateCharacterButton then
+    CharSelectCreateCharacterButton:ClearAllPoints()
+    CharSelectCreateCharacterButton:SetPoint("BOTTOM", rail, "BOTTOM", 0, 14)
+  end
+
+  -- Enter cluster sits in the optical center of the free area left of the rail.
+  local shift = -70
+  if CharSelectCharacterName then
+    CharSelectCharacterName:ClearAllPoints()
+    CharSelectCharacterName:SetPoint("BOTTOM", ui, "BOTTOM", shift, 124)
+  end
+  if CharSelectEnterWorldButton then
+    CharSelectEnterWorldButton:ClearAllPoints()
+    CharSelectEnterWorldButton:SetPoint("BOTTOM", ui, "BOTTOM", shift, 44)
+  end
+  if CharacterSelectRotateLeft and CharSelectEnterWorldButton then
+    CharacterSelectRotateLeft:ClearAllPoints()
+    CharacterSelectRotateLeft:SetPoint("RIGHT", CharSelectEnterWorldButton, "LEFT", -6, 2)
+  end
+  if CharacterSelectRotateRight and CharSelectEnterWorldButton then
+    CharacterSelectRotateRight:ClearAllPoints()
+    CharacterSelectRotateRight:SetPoint("LEFT", CharSelectEnterWorldButton, "RIGHT", 6, 2)
+  end
+  if CharacterSelectBackButton then
+    CharacterSelectBackButton:ClearAllPoints()
+    CharacterSelectBackButton:SetPoint("BOTTOMLEFT", ui, "BOTTOMLEFT", 36, 44)
+  end
+  if CharacterSelectDeleteButton and CharSelectEnterWorldButton then
+    CharacterSelectDeleteButton:ClearAllPoints()
+    CharacterSelectDeleteButton:SetPoint("BOTTOM", CharSelectEnterWorldButton, "BOTTOM", 0, 0)
+    local after = CharacterSelectRotateRight or CharSelectEnterWorldButton
+    CharacterSelectDeleteButton:SetPoint("LEFT", after, "RIGHT", 18, 0)
+  end
+end
+
 local function SkinCharacterSelect()
-  -- Login blank stays up until character select actually stands.
   local stockCharShow = CharacterSelect_OnShow
-  if stockCharShow and not SoloShowLoginUI then
+  if stockCharShow then
     function CharacterSelect_OnShow()
-      ReleaseLoginPage()
-      return stockCharShow()
+      if not SoloShowLoginUI then ReleaseLoginPage() end
+      local r = stockCharShow()
+      LayoutCharSelect()
+      return r
     end
   end
-  -- Soloroth ships a fixed addon set; the stock AddOns list is not for players.
-  -- UpdateAddonButton re-Shows it when GetNumAddOns() > 0, so replace that too.
-  function UpdateAddonButton()
-    if CharacterSelectAddonsButton then CharacterSelectAddonsButton:Hide() end
-    if CharacterSelectAddonsButtonGlow then CharacterSelectAddonsButtonGlow:Hide() end
+  local stockList = UpdateCharacterList
+  if stockList then
+    function UpdateCharacterList()
+      stockList()
+      LayoutCharSelect()
+    end
   end
-  UpdateAddonButton()
+  function UpdateAddonButton()
+    HideCharSelectChrome()
+  end
+  LayoutCharSelect()
+
   Panel(CharacterSelectCharacterFrame, 8, 3, 3, 7, .6)
-  Own(GameRoomBillingFrame)
   Panel(CharacterDeleteBackground, 6, 6, 6, 6, .85)
   Panel(CharacterRenameBackground, 6, 6, 6, 6, .85)
   -- Their name boxes wear the chat input's end caps.
