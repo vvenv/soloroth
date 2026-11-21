@@ -230,9 +230,9 @@ mount_profile() {
         echo "visual profile: vanilla (empty $profile)"
         return 0
     fi
-    # Reforged/HD patch-C remaps Ghamoo-ra (display 5027) to AncientSeaTurtle,
-    # which benilla draws as a black box. patch-V sits above C and puts 5027
-    # back on SeaTurtle; rebuilt whenever this profile mounts.
+    # Reforged/HD patch-C ships some CreatureModelData rows (AncientSeaTurtle for
+    # Ghamoo-ra, …) with ModelScale 0; benilla then draws the black debug cube.
+    # patch-V sits above C and sets those scales to 1; rebuilt on every mount.
     if [ -L "$root/Data/patch-C.MPQ" ] || [ -e "$root/Data/patch-C.MPQ" ]; then
         if python3 "$root/tools/macos/build-hd-overrides.py" --from-data "$root/Data" \
             "$root/Data/patch-V.MPQ"; then
@@ -240,7 +240,7 @@ mount_profile() {
                 printf '%s\n' "patch-V.MPQ" >> "$managed.tmp"
             fi
         else
-            echo "warning: build-hd-overrides.py failed; Ghamoo-ra may stay on AncientSeaTurtle" >&2
+            echo "warning: build-hd-overrides.py failed; some HD creatures may stay black" >&2
         fi
     fi
 

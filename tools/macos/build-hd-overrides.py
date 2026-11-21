@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Build a small MPQ that puts Ghamoo-ra (CreatureDisplayInfo 5027) back on the
-ordinary SeaTurtle model when a Reforged/HD patch-C is mounted.
+"""Build Data/patch-V.MPQ: fix Reforged/HD CreatureModelData rows whose
+ModelScale is 0 so benilla will draw them.
 
-Project Reforged's patch-C remaps 5027 to AncientSeaTurtle, which benilla draws
-as a black box. Display 5026 (Aku'mai Snapjaw) still uses SeaTurtleSkinRed and
-is the donor for model id and texture string offsets.
+benilla only builds a creature display when
+`CreatureModelData.modelScale * CreatureDisplayInfo.creatureModelScale > 0`
+(see new_creature_display). Project Reforged's patch-C ships several models —
+including AncientSeaTurtle used by Ghamoo-ra (display 5027) — with ModelScale
+0, which becomes the black debug cube in-world.
 
-    tools/macos/build-hd-overrides.py <source-CDI.dbc|source.MPQ> <out.MPQ>
+    tools/macos/build-hd-overrides.py <source.MPQ|CMD.dbc> <out.MPQ>
     tools/macos/build-hd-overrides.py --from-data <Data/> <out.MPQ>
 
-Exit 0 with no output file when 5027 is already on SeaTurtle (nothing to fix).
+Exit 0 with no output file when every ModelScale is already > 0.
 """
 from __future__ import print_function
 
@@ -19,12 +21,11 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-CDI_NAME = "DBFilesClient\\CreatureDisplayInfo.dbc"
-DISPLAY_ID = 5027
-DONOR_ID = 5026  # same skin, model 173
-SEA_TURTLE_MODEL = 173
+CMD_NAME = "DBFilesClient\\CreatureModelData.dbc"
+# ModelScale is field 4 (byte offset 16) in the 1.12 / Reforged 16-field layout.
+MODEL_SCALE_OFF = 16
+DEFAULT_SCALE = 1.0
 
-# Minimal MPQ writer (stored, unencrypted), same layout as tools/glue-skin/build-patch.py.
 FLAG_EXISTS = 0x80000000
 
 
@@ -122,7 +123,7 @@ def find_mpqcat():
     return None
 
 
-def read_cdi_bytes(source):
+def read_cmd_bytes(source):
     if source.lower().endswith(".dbc"):
         with open(source, "rb") as f:
             return f.read()
@@ -130,17 +131,20 @@ def read_cdi_bytes(source):
     if mpqcat is None:
         sys.exit("mpqcat not built (cargo build --release -p benilla-mpq --example mpqcat)")
     proc = subprocess.run(
-        [mpqcat, source, CDI_NAME],
+        [mpqcat, source, CMD_NAME],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
     if proc.returncode != 0 or not proc.stdout:
-        sys.exit("no %s in %s" % (CDI_NAME, source))
+        sys.exit("no %s in %s" % (CMD_NAME, source))
     return proc.stdout
 
 
-def cdi_from_data_dir(data_dir):
-    """Highest-priority patch-?.MPQ that holds CreatureDisplayInfo, then patch.MPQ / dbc.MPQ."""
+def cmd_from_data_dir(data_dir):
+    """Highest-priority patch that holds CreatureModelData, then patch.MPQ / dbc.MPQ.
+
+    Skip our own patch-V so a remount always re-reads the Reforged/HD source.
+    """
     names = os.listdir(data_dir)
     patches = sorted(
         (
@@ -149,6 +153,7 @@ def cdi_from_data_dir(data_dir):
             if n.lower().startswith("patch-")
             and n.lower().endswith(".mpq")
             and len(n) == len("patch-?.mpq")
+            and n.lower() != "patch-v.mpq"
         ),
         key=str.lower,
         reverse=True,
@@ -160,81 +165,73 @@ def cdi_from_data_dir(data_dir):
     for name in order:
         path = os.path.join(data_dir, name)
         proc = subprocess.run(
-            [mpqcat, path, CDI_NAME],
+            [mpqcat, path, CMD_NAME],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
         if proc.returncode == 0 and proc.stdout[:4] == b"WDBC":
             return proc.stdout, path
-    sys.exit("no %s under %s" % (CDI_NAME, data_dir))
+    sys.exit("no %s under %s" % (CMD_NAME, data_dir))
 
 
-def fix_cdi(data):
-    """Return (fixed_bytes, changed). Vanilla CDI: 12×uint32 fields, scale is float at +16."""
+def fix_cmd(data):
+    """Return (fixed_bytes, list of (id, path) repaired)."""
     if data[:4] != b"WDBC":
         sys.exit("not a WDBC")
     records, fields, record_size, _ = struct.unpack_from("<IIII", data, 4)
-    if fields < 8 or record_size < 32:
-        sys.exit("unexpected CreatureDisplayInfo layout: fields=%d rs=%d" % (fields, record_size))
-    header = 20
-    donor = None
-    target = None
-    for i in range(records):
-        off = header + i * record_size
-        row_id = struct.unpack_from("<I", data, off)[0]
-        if row_id == DONOR_ID:
-            donor = off
-        elif row_id == DISPLAY_ID:
-            target = off
-    if target is None:
-        sys.exit("CreatureDisplayInfo has no row %d" % DISPLAY_ID)
-    if donor is None:
-        sys.exit("CreatureDisplayInfo has no donor row %d" % DONOR_ID)
+    if fields < 5 or record_size < 20:
+        sys.exit("unexpected CreatureModelData layout: fields=%d rs=%d" % (fields, record_size))
+    strings = data[20 + records * record_size :]
 
-    model = struct.unpack_from("<I", data, target + 4)[0]
-    # textureVariation[3] live at +24,+28,+32 in the 1.12 / Reforged 12-field layout
-    tex0 = struct.unpack_from("<I", data, target + 24)[0]
-    donor_model = struct.unpack_from("<I", data, donor + 4)[0]
-    donor_tex0 = struct.unpack_from("<I", data, donor + 24)[0]
-    if donor_model != SEA_TURTLE_MODEL:
-        sys.exit("donor %d is not SeaTurtle (model %d)" % (DONOR_ID, donor_model))
-
-    if model == SEA_TURTLE_MODEL and tex0 == donor_tex0:
-        return data, False
+    def sget(off):
+        if not off:
+            return ""
+        end = strings.find(b"\0", off)
+        return strings[off:end].decode("latin-1", "replace")
 
     out = bytearray(data)
-    struct.pack_into("<I", out, target + 4, SEA_TURTLE_MODEL)
-    # Keep 5027's own scale (1.5); only borrow model + skin name from 5026.
-    struct.pack_into("<I", out, target + 24, donor_tex0)
-    struct.pack_into("<I", out, target + 28, struct.unpack_from("<I", data, donor + 28)[0])
-    struct.pack_into("<I", out, target + 32, struct.unpack_from("<I", data, donor + 32)[0])
-    return bytes(out), True
+    fixed = []
+    for i in range(records):
+        off = 20 + i * record_size
+        mid = struct.unpack_from("<I", data, off)[0]
+        scale = struct.unpack_from("<f", data, off + MODEL_SCALE_OFF)[0]
+        if scale > 0.0:
+            continue
+        path_off = struct.unpack_from("<I", data, off + 8)[0]
+        struct.pack_into("<f", out, off + MODEL_SCALE_OFF, DEFAULT_SCALE)
+        fixed.append((mid, sget(path_off)))
+    return bytes(out), fixed
 
 
 def main():
     args = sys.argv[1:]
     if len(args) == 3 and args[0] == "--from-data":
         data_dir, out_path = args[1], args[2]
-        raw, source = cdi_from_data_dir(data_dir)
-        print("hd-overrides: CDI from %s" % source)
+        raw, source = cmd_from_data_dir(data_dir)
+        print("hd-overrides: CMD from %s" % source)
     elif len(args) == 2:
-        raw = read_cdi_bytes(args[0])
+        raw = read_cmd_bytes(args[0])
         out_path = args[1]
     else:
         sys.exit(__doc__.strip())
 
-    fixed, changed = fix_cdi(raw)
-    if not changed:
+    fixed, repaired = fix_cmd(raw)
+    if not repaired:
         if os.path.exists(out_path):
             os.remove(out_path)
-            print("hd-overrides: 5027 already SeaTurtle; removed %s" % out_path)
+            print("hd-overrides: no zero ModelScale rows; removed %s" % out_path)
         else:
-            print("hd-overrides: 5027 already SeaTurtle; nothing to write")
+            print("hd-overrides: no zero ModelScale rows; nothing to write")
         return
 
-    listfile = (CDI_NAME + "\r\n(listfile)\r\n").encode("latin-1")
-    write_mpq(out_path, [(CDI_NAME, fixed), ("(listfile)", listfile)])
-    print("hd-overrides: wrote %s (display %d → SeaTurtle model %d)" % (out_path, DISPLAY_ID, SEA_TURTLE_MODEL))
+    listfile = (CMD_NAME + "\r\n(listfile)\r\n").encode("latin-1")
+    write_mpq(out_path, [(CMD_NAME, fixed), ("(listfile)", listfile)])
+    print(
+        "hd-overrides: wrote %s (%d ModelScale 0→%.1f)"
+        % (out_path, len(repaired), DEFAULT_SCALE)
+    )
+    for mid, path in repaired:
+        print("  model %d %s" % (mid, path or "?"))
 
 
 if __name__ == "__main__":
