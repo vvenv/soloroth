@@ -102,6 +102,15 @@ local PFUI_INVARIANT = {
   -- Right chat on, so the combat log has the same frame as the message log.
   -- pfUI would put ChatFrame3 there; PlaceCombatLog swaps in ChatFrame2.
   { { "chat", "right", "enable" }, "1" },
+  -- Info bars under the chats: solo-useful widgets only. pfUI defaults put
+  -- guild / friends online here; every character also has a home guild, so
+  -- those counters are noise. Styles may set them — we overwrite every login.
+  { { "panel", "left", "left" }, "exp" },
+  { { "panel", "left", "center" }, "durability" },
+  { { "panel", "left", "right" }, "bagspace" },
+  { { "panel", "right", "left" }, "combat" },
+  { { "panel", "right", "center" }, "time" },
+  { { "panel", "right", "right" }, "gold" },
   -- A travel journal: pfUI takes a screenshot on level up and on epic loot,
   -- without the interface and with the zone and time written on it.
   { { "screenshot", "levelup" }, "1" },
@@ -111,6 +120,8 @@ local PFUI_INVARIANT = {
   -- An item's tooltip (loot, vendors) always shows the
   -- equipped item beside it, without holding Shift.
   { { "tooltip", "compare", "showalways" }, "1" },
+  -- No guild rank / note block on unit tooltips (home guild is always there).
+  { { "tooltip", "extguild" }, "0" },
   -- Grey items sell themselves at a vendor.
   { { "global", "autosell" }, "1" },
   -- Modules with nothing to do alone, or that only serve other players.
