@@ -124,6 +124,8 @@ local PFUI_INVARIANT = {
   { { "tooltip", "extguild" }, "0" },
   -- Grey items sell themselves at a vendor.
   { { "global", "autosell" }, "1" },
+  -- Right Actionbar (MultiBarRight / bar3) off; main + bottom bars cover solo.
+  { { "bars", "bar3", "enable" }, "0" },
   -- Modules with nothing to do alone, or that only serve other players.
   { { "disabled", "raid" }, "1" },                -- a five-player party at most
   { { "disabled", "targettargettarget" }, "1" },
