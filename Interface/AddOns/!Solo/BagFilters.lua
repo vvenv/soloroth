@@ -131,10 +131,10 @@ local function LayoutTabs(bar)
   local border = bar.border or 3
   local gap = border * 2
   local bag = bar.bag
+  -- Width comes from TOPLEFT+TOPRIGHT stretch; SetWidth would break that.
   local w = bar:GetWidth()
   if (not w or w < 40) and bag then w = bag:GetWidth() - border * 2 end
   if not w or w < 40 then w = 200 end
-  bar:SetWidth(w)
   local inner = w - border * 2 - gap * (n - 1)
   local tw = inner / n
   for i = 1, n do
@@ -235,9 +235,11 @@ local function MakeBar(bag, name)
   A.CreateBackdrop(bar, border)
   if A.CreateBackdropShadow then A.CreateBackdropShadow(bar) end
 
-  local fontSize = 12
+  -- A step under pfUI's UI font so five labels fit the tab row.
+  local fontSize = 10
   if pfUI_config and pfUI_config.global and pfUI_config.global.font_size then
-    fontSize = tonumber(pfUI_config.global.font_size) or 12
+    fontSize = (tonumber(pfUI_config.global.font_size) or 12) - 2
+    if fontSize < 9 then fontSize = 9 end
   end
   local font = pfUI.font_default or "Fonts\\FRIZQT__.TTF"
 
