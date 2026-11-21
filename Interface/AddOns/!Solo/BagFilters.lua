@@ -102,15 +102,21 @@ local function ApplyAll()
   end
 end
 
+-- inset 0: backdrop matches the button (no outer overhang), so a small
+-- gap between tabs stays visible and widths can fill the bar edge-to-edge.
+local function SkinTab(btn)
+  local A = pfUI and pfUI.api
+  if A and A.CreateBackdrop then
+    A.CreateBackdrop(btn, 0)
+  end
+end
+
 local function PaintTabs(bar)
   if not bar or not bar.buttons then return end
-  local A = pfUI and pfUI.api
   for i = 1, table.getn(bar.buttons) do
     local btn = bar.buttons[i]
     local on = btn.filter == active
-    if A and A.CreateBackdrop then
-      A.CreateBackdrop(btn, bar.border)
-    end
+    SkinTab(btn)
     if on and btn.backdrop then
       btn.backdrop:SetBackdropBorderColor(1, 1, .25, 1)
       if btn.label then btn.label:SetTextColor(1, 1, .25, 1) end
@@ -128,21 +134,28 @@ end
 
 local function LayoutTabs(bar)
   local n = table.getn(bar.buttons)
-  local border = bar.border or 3
-  local gap = border * 2
   local bag = bar.bag
-  -- Width comes from TOPLEFT+TOPRIGHT stretch; SetWidth would break that.
-  local w = bar:GetWidth()
-  if (not w or w < 40) and bag then w = bag:GetWidth() - border * 2 end
-  if not w or w < 40 then w = 200 end
-  local inner = w - border * 2 - gap * (n - 1)
-  local tw = inner / n
+  local border = bar.border or 3
+  -- Bar is inset by `border` from the bag; fill that content width.
+  local w = bag and bag:GetWidth() or 0
+  w = w - border * 2
+  if w < 40 then w = 200 end
+  bar:SetWidth(w)
+  local gap = 3
+  local used = 0
   for i = 1, n do
     local btn = bar.buttons[i]
+    local tw
+    if i < n then
+      tw = math.floor((w - gap * (n - 1)) / n)
+      used = used + tw + gap
+    else
+      tw = w - used
+    end
     btn:ClearAllPoints()
     btn:SetWidth(tw)
     if i == 1 then
-      btn:SetPoint("LEFT", bar, "LEFT", border, 0)
+      btn:SetPoint("LEFT", bar, "LEFT", 0, 0)
     else
       btn:SetPoint("LEFT", bar.buttons[i - 1], "RIGHT", gap, 0)
     end
@@ -155,11 +168,13 @@ local function SetFilter(id)
   ApplyAll()
 end
 
--- pfUI topspace = close height + border*2; sit the bar on that line.
+-- Clear the toolbar button row and its CreateBackdrop overhang
+-- (buttons hang `border` below their frames).
 local function ToolbarOffset(bag, border)
   local closeH = 12
   if bag and bag.close then closeH = bag.close:GetHeight() or 12 end
-  return closeH + (border or 3) * 2
+  border = border or 3
+  return closeH + border * 3
 end
 
 local function FilterExtra(bar)
@@ -205,7 +220,6 @@ local function SyncBar(bar)
     local top = ToolbarOffset(bag, border)
     bar:ClearAllPoints()
     bar:SetPoint("TOPLEFT", bag, "TOPLEFT", border, -top)
-    bar:SetPoint("TOPRIGHT", bag, "TOPRIGHT", -border, -top)
     LayoutTabs(bar)
   else
     bar:Hide()
@@ -232,8 +246,7 @@ local function MakeBar(bag, name)
   bar:SetHeight(20)
   bar:EnableMouse(true)
   bar:SetFrameLevel((bag:GetFrameLevel() or 0) + 5)
-  A.CreateBackdrop(bar, border)
-  if A.CreateBackdropShadow then A.CreateBackdropShadow(bar) end
+  -- No bar chrome — only the tab buttons carry a backdrop.
 
   -- A step under pfUI's UI font so five labels fit the tab row.
   local fontSize = 10
@@ -249,7 +262,7 @@ local function MakeBar(bag, name)
     btn.filter = tab.id
     btn:SetHeight(16)
     btn:EnableMouse(true)
-    A.CreateBackdrop(btn, border)
+    SkinTab(btn)
     btn.label = btn:CreateFontString(nil, "OVERLAY")
     btn.label:SetFont(font, fontSize, "OUTLINE")
     btn.label:SetAllPoints(btn)
