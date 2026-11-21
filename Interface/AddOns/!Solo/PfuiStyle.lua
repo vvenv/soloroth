@@ -8,7 +8,7 @@ tables from PfuiStylesData.lua ("Solo: …"). /style and /fengge do the same.
 ----------------------------------------------------------------------------]]
 
 local CVAR = "solorothUiStyle"
-local DEFAULT = "Modern"
+local DEFAULT = "Adapta"
 local ROW_KEY = "RowSoloUiStyle"
 local ROW_NAME = "BenillaOptionsFrameContainerBodyGraphics" .. ROW_KEY
 

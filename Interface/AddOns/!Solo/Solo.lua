@@ -7,7 +7,7 @@ The realm is one player and their bots, so:
     say stay; say, yell, whispers, party/guild talk and channels go. (The
     server refuses every channel join anyway: Channel.Disable.)
   * pfUI skips its first-run wizard and starts from a chosen style
-    (default Modern; Options → Graphics / /style) plus solo constraints
+    (default Adapta; Options → Graphics / /style) plus solo constraints
     (command strip, dual chat, HUD seats) every login.
 
 The folder starts with "!" so it loads before every other addon: its
@@ -174,7 +174,7 @@ local PFUI_INVARIANT = {
 -- step; the chat steps would set up channels this realm does not have.
 local PFUI_WIZARD = { "init", "profile", "cvars", "chat_right", "chat_position", "chat_channels", "finalize" }
 
-local DEFAULT_STYLE = "Modern"
+local DEFAULT_STYLE = "Adapta"
 
 -- pfUI's SavedVariables dump every value as a string. LoadMovable then does
 -- SetPoint(anchor, xpos, ypos); a string offset is treated as a region name.
