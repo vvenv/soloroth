@@ -4,8 +4,10 @@ TradeSkill. Add a count box + Create All next to Craft Create, and run that
 many enchants on the same item: first BIND/REPLACE still asks; the rest
 re-target the remembered bag/paperdoll slot and skip the popup.
 
-Cancel on REPLACE, craft close, cast fail, or count exhausted re-arms the
-prompt. BIND_ENCHANT itself always shows for a new unbound piece.
+Needs the Soloroth client deviation that lets ReplaceEnchant commit outside
+a click (craft batch re-target runs from OnUpdate).
+
+Cancel on REPLACE cancel, craft close, cast fail, or count exhausted.
 ----------------------------------------------------------------------------]]
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
@@ -18,6 +20,7 @@ local pendingNext = false
 local expectStop = false
 local lastBag, lastSlot, lastInv
 local dialogsHooked = false
+local popupShowHooked = false
 local pickupsHooked = false
 local uiReady = false
 
@@ -48,8 +51,6 @@ local function SyncInput()
   local avail = Available()
   input:SetNumber(ClampCount(input:GetNumber(), avail > 0 and avail or nil))
   if createAll then
-    -- Stock Create can be enabled with numAvailable 0 (no reagents listed);
-    -- keep Create All in step with Create, not only the count.
     if CreateEnabled() or avail > 0 then
       createAll:Enable()
     else
@@ -62,8 +63,12 @@ local function ClearBatch()
   remaining = 0
   needRetarget = false
   pendingNext = false
-  skipReplace = false
   expectStop = false
+end
+
+local function ClearSession()
+  ClearBatch()
+  skipReplace = false
 end
 
 local function RememberTarget(bag, slot, inv)
@@ -92,14 +97,11 @@ local function StartBatch(count)
   local idx = GetCraftSelectionIndex and GetCraftSelectionIndex()
   if not idx or idx == 0 then return end
   local avail = Available()
-  -- Never refuse DoCraft when the stock Create button would fire: numAvailable
-  -- can be 0 while reagents are listed empty or Create is still enabled.
   if avail > 0 then
     remaining = ClampCount(count, avail)
   else
     remaining = ClampCount(count, nil)
   end
-  skipReplace = false
   needRetarget = false
   pendingNext = false
   expectStop = false
@@ -125,22 +127,26 @@ local function HookDialog(which, onAccept, onCancel)
 end
 
 local function HookDialogs()
-  if dialogsHooked or type(StaticPopupDialogs) ~= "table" then return end
+  if type(StaticPopupDialogs) ~= "table" then return end
   if not StaticPopupDialogs["REPLACE_ENCHANT"] then return end
-  dialogsHooked = true
 
-  HookDialog("REPLACE_ENCHANT", function()
-    if remaining > 0 then skipReplace = true end
-  end, ClearBatch)
+  if not dialogsHooked then
+    dialogsHooked = true
+    HookDialog("REPLACE_ENCHANT", function()
+      skipReplace = true
+    end, ClearSession)
 
-  HookDialog("BIND_ENCHANT", function()
-    if remaining > 0 then skipReplace = true end
-  end, nil)
+    HookDialog("BIND_ENCHANT", function()
+      skipReplace = true
+    end, nil)
+  end
 
+  if popupShowHooked then return end
   local origShow = StaticPopup_Show
   if type(origShow) ~= "function" then return end
+  popupShowHooked = true
   StaticPopup_Show = function(which, text1, text2, data)
-    if which == "REPLACE_ENCHANT" and skipReplace and remaining > 0
+    if which == "REPLACE_ENCHANT" and skipReplace
         and type(ReplaceEnchant) == "function" then
       ReplaceEnchant()
       return
@@ -172,8 +178,6 @@ local function HookPickups()
   end
 end
 
--- Match TradeSkill's pfUI Profession skin: SkinButton / SkinArrowButton /
--- CreateBackdrop on the count strip. Safe to call again until it sticks.
 local function SkinCountUi()
   if skinReady or not createAll then return end
   if not (pfUI and pfUI.api and SoloSkin) then return end
@@ -198,11 +202,10 @@ local function InstallCraftUi()
   uiReady = true
 
   local create = CraftCreateButton
-  -- pfUI Profession seats Create left of Cancel; keep that and put our
-  -- strip left of Create: [−] [count] [+] [Create All] [Create] [Cancel]
   createAll = CreateFrame("Button", "SoloCraftCreateAllButton", CraftFrame, "UIPanelButtonTemplate")
   createAll:SetWidth(80)
   createAll:SetHeight(22)
+  createAll:SetFrameLevel((create:GetFrameLevel() or 1) + 2)
   createAll:SetText(CREATE_ALL or L("Create All", "全部制造"))
   createAll:SetPoint("RIGHT", create, "LEFT", -5, 0)
   createAll:SetScript("OnClick", function()
@@ -214,6 +217,7 @@ local function InstallCraftUi()
   plus = CreateFrame("Button", "SoloCraftIncrementButton", CraftFrame)
   plus:SetWidth(18)
   plus:SetHeight(18)
+  plus:SetFrameLevel((create:GetFrameLevel() or 1) + 2)
   plus:SetPoint("RIGHT", createAll, "LEFT", -5, 0)
   plus:SetScript("OnClick", function()
     local avail = Available()
@@ -237,6 +241,7 @@ local function InstallCraftUi()
   minus = CreateFrame("Button", "SoloCraftDecrementButton", CraftFrame)
   minus:SetWidth(18)
   minus:SetHeight(18)
+  minus:SetFrameLevel((create:GetFrameLevel() or 1) + 2)
   minus:SetPoint("RIGHT", input, "LEFT", -2, 0)
   minus:SetScript("OnClick", function()
     input:SetNumber(ClampCount(input:GetNumber() - 1, Available()))
@@ -259,7 +264,6 @@ local function InstallCraftUi()
   SyncInput()
 end
 
--- Profession skin runs in pfUI's env; install/skin when Craft UI is there.
 if SoloSkin and SoloSkin.Register then
   SoloSkin.Register("SoloCraftCount", function()
     HookAddonOrVariable("Blizzard_CraftUI", function()
@@ -308,13 +312,12 @@ f:SetScript("OnEvent", function()
     InstallCraftUi()
     SkinCountUi()
     SyncInput()
+    HookDialogs()
   elseif event == "CRAFT_CLOSE" then
-    ClearBatch()
+    ClearSession()
   elseif event == "CRAFT_UPDATE" then
     SyncInput()
   elseif event == "SPELLCAST_START" then
-    -- Any cast start while a batch is open counts; do not require the craft
-    -- name to match SPELLCAST_START's label (empty for some flags, locale drift).
     if remaining > 0 then expectStop = true end
   elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
     if remaining > 0 and expectStop then ClearBatch() end
@@ -327,7 +330,6 @@ f:SetScript("OnEvent", function()
       SyncInput()
       return
     end
-    -- Defer the next DoCraft: same-frame cast after STOP often fails to arm.
     pendingNext = true
   end
 end)

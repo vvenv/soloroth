@@ -4,7 +4,9 @@ Companions — unlocked vanity pets and mounts.
 The server learns the summon / mount spell when you loot or .additem the
 token, and never puts the item in a bag. This panel matches Data_Companions
 rows against the spellbook (1.12 has no GetSpellInfo(spellId)) and casts
-with CastSpell(index, BOOKTYPE_SPELL).
+with CastSpell(index, BOOKTYPE_SPELL). Icons come from the item inventory
+texture baked into Data_Companions — spellbook textures are almost all
+Ability_Seal for vanity pets.
 ----------------------------------------------------------------------------]]
 
 local VERSION = "1.0.0"
@@ -45,9 +47,19 @@ local function SpellbookIndex()
 end
 
 local function RowLabel(row)
-  -- row = { spellId, en, zh }
+  -- row = { spellId, en, zh, iconLeaf }
   if ZH and row[3] and row[3] ~= "" then return row[3] end
   return row[2] or tostring(row[1])
+end
+
+-- Item inventory icon from Data_Companions; spellbook falls back when empty.
+local function RowTexture(row, known)
+  local leaf = row[4]
+  if leaf and leaf ~= "" then
+    return "Interface\\Icons\\" .. leaf
+  end
+  if known and known.texture then return known.texture end
+  return "Interface\\Icons\\INV_Misc_QuestionMark"
 end
 
 local function FindKnown(row, book)
@@ -185,7 +197,7 @@ Refresh = function()
     local b = cells[i]
     if e then
       b.entry = e
-      b.icon:SetTexture(e.known.texture or "Interface\\Icons\\INV_Misc_QuestionMark")
+      b.icon:SetTexture(RowTexture(e.row, e.known))
       b:Show()
     else
       b.entry = nil
