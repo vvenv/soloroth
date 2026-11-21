@@ -218,6 +218,13 @@ local function SkinCharacterSelect()
       return stockCharShow()
     end
   end
+  -- Soloroth ships a fixed addon set; the stock AddOns list is not for players.
+  -- UpdateAddonButton re-Shows it when GetNumAddOns() > 0, so replace that too.
+  function UpdateAddonButton()
+    if CharacterSelectAddonsButton then CharacterSelectAddonsButton:Hide() end
+    if CharacterSelectAddonsButtonGlow then CharacterSelectAddonsButtonGlow:Hide() end
+  end
+  UpdateAddonButton()
   Panel(CharacterSelectCharacterFrame, 8, 3, 3, 7, .6)
   Own(GameRoomBillingFrame)
   Panel(CharacterDeleteBackground, 6, 6, 6, 6, .85)
