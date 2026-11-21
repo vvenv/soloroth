@@ -2,12 +2,11 @@
 Category filter tabs for pfUI bags and bank: All / Gear / Consumable /
 Recipe / Junk. Dim non-matching slots (same idea as pfUI's bag search).
 
-The bar lives on UIParent, glued to the top of pfBag / pfBank, so it is not
-clipped by the bag frame. When pfUI's bag-slot strip is open (the up-arrow
-next to close), the bar lifts above that strip — same screen spot would
-otherwise cover the bank "+" purchase button. No hooksecurefunc (that
-global is only in pfUI's env). Full client restart required after changing
-this file — /reload's hot swap keeps old OnUpdate / hooks.
+The bar is a child of pfBag / pfBank, one row below the default toolbar
+(search / close / bags / …). CreateBags is wrapped so item slots and frame
+height leave room for it — otherwise the first icon row would sit under the
+tabs. Full client restart required after changing this file — /reload's hot
+swap keeps old OnUpdate / hooks.
 ----------------------------------------------------------------------------]]
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
@@ -24,6 +23,7 @@ local TABS = {
 local active = "all"
 local bars = {}
 local classes
+local createBagsHooked
 
 local function Say(text)
   DEFAULT_CHAT_FRAME:AddMessage("|cff44ddffSolo|r: " .. text)
@@ -131,7 +131,8 @@ local function LayoutTabs(bar)
   local border = bar.border or 3
   local gap = border * 2
   local bag = bar.bag
-  local w = bag and bag:GetWidth() or bar:GetWidth()
+  local w = bar:GetWidth()
+  if (not w or w < 40) and bag then w = bag:GetWidth() - border * 2 end
   if not w or w < 40 then w = 200 end
   bar:SetWidth(w)
   local inner = w - border * 2 - gap * (n - 1)
@@ -154,23 +155,58 @@ local function SetFilter(id)
   ApplyAll()
 end
 
+-- pfUI topspace = close height + border*2; sit the bar on that line.
+local function ToolbarOffset(bag, border)
+  local closeH = 12
+  if bag and bag.close then closeH = bag.close:GetHeight() or 12 end
+  return closeH + (border or 3) * 2
+end
+
+local function FilterExtra(bar)
+  local border = bar.border or 3
+  return (bar:GetHeight() or 20) + border
+end
+
+-- CreateBags lays slots from the toolbar; push them (and grow the frame)
+-- so the filter row does not cover the first icons.
+local function PushSlots(frame, iterate)
+  local bar = frame and frame.soloBagFilter
+  if not bar or not iterate or not pfUI or not pfUI.bags then return end
+  local extra = FilterExtra(bar)
+  for i = 1, table.getn(iterate) do
+    local bag = iterate[i]
+    local data = pfUI.bags[bag]
+    if data and data.slots then
+      for slot, entry in pairs(data.slots) do
+        if type(entry) == "table" and entry.frame then
+          local f = entry.frame
+          local p, rel, rp, x, y = f:GetPoint(1)
+          if p and y then
+            f:ClearAllPoints()
+            if rel then
+              f:SetPoint(p, rel, rp, x, y - extra)
+            else
+              f:SetPoint(p, x, y - extra)
+            end
+          end
+        end
+      end
+    end
+  end
+  frame:SetHeight(frame:GetHeight() + extra)
+end
+
 local function SyncBar(bar)
   local bag = bar.bag
   if not bag then return end
   if bag:IsVisible() then
     bar:Show()
-    LayoutTabs(bar)
-    -- pfUI bagslots sit at TOP of the bag (y = border*3). Lift the filter
-    -- clear of them so bank purchase / bag equip clicks still land.
-    local gap = 4
-    local slots = bag.bagslots
-    if slots and slots:IsShown() then
-      local border = bar.border or 3
-      gap = 4 + (slots:GetHeight() or 0) + border * 3
-    end
+    local border = bar.border or 3
+    local top = ToolbarOffset(bag, border)
     bar:ClearAllPoints()
-    bar:SetPoint("BOTTOMLEFT", bag, "TOPLEFT", 0, gap)
-    bar:SetPoint("BOTTOMRIGHT", bag, "TOPRIGHT", 0, gap)
+    bar:SetPoint("TOPLEFT", bag, "TOPLEFT", border, -top)
+    bar:SetPoint("TOPRIGHT", bag, "TOPRIGHT", -border, -top)
+    LayoutTabs(bar)
   else
     bar:Hide()
   end
@@ -188,15 +224,14 @@ local function MakeBar(bag, name)
   local _, border = A.GetBorderSize("bags")
   if not border then border = 3 end
 
-  -- On UIParent so the bag frame cannot clip it; glued to the bag's top edge.
-  local bar = CreateFrame("Frame", name, UIParent)
+  -- Child of the bag so it moves / hides with it, under the toolbar row.
+  local bar = CreateFrame("Frame", name, bag)
   bar.border = border
   bar.bag = bag
   bar.buttons = {}
   bar:SetHeight(20)
   bar:EnableMouse(true)
-  bar:SetFrameStrata("HIGH")
-  bar:SetFrameLevel(100)
+  bar:SetFrameLevel((bag:GetFrameLevel() or 0) + 5)
   A.CreateBackdrop(bar, border)
   if A.CreateBackdropShadow then A.CreateBackdropShadow(bar) end
 
@@ -240,8 +275,43 @@ local function MakeBar(bag, name)
   return bar
 end
 
+local function AfterCreateBags(object)
+  if object == "bank" then
+    if pfUI.bag.left then
+      MakeBar(pfUI.bag.left, "SoloBankFilter")
+      PushSlots(pfUI.bag.left, pfUI.BANK)
+    end
+  else
+    if pfUI.bag.right then
+      MakeBar(pfUI.bag.right, "SoloBagFilter")
+      PushSlots(pfUI.bag.right, pfUI.BACKPACK)
+    end
+  end
+  if active ~= "all" then ApplyAll() end
+end
+
+local function EnsureCreateBagsHook()
+  if createBagsHooked or not pfUI or not pfUI.bag or not pfUI.bag.CreateBags then
+    return
+  end
+  createBagsHooked = true
+  local orig = pfUI.bag.CreateBags
+  function pfUI.bag.CreateBags(self, object)
+    orig(self, object)
+    AfterCreateBags(object)
+  end
+  -- Already laid out before the wrap existed: rebuild so PushSlots runs once.
+  if pfUI.bag.right and pfUI.bag.right.init then
+    pfUI.bag:CreateBags()
+  end
+  if pfUI.bag.left and pfUI.bag.left.init then
+    pfUI.bag:CreateBags("bank")
+  end
+end
+
 local function TryAttach()
   if not pfUI or not pfUI.bag then return false end
+  EnsureCreateBagsHook()
   local ok = false
   if pfUI.bag.right then
     MakeBar(pfUI.bag.right, "SoloBagFilter")
@@ -253,12 +323,13 @@ local function TryAttach()
   return ok
 end
 
--- Keep bars glued while bags move / show / hide. Do not ApplyAll here —
--- that belongs on bag events and tab clicks.
+-- Keep bars sized while bags move / show / hide. Slot push belongs on the
+-- CreateBags wrap, not here.
 local driver = CreateFrame("Frame")
 local attachAt = 0
 driver:SetScript("OnUpdate", function()
   if not pfUI or not pfUI.bag then return end
+  EnsureCreateBagsHook()
   attachAt = attachAt + arg1
   if attachAt > 0.25 then
     attachAt = 0
@@ -307,7 +378,7 @@ SlashCmdList["SOLOBAGFILTER"] = function()
     end
     if sample ~= "-" then break end
   end
-  Say(L("Bag filters on top of the bag.", "背包分类在背包上方。")
+  Say(L("Bag filters below the bag toolbar.", "背包分类在工具条下方。")
     .. " class1=" .. tostring(c[1])
     .. " sample=" .. sample
     .. " filter=" .. active)
