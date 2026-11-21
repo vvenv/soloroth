@@ -26,6 +26,13 @@ It is not affiliated with or endorsed by Blizzard Entertainment and ships no gam
 
 Teleport, Items, GMBox, Dungeon, Bots, Achievements and !Solo in the same folder are this project's own, under its GPL-3.0.
 
+Bundled pfUI style tables under `Interface/AddOns/!Solo/PfuiStylesData.lua` are decoded community `/share` exports (not the authors' full addons), kept for one-click switching in Soloroth:
+
+| Style id | Author | Source |
+| --- | --- | --- |
+| Solo: Clean | megajjh | https://pastebin.com/aTz0rQAa (r/pfUI) |
+| Solo: Compact | Khegful | https://pastebin.com/m2nLAtHA (r/pfUI) |
+
 ## benilla
 
 benilla is dual-licensed under the MIT licence and the Apache License 2.0; the full Apache text is `LICENSE-APACHE` in the client source.

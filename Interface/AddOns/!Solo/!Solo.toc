@@ -13,6 +13,8 @@ MicroBar.lua
 BenillaOptions_zhCN.lua
 PfuiSkin.lua
 SkinKit.lua
+PfuiStylesData.lua
+PfuiStyle.lua
 Visual.lua
 AutoLoot.lua
 ContinuousEnchant.lua

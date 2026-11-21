@@ -6,7 +6,9 @@ addons. Third-party addon sources are never edited; anything they should do diff
 is done from here.
 
 Player-facing copy treats Soloroth windows as one product (command strip under the
-minimap, ESC「界面」for settings). Keep that in README; this file stays in addon terms.
+minimap, ESC「界面」for settings). Interface style lives in Options → Graphics
+(`/style`, `PfuiStyle.lua` + `PfuiStylesData.lua`); Solo invariant keys stay in
+`Solo.lua`. Keep that in README; this file stays in addon terms.
 
 ## Command strip
 

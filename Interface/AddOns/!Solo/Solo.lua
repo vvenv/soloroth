@@ -6,8 +6,9 @@ The realm is one player and their bots, so:
   * chat is a message log: system, loot, experience and what NPCs
     say stay; say, yell, whispers, party/guild talk and channels go. (The
     server refuses every channel join anyway: Channel.Disable.)
-  * pfUI skips its first-run wizard and starts from settings made for
-    travelling alone, on every character, every login.
+  * pfUI skips its first-run wizard and starts from a chosen style
+    (default Modern; Options → Graphics / /style) plus solo constraints
+    (command strip, dual chat, HUD seats) every login.
 
 The folder starts with "!" so it loads before every other addon: its
 ADDON_LOADED handler then runs before pfUI's own, at the moment pfUI's
@@ -71,16 +72,18 @@ end
 
 -- -------------------------------------------------------------------- pfUI --
 
--- Set on every login, over whatever the character had.
-local PFUI = {
+-- Solo product constraints, written every login (and after a style switch).
+-- Fonts, unit frames, bar textures, chat size and panel chrome follow the
+-- chosen pfUI style (PfuiStyle.lua); these keys stay put.
+local PFUI_INVARIANT = {
   -- World map: show zones not visited yet and the exploration points.
   { { "appearance", "worldmap", "mapreveal" }, "1" },
   { { "appearance", "worldmap", "mapexploration" }, "1" },
   -- Minimap: bigger, with the zone name and coordinates always on.
+  -- Size 170 matches MicroBar's strip width under the minimap.
   { { "appearance", "minimap", "size" }, "170" },
   { { "appearance", "minimap", "zonetext" }, "on" },
   { { "appearance", "minimap", "coordstext" }, "on" },
-  { { "appearance", "border", "shadow" }, "1" },
   -- pfUI kills the stock MainMenuBar; without this the character / spellbook /
   -- talent / map / menu micro buttons have nowhere to sit. Social and Help
   -- are shut in NoSocial / NoHelp.
@@ -96,22 +99,6 @@ local PFUI = {
   -- Six solo buttons. MicroBar.lua redraws them as action-bar squares and
   -- packs the row to however many are showing.
   { { "abuttons", "rowsize" }, "6" },
-  -- Info panels: no guild or friends to count.
-  { { "panel", "left", "left" }, "exp" },
-  { { "panel", "left", "right" }, "bagspace" },
-  -- The right info bar is the length of the current or last fight, beside
-  -- the time and gold. It sits in the bottom of the combat log (below).
-  { { "panel", "right", "left" }, "combat" },
-  -- Those bars take their width from the chat frames. Exp, armor, bags, the
-  -- fight timer, the clock and gold are short; 380 leaves them mostly empty.
-  -- The two chats are the same size: the message log on the left, the
-  -- combat log on the right.
-  { { "chat", "left", "width" }, "280" },
-  { { "chat", "right", "width" }, "280" },
-  { { "chat", "left", "height" }, "180" },
-  { { "chat", "right", "height" }, "180" },
-  -- The experience bar beside the chat stays visible, not only after a kill.
-  { { "panel", "xp", "xp_always" }, "1" },
   -- Right chat on, so the combat log has the same frame as the message log.
   -- pfUI would put ChatFrame3 there; PlaceCombatLog swaps in ChatFrame2.
   { { "chat", "right", "enable" }, "1" },
@@ -183,10 +170,11 @@ local PFUI = {
   { { "position", "WorldMapFrame", "scale" }, 0.7 },
 }
 
--- The steps of pfUI's first-run wizard. Its profile step would copy the
--- Modern profile, which is what a new character gets here; the chat steps
--- would set up channels this realm does not have.
+-- The steps of pfUI's first-run wizard. Style switching replaces the profile
+-- step; the chat steps would set up channels this realm does not have.
 local PFUI_WIZARD = { "init", "profile", "cvars", "chat_right", "chat_position", "chat_channels", "finalize" }
+
+local DEFAULT_STYLE = "Modern"
 
 -- pfUI's SavedVariables dump every value as a string. LoadMovable then does
 -- SetPoint(anchor, xpos, ypos); a string offset is treated as a region name.
@@ -202,20 +190,53 @@ local function CoercePositions()
   end
 end
 
-local function PreparePfUI()
+function Solo_PreferredPfuiStyle()
+  if type(Solo_State) == "table" and type(Solo_State.uiStyle) == "string" and Solo_State.uiStyle ~= "" then
+    return Solo_State.uiStyle
+  end
+  if type(GetCVar) == "function" then
+    local c = GetCVar("solorothUiStyle")
+    if c and c ~= "" then return c end
+  end
+  return DEFAULT_STYLE
+end
+
+-- Overlay solo constraints onto the current pfUI_config. Used every login and
+-- after PfuiStyle copies a new profile.
+function Solo_ApplyPfUIInvariant()
   if type(pfUI_config) ~= "table" then pfUI_config = {} end
   if type(pfUI_init) ~= "table" then pfUI_init = {} end
-
-  if IsEmpty(pfUI_config) and pfUI_profiles and pfUI_profiles["Modern"] then
-    pfUI_config = Copy(pfUI_profiles["Modern"])
-  end
   for i = 1, table.getn(PFUI_WIZARD) do
     pfUI_init[PFUI_WIZARD[i]] = true
   end
-  for i = 1, table.getn(PFUI) do
-    Set(pfUI_config, PFUI[i][1], PFUI[i][2])
+  for i = 1, table.getn(PFUI_INVARIANT) do
+    Set(pfUI_config, PFUI_INVARIANT[i][1], PFUI_INVARIANT[i][2])
   end
   CoercePositions()
+end
+
+local function PreparePfUI()
+  if type(Solo_RegisterPfuiCommunityProfiles) == "function" then
+    Solo_RegisterPfuiCommunityProfiles()
+  end
+  if type(pfUI_config) ~= "table" then pfUI_config = {} end
+  if type(pfUI_init) ~= "table" then pfUI_init = {} end
+
+  if IsEmpty(pfUI_config) and type(pfUI_profiles) == "table" then
+    local style = Solo_PreferredPfuiStyle()
+    local src = pfUI_profiles[style] or pfUI_profiles[DEFAULT_STYLE]
+    if not src and style ~= DEFAULT_STYLE then
+      style = DEFAULT_STYLE
+      src = pfUI_profiles[DEFAULT_STYLE]
+    end
+    if src then
+      pfUI_config = Copy(src)
+      if type(Solo_State) ~= "table" then Solo_State = {} end
+      Solo_State.uiStyle = style
+      if type(SetCVar) == "function" then SetCVar("solorothUiStyle", style) end
+    end
+  end
+  Solo_ApplyPfUIInvariant()
 end
 
 -- -------------------------------------------------------------------- chat --
@@ -516,6 +537,10 @@ ev:SetScript("OnEvent", function()
       HideDungeonRefButtons()
     end
   elseif event == "VARIABLES_LOADED" then
+    -- pfUI assigns Light on this event; re-publish community styles afterwards.
+    if type(Solo_RegisterPfuiCommunityProfiles) == "function" then
+      Solo_RegisterPfuiCommunityProfiles()
+    end
     EnableCombatText()
     HideGuildUnderNames()
     HideGameTips()
