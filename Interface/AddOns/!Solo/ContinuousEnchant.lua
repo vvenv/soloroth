@@ -14,7 +14,7 @@ local function L(en, zh) if ZH and zh then return zh end return en end
 local skipReplace = false
 local remaining = 0
 local needRetarget = false
-local batchSpell
+local pendingNext = false
 local expectStop = false
 local lastBag, lastSlot, lastInv
 local dialogsHooked = false
@@ -39,12 +39,8 @@ local function Available()
   return tonumber(num) or 0
 end
 
-local function SelectedSpellName()
-  local idx = GetCraftSelectionIndex and GetCraftSelectionIndex()
-  if not idx or idx == 0 then return end
-  local name, _, craftType = GetCraftInfo(idx)
-  if craftType == "header" then return end
-  return name
+local function CreateEnabled()
+  return CraftCreateButton and CraftCreateButton:IsEnabled() == 1
 end
 
 local function SyncInput()
@@ -52,15 +48,21 @@ local function SyncInput()
   local avail = Available()
   input:SetNumber(ClampCount(input:GetNumber(), avail > 0 and avail or nil))
   if createAll then
-    if avail > 0 then createAll:Enable() else createAll:Disable() end
+    -- Stock Create can be enabled with numAvailable 0 (no reagents listed);
+    -- keep Create All in step with Create, not only the count.
+    if CreateEnabled() or avail > 0 then
+      createAll:Enable()
+    else
+      createAll:Disable()
+    end
   end
 end
 
 local function ClearBatch()
   remaining = 0
   needRetarget = false
+  pendingNext = false
   skipReplace = false
-  batchSpell = nil
   expectStop = false
 end
 
@@ -76,16 +78,31 @@ local function Retarget()
   end
 end
 
+local function QueueCraft()
+  local idx = GetCraftSelectionIndex and GetCraftSelectionIndex()
+  if not idx or idx == 0 then
+    ClearBatch()
+    return
+  end
+  needRetarget = true
+  DoCraft(idx)
+end
+
 local function StartBatch(count)
   local idx = GetCraftSelectionIndex and GetCraftSelectionIndex()
   if not idx or idx == 0 then return end
   local avail = Available()
-  if avail < 1 then return end
-  remaining = ClampCount(count, avail)
+  -- Never refuse DoCraft when the stock Create button would fire: numAvailable
+  -- can be 0 while reagents are listed empty or Create is still enabled.
+  if avail > 0 then
+    remaining = ClampCount(count, avail)
+  else
+    remaining = ClampCount(count, nil)
+  end
   skipReplace = false
   needRetarget = false
+  pendingNext = false
   expectStop = false
-  batchSpell = SelectedSpellName()
   DoCraft(idx)
 end
 
@@ -189,7 +206,9 @@ local function InstallCraftUi()
   createAll:SetText(CREATE_ALL or L("Create All", "全部制造"))
   createAll:SetPoint("RIGHT", create, "LEFT", -5, 0)
   createAll:SetScript("OnClick", function()
-    StartBatch(Available())
+    local n = Available()
+    if n < 1 then n = ClampCount(input and input:GetNumber() or 1, nil) end
+    StartBatch(n)
   end)
 
   plus = CreateFrame("Button", "SoloCraftIncrementButton", CraftFrame)
@@ -264,6 +283,12 @@ f:RegisterEvent("SPELLCAST_STOP")
 f:RegisterEvent("SPELLCAST_FAILED")
 f:RegisterEvent("SPELLCAST_INTERRUPTED")
 f:SetScript("OnUpdate", function()
+  if pendingNext then
+    pendingNext = false
+    if remaining < 1 then return end
+    QueueCraft()
+    return
+  end
   if not needRetarget then return end
   if SpellIsTargeting and SpellIsTargeting() then
     needRetarget = false
@@ -288,9 +313,9 @@ f:SetScript("OnEvent", function()
   elseif event == "CRAFT_UPDATE" then
     SyncInput()
   elseif event == "SPELLCAST_START" then
-    if remaining > 0 and batchSpell and arg1 == batchSpell then
-      expectStop = true
-    end
+    -- Any cast start while a batch is open counts; do not require the craft
+    -- name to match SPELLCAST_START's label (empty for some flags, locale drift).
+    if remaining > 0 then expectStop = true end
   elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
     if remaining > 0 and expectStop then ClearBatch() end
   elseif event == "SPELLCAST_STOP" then
@@ -302,12 +327,7 @@ f:SetScript("OnEvent", function()
       SyncInput()
       return
     end
-    local idx = GetCraftSelectionIndex and GetCraftSelectionIndex()
-    if not idx or idx == 0 or Available() < 1 then
-      ClearBatch()
-      return
-    end
-    needRetarget = true
-    DoCraft(idx)
+    -- Defer the next DoCraft: same-frame cast after STOP often fails to arm.
+    pendingNext = true
   end
 end)
