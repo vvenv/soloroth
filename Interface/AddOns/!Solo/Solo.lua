@@ -96,9 +96,9 @@ local PFUI_INVARIANT = {
   { { "abuttons", "position" }, "bottom" },
   { { "abuttons", "showdefault" }, "1" },
   { { "abuttons", "hideincombat" }, "0" },
-  -- Six solo buttons. MicroBar.lua redraws them as action-bar squares and
-  -- packs the row to however many are showing.
-  { { "abuttons", "rowsize" }, "6" },
+  -- Seven solo buttons (travel → gear → pets → tools → party → farm → dungeon).
+  -- MicroBar.lua redraws them as action-bar squares and packs the row.
+  { { "abuttons", "rowsize" }, "7" },
   -- Right chat on, so the combat log has the same frame as the message log.
   -- pfUI would put ChatFrame3 there; PlaceCombatLog swaps in ChatFrame2.
   { { "chat", "right", "enable" }, "1" },

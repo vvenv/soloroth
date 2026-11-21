@@ -1,8 +1,8 @@
 --[[--------------------------------------------------------------------------
 Soloroth command strip under the minimap: one chrome frame holding two rows of
 pfUI action-bar squares — character / book / talent / map / menu above, then
-travel → gear → tools → party → farm → dungeon. Same size, same border; the
-rows are layout only, not "system vs addon".
+travel → gear → pets → tools → party → farm → dungeon. Same size, same border;
+the rows are layout only, not "system vs addon".
 
 Stock micro buttons are 33×44; pfUI only scales that art. Feature buttons wear
 the round minimap ring. Both become cropped action-bar icons. pfUI still
@@ -26,6 +26,7 @@ local MICRO = {
 local FEATURE_ORDER = {
   "TeleportMinimapButton",
   "ItemsMinimapButton",
+  "CompanionsMinimapButton",
   "GMBoxMinimapButton",
   "BotsMinimapButton",
   "SoloFarmMinimapButton",

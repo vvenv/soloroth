@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="COMPANIONS_TOGGLE" header="COMPANIONS">
+    Companions_Toggle();
+  </Binding>
+</Bindings>
