@@ -1,9 +1,14 @@
 # Soloroth
 
 WoW 1.12.1 classic for one player on an Apple Silicon Mac: a vmangos server, the benilla
-client, and a vetted 1.12 addon set tuned for solo play. README.md (Chinese) is the user
-guide; keep it in step with any player-visible change. DEVELOP.md (Chinese) holds what
-each script does, the directory table and upstream merging.
+client, and a vetted 1.12 addon set tuned for solo play.
+
+Docs (Chinese unless noted):
+- `README.md` — short human install / play guide. Keep its feature bullets and command
+  table honest when player-visible behavior changes.
+- `GUIDE.md` — full player-facing behavior (bots, grind, UI defaults, rates, …). This is
+  the detailed source of truth for agents; update it with any player-visible change.
+- `DEVELOP.md` — what each script does, directory table, upstream merging.
 
 ## Layout and who owns what
 
