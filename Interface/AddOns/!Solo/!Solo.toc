@@ -15,6 +15,7 @@ PfuiSkin.lua
 SkinKit.lua
 Visual.lua
 AutoLoot.lua
+ContinuousEnchant.lua
 Farm.lua
 BagFilters.lua
 SkinAtlas.lua
