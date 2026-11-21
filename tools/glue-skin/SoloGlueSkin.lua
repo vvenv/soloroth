@@ -226,14 +226,78 @@ local function HideCharSelectChrome()
 end
 
 -- Stock select is top-heavy and right-crowded once the realm row is gone. Solo
--- layout: a right rail sized to the roster, a centered enter cluster under the
--- model, and Back / Delete as a balanced bottom pair outside that rail.
+-- layout: a right rail sized to the roster; bottom row is one baseline with
+-- Back / Enter / Delete mirrored (same inset from left and right).
+--
+-- Stock character rows are left-anchored; their Glue-CharacterSelect-Highlight
+-- hangs 20px left and its glow art is itself left-weighted — in a freestanding
+-- rail that always reads off-center. Drop that texture, draw a pfUI-flat pick
+-- frame we control, and center the row + text on the rail midline.
+local ROW_W = 220
+
+local function CenterCharSelectRow(btn)
+  if not btn or btn.soloCentered then return end
+  btn.soloCentered = true
+  btn:SetWidth(ROW_W)
+  local hl = btn:GetHighlightTexture()
+  if hl then
+    hl:SetTexture(nil)
+    hl:SetWidth(1)
+    hl:SetHeight(1)
+  end
+  if not btn.soloPick then
+    local pick = CreateFrame("Frame", nil, btn)
+    pick:SetFrameLevel(btn:GetFrameLevel())
+    pick:SetPoint("TOPLEFT", btn, "TOPLEFT", -4, 6)
+    pick:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 4, 10)
+    pick:SetBackdrop(BACKDROP)
+    pick:SetBackdropColor(1, .82, 0, .1)
+    pick:SetBackdropBorderColor(HOVER[1], HOVER[2], HOVER[3], .95)
+    pick:Hide()
+    btn.soloPick = pick
+  end
+  local prefix = btn:GetName() .. "ButtonText"
+  local text = getglobal(prefix)
+  local name = getglobal(prefix .. "Name")
+  local info = getglobal(prefix .. "Info")
+  local loc = getglobal(prefix .. "Location")
+  if name and text then
+    name:SetJustifyH("CENTER")
+    name:ClearAllPoints()
+    name:SetPoint("TOP", text, "TOP", 0, -8)
+  end
+  if info and name then
+    info:SetJustifyH("CENTER")
+    info:SetWidth(ROW_W - 16)
+    info:ClearAllPoints()
+    info:SetPoint("TOP", name, "BOTTOM", 0, -1)
+  end
+  if loc and info then
+    loc:SetJustifyH("CENTER")
+    loc:SetWidth(ROW_W - 16)
+    loc:ClearAllPoints()
+    loc:SetPoint("TOP", info, "BOTTOM", 0, -1)
+  end
+end
+
+local function SyncCharSelectPick()
+  local maxDisp = MAX_CHARACTERS_DISPLAYED or 10
+  local sel = CharacterSelect and CharacterSelect.selectedIndex or 0
+  for i = 1, maxDisp do
+    local btn = getglobal("CharSelectCharacterButton" .. i)
+    if btn and btn.soloPick then
+      if i == sel then btn.soloPick:Show() else btn.soloPick:Hide() end
+    end
+  end
+end
+
 local function LayoutCharSelect()
   HideCharSelectChrome()
   local ui = CharacterSelectUI
   local rail = CharacterSelectCharacterFrame
   if not ui or not rail then return end
 
+  local margin, baseline = 36, 44
   local num = GetNumCharacters() or 0
   local maxPer = MAX_CHARACTERS_PER_REALM or 10
   local showCreate = (num < maxPer) and IsConnectedToServer()
@@ -247,48 +311,61 @@ local function LayoutCharSelect()
   if h < 160 then h = 160 end
   if h > 600 then h = 600 end
 
-  rail:SetWidth(272)
+  rail:SetWidth(ROW_W + 36)
   rail:SetHeight(h)
-  -- Mid-right rail (above the action row) so the roster is not pinned to the floor.
+  -- Same right inset as Delete; sit above the action row.
   rail:ClearAllPoints()
-  rail:SetPoint("RIGHT", ui, "RIGHT", -28, 36)
+  rail:SetPoint("BOTTOMRIGHT", ui, "BOTTOMRIGHT", -margin, baseline + 56)
 
   if CharSelectCharacterButton1 then
     CharSelectCharacterButton1:ClearAllPoints()
-    CharSelectCharacterButton1:SetPoint("TOPLEFT", rail, "TOPLEFT", 22, -padTop)
+    CharSelectCharacterButton1:SetPoint("TOP", rail, "TOP", 0, -padTop)
   end
+  local maxDisp = MAX_CHARACTERS_DISPLAYED or 10
+  for i = 1, maxDisp do
+    CenterCharSelectRow(getglobal("CharSelectCharacterButton" .. i))
+  end
+  SyncCharSelectPick()
   if CharSelectCreateCharacterButton then
-    CharSelectCreateCharacterButton:ClearAllPoints()
-    CharSelectCreateCharacterButton:SetPoint("BOTTOM", rail, "BOTTOM", 0, 14)
+    local create = CharSelectCreateCharacterButton
+    create:SetWidth(ROW_W)
+    create:ClearAllPoints()
+    create:SetPoint("BOTTOM", rail, "BOTTOM", 0, 14)
+    if create.soloBackdrop then
+      local bw = math.floor(ROW_W * .86 + .5)
+      local bh = math.floor(create:GetHeight() * .55 + .5)
+      create.soloBackdrop:SetWidth(bw)
+      create.soloBackdrop:SetHeight(bh)
+      create.soloBackdrop:ClearAllPoints()
+      create.soloBackdrop:SetPoint("CENTER", create, "CENTER", 0, 3)
+    end
   end
 
-  -- Enter cluster sits in the optical center of the free area left of the rail.
-  local shift = -70
-  if CharSelectCharacterName then
-    CharSelectCharacterName:ClearAllPoints()
-    CharSelectCharacterName:SetPoint("BOTTOM", ui, "BOTTOM", shift, 124)
-  end
+  -- One bottom row: Back | Enter (+ rotates) | Delete. Same baseline; outer
+  -- edges share `margin` so left and right mirror. Enter is taller and grows up.
   if CharSelectEnterWorldButton then
     CharSelectEnterWorldButton:ClearAllPoints()
-    CharSelectEnterWorldButton:SetPoint("BOTTOM", ui, "BOTTOM", shift, 44)
+    CharSelectEnterWorldButton:SetPoint("BOTTOM", ui, "BOTTOM", 0, baseline)
+  end
+  if CharSelectCharacterName and CharSelectEnterWorldButton then
+    CharSelectCharacterName:ClearAllPoints()
+    CharSelectCharacterName:SetPoint("BOTTOM", CharSelectEnterWorldButton, "TOP", 0, 18)
   end
   if CharacterSelectRotateLeft and CharSelectEnterWorldButton then
     CharacterSelectRotateLeft:ClearAllPoints()
-    CharacterSelectRotateLeft:SetPoint("RIGHT", CharSelectEnterWorldButton, "LEFT", -6, 2)
+    CharacterSelectRotateLeft:SetPoint("RIGHT", CharSelectEnterWorldButton, "LEFT", -6, 0)
   end
   if CharacterSelectRotateRight and CharSelectEnterWorldButton then
     CharacterSelectRotateRight:ClearAllPoints()
-    CharacterSelectRotateRight:SetPoint("LEFT", CharSelectEnterWorldButton, "RIGHT", 6, 2)
+    CharacterSelectRotateRight:SetPoint("LEFT", CharSelectEnterWorldButton, "RIGHT", 6, 0)
   end
   if CharacterSelectBackButton then
     CharacterSelectBackButton:ClearAllPoints()
-    CharacterSelectBackButton:SetPoint("BOTTOMLEFT", ui, "BOTTOMLEFT", 36, 44)
+    CharacterSelectBackButton:SetPoint("BOTTOMLEFT", ui, "BOTTOMLEFT", margin, baseline)
   end
-  if CharacterSelectDeleteButton and CharSelectEnterWorldButton then
+  if CharacterSelectDeleteButton then
     CharacterSelectDeleteButton:ClearAllPoints()
-    CharacterSelectDeleteButton:SetPoint("BOTTOM", CharSelectEnterWorldButton, "BOTTOM", 0, 0)
-    local after = CharacterSelectRotateRight or CharSelectEnterWorldButton
-    CharacterSelectDeleteButton:SetPoint("LEFT", after, "RIGHT", 18, 0)
+    CharacterSelectDeleteButton:SetPoint("BOTTOMRIGHT", ui, "BOTTOMRIGHT", -margin, baseline)
   end
 end
 
@@ -309,12 +386,26 @@ local function SkinCharacterSelect()
       LayoutCharSelect()
     end
   end
+  local stockSel = UpdateCharacterSelection
+  if stockSel then
+    function UpdateCharacterSelection()
+      stockSel()
+      -- Stock LockHighlight would bring the left-weighted art back; keep ours.
+      local maxDisp = MAX_CHARACTERS_DISPLAYED or 10
+      for i = 1, maxDisp do
+        local btn = getglobal("CharSelectCharacterButton" .. i)
+        if btn then btn:UnlockHighlight() end
+      end
+      SyncCharSelectPick()
+    end
+  end
   function UpdateAddonButton()
     HideCharSelectChrome()
   end
   LayoutCharSelect()
 
-  Panel(CharacterSelectCharacterFrame, 8, 3, 3, 7, .6)
+  -- Own: a child one level down of a model-scene panel can slip under the 3D.
+  Own(CharacterSelectCharacterFrame, .6)
   Panel(CharacterDeleteBackground, 6, 6, 6, 6, .85)
   Panel(CharacterRenameBackground, 6, 6, 6, 6, .85)
   -- Their name boxes wear the chat input's end caps.
