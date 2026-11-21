@@ -596,9 +596,31 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return last.isEmpty ? "详情见 server/logs/launcher.log" : last
     }
 
+    // Auth 3724 + world 8085. Launcher used to trust .ready forever; if mangosd
+    // exited in the background, 开始游戏 only launched the client → black screen
+    // (login UI hidden, nothing to connect to).
+    func serverListening() -> Bool {
+        let check = { (port: Int) -> Bool in
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
+            p.arguments = ["-nP", "-iTCP:\(port)", "-sTCP:LISTEN"]
+            p.standardOutput = FileHandle.nullDevice
+            p.standardError = FileHandle.nullDevice
+            do { try p.run() } catch { return false }
+            p.waitUntilExit()
+            return p.terminationStatus == 0
+        }
+        return check(3724) && check(8085)
+    }
+
     func startClient() {
         wantsPlay = false
         guard !clientRunning else { return }
+        if !serverListening() {
+            wantsPlay = true
+            startServer()
+            return
+        }
         clientRunning = true
         set(.playing)
         run("start-client.sh") { code in
