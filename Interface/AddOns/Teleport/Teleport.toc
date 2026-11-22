@@ -4,10 +4,11 @@
 ## Notes: Search the server's teleport points and go there in one click.
 ## Notes-zhCN: 搜索传送点，点一下就过去。
 ## Author: local
-## Version: 1.0.0
+## Version: 1.1.0
 ## SavedVariables: TeleportDB
 ## OptionalDeps: pfUI, !Solo
 
 Data_Tele.lua
+Data_MapBounds.lua
 Teleport.lua
 Bindings.xml

@@ -8,9 +8,12 @@ Data_Tele.lua (loaded first) still publishes GMBox_Tele, GMBox_TeleZH and
 GMBox_TelePY. Those names are what the generator writes. The Chinese and
 pinyin columns are why a zhCN client can search by hanzi or pinyin; the
 English name is what `.tele` expects and is what gets sent.
+
+Data_MapBounds.lua is WorldMapArea.dbc for outdoor maps 0/1. A map click
+turns the cursor percent into world XY and picks the nearest game_tele.
 ----------------------------------------------------------------------------]]
 
-local VERSION = "1.0.0"
+local VERSION = "1.1.0"
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end
@@ -24,6 +27,7 @@ local TELE = GMBox_Tele or {}
 local TELE_ZH = GMBox_TeleZH or {}
 local TELE_PY = GMBox_TelePY or {}
 local TELE_ALTS = { TELE_ZH, TELE_PY }
+local MAP_BOUNDS = Teleport_MapBounds or {}
 
 local COL = "|cff44ddff"
 
@@ -346,6 +350,160 @@ end)
 ui.gps = Button(f, 60, 20, L("Where", "我在哪"), "LEFT", ui.recall, "RIGHT", 4, 0)
 ui.gps:SetScript("OnClick", function() Cmd(".gps") end)
 
+-- ------------------------------------------------------- world map pin ---
+-- Right-click or Ctrl+left-click places a "go here" button on the map.
+-- Left-click on a zone map (already zoomed in) does the same; continent
+-- left-click still zooms. The button sends .tele to the nearest outdoor
+-- game_tele — Z from the list, so you land on the ground.
+
+local mapPin = {
+  frame = nil, go = nil, mark = nil, key = nil, data = nil,
+}
+
+local function MapCursorPercent()
+  if not WorldMapButton or not MouseIsOver(WorldMapButton) then return end
+  local width = WorldMapButton:GetWidth()
+  local height = WorldMapButton:GetHeight()
+  local mx, my = WorldMapButton:GetCenter()
+  local scale = WorldMapButton:GetEffectiveScale()
+  local x, y = GetCursorPosition()
+  if not mx or not my or width == 0 or height == 0 then return end
+  mx = ((x / scale) - (mx - width / 2)) / width * 100
+  my = ((my + height / 2) - (y / scale)) / height * 100
+  if mx < 0 or mx > 100 or my < 0 or my > 100 then return end
+  return mx, my, width, height
+end
+
+local function MapSelectionKey()
+  local file = GetMapInfo and GetMapInfo() or ""
+  return tostring(GetCurrentMapContinent and GetCurrentMapContinent() or 0) .. ":"
+    .. tostring(GetCurrentMapZone and GetCurrentMapZone() or 0) .. ":" .. tostring(file)
+end
+
+local function HideMapPin()
+  mapPin.data = nil
+  mapPin.key = nil
+  if mapPin.frame then mapPin.frame:Hide() end
+end
+
+local function NearestTele(mapId, wx, wy)
+  local best, bestD
+  for i = 1, table.getn(TELE) do
+    local e = TELE[i]
+    if e[2] == mapId then
+      local dx, dy = e[3] - wx, e[4] - wy
+      local d = dx * dx + dy * dy
+      if not bestD or d < bestD then
+        bestD = d
+        best = i
+      end
+    end
+  end
+  if not best then return end
+  return {
+    name = TELE[best][1], show = TeleDisplay(best),
+    map = TELE[best][2], x = TELE[best][3], y = TELE[best][4], z = TELE[best][5],
+  }
+end
+
+local function EnsureMapPin()
+  if mapPin.frame then return end
+  local p = CreateFrame("Frame", "TeleportMapPin", WorldMapButton)
+  p:SetWidth(1) p:SetHeight(1)
+  p:SetFrameLevel((WorldMapButton:GetFrameLevel() or 1) + 20)
+  p:Hide()
+  local mark = p:CreateTexture(nil, "OVERLAY")
+  mark:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcon_1")
+  mark:SetWidth(16) mark:SetHeight(16)
+  mark:SetPoint("CENTER", p, "CENTER", 0, 0)
+  local go = CreateFrame("Button", "TeleportMapGo", p, "UIPanelButtonTemplate")
+  go:SetWidth(170) go:SetHeight(22)
+  go:SetPoint("TOP", p, "BOTTOM", 0, -4)
+  go:SetScript("OnClick", function()
+    if not mapPin.data then return end
+    DoTele(mapPin.data)
+    HideMapPin()
+  end)
+  go:SetScript("OnEnter", function()
+    if not mapPin.data then return end
+    local d = mapPin.data
+    GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(d.show or d.name)
+    if ZH and d.show ~= d.name then
+      GameTooltip:AddLine(d.name, 0.8, 0.8, 0.8)
+    end
+    GameTooltip:AddLine(MapLabel(d.map) .. "  " .. d.x .. " " .. d.y .. " " .. d.z, 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L("Click to teleport (nearest named spot).",
+                          "点此传送到最近的命名地点。"), 0.4, 0.8, 1)
+    GameTooltip:Show()
+  end)
+  go:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  mapPin.frame, mapPin.go, mapPin.mark = p, go, mark
+  if SoloSkin and SoloSkin.Button then SoloSkin.Button(go) end
+end
+
+local function PlaceMapPin(mx, my)
+  local file = GetMapInfo and GetMapInfo()
+  local bounds = file and MAP_BOUNDS[file]
+  if not bounds then
+    msg(L("this map has no outdoor bounds for click-teleport",
+          "这张地图没有可点的户外范围"))
+    return
+  end
+  BuildTele()
+  local mapId, left, right, top, bottom = bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]
+  local wy = left - (left - right) * (mx / 100)
+  local wx = top - (top - bottom) * (my / 100)
+  local d = NearestTele(mapId, wx, wy)
+  if not d then
+    msg(L("no teleport point on this continent", "这块大陆上没有传送点"))
+    return
+  end
+  EnsureMapPin()
+  local w, h = WorldMapButton:GetWidth(), WorldMapButton:GetHeight()
+  mapPin.frame:ClearAllPoints()
+  mapPin.frame:SetPoint("CENTER", WorldMapButton, "TOPLEFT", w * mx / 100, -h * my / 100)
+  mapPin.go:SetText(L("Go: ", "传送：") .. (d.show or d.name))
+  local fs = mapPin.go:GetFontString()
+  local tw = (fs and fs:GetStringWidth()) or 140
+  if tw + 24 > 170 then mapPin.go:SetWidth(tw + 24) else mapPin.go:SetWidth(170) end
+  mapPin.data = d
+  mapPin.key = MapSelectionKey()
+  mapPin.frame:Show()
+end
+
+local function TryMapPinClick()
+  local mx, my = MapCursorPercent()
+  if not mx then return false end
+  PlaceMapPin(mx, my)
+  return true
+end
+
+local function HookWorldMapTeleport()
+  if not WorldMapButton or WorldMapButton.teleportHooked then return end
+  WorldMapButton.teleportHooked = true
+  WorldMapButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  local prev = WorldMapButton:GetScript("OnClick")
+  WorldMapButton:SetScript("OnClick", function()
+    local zone = GetCurrentMapZone and GetCurrentMapZone() or 0
+    local pinClick = (arg1 == "RightButton")
+      or (arg1 == "LeftButton" and IsControlKeyDown())
+      or (arg1 == "LeftButton" and zone > 0)
+    if pinClick then TryMapPinClick() end
+    -- Right / Ctrl+left: pin only, keep the current zoom.
+    if arg1 == "RightButton" or (arg1 == "LeftButton" and IsControlKeyDown()) then
+      return
+    end
+    if prev then prev() end
+  end)
+  if not WorldMapFrame then return end
+  local prevHide = WorldMapFrame:GetScript("OnHide")
+  WorldMapFrame:SetScript("OnHide", function()
+    HideMapPin()
+    if prevHide then prevHide() end
+  end)
+end
+
 -- ------------------------------------------------------- minimap button ---
 
 local mm = CreateFrame("Button", "TeleportMinimapButton", Minimap)
@@ -476,10 +634,12 @@ local function Help()
     msg("/gt 开关窗口（命令条上也有）")
     msg("/gt <文字>  唯一匹配直接过去，多个就开列表")
     msg("左键传送，Shift+左键按坐标，右键收藏")
+    msg("世界地图：区域图左键、或右键 / Ctrl+左键，点出「传送」按钮")
   else
     msg("/gt opens or closes the window (also on the command strip)")
     msg("/gt <text>  one match goes instantly, otherwise the list opens")
     msg("left click teleports, shift+click uses .go xyz, right click favourites")
+    msg("world map: left-click a zone, or right / Ctrl+left, for a Go button")
   end
 end
 
@@ -523,6 +683,7 @@ local function SkinTeleport()
   if not SoloSkin then return end
   SoloSkin.Backdrop(f)
   SoloSkin.Controls(f)
+  if mapPin.go and SoloSkin.Button then SoloSkin.Button(mapPin.go) end
   local _, class = UnitClass("player")
   local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS[class] or { r = 1, g = 1, b = 1 }
   local i = 1
@@ -546,6 +707,7 @@ end
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("VARIABLES_LOADED")
 ev:RegisterEvent("PLAYER_LOGIN")
+ev:RegisterEvent("WORLD_MAP_UPDATE")
 ev:SetScript("OnEvent", function()
   if event == "VARIABLES_LOADED" then
     InitDB()
@@ -555,11 +717,16 @@ ev:SetScript("OnEvent", function()
       f:SetPoint(db.point[1], UIParent, db.point[2], db.point[3], db.point[4])
     end
     PlaceMinimapButton()
+    HookWorldMapTeleport()
     f:Hide()
   elseif event == "PLAYER_LOGIN" then
     -- J is free in 1.12 defaults.
     if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("TELEPORT_TOGGLE", "J", db) end
+    HookWorldMapTeleport()
+  elseif event == "WORLD_MAP_UPDATE" then
+    if mapPin.key and mapPin.key ~= MapSelectionKey() then HideMapPin() end
   end
 end)
 
 InitDB()
+HookWorldMapTeleport()
