@@ -52,11 +52,26 @@ function SoloSkin.Frame(parent, region)
   return border
 end
 
+-- Same look as pfUI's SkinCloseButton, but the icon is unnamed: pfUI names
+-- every close tex "pfQuestionDialogCloseTex", so a second close aborts the
+-- skin mid-pass (menu rows stay gold).
 function SoloSkin.Close(button, anchor)
   if not button then return end
   local A = pfUI.api
   local parent = anchor or button:GetParent()
-  A.SkinCloseButton(button, parent.backdrop or parent, -6, -6)
+  local host = parent.backdrop or parent
+  A.SkinButton(button, 1, .25, .25)
+  button:SetWidth(15)
+  button:SetHeight(15)
+  button:ClearAllPoints()
+  button:SetPoint("TOPRIGHT", host, "TOPRIGHT", -6, -6)
+  if not button.texture then
+    button.texture = button:CreateTexture(nil, "ARTWORK")
+  end
+  button.texture:SetTexture(pfUI.media["img:close"])
+  button.texture:ClearAllPoints()
+  button.texture:SetAllPoints(button)
+  button.texture:SetVertexColor(1, .25, .25, 1)
   if button:GetText() then button:SetText("") end
 end
 

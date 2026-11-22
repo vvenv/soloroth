@@ -96,13 +96,8 @@ local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 title:SetPoint("TOP", panel, "TOP", 0, -10)
 title:SetText(L("Party", "组队"))
 
--- A panel button, like the farming menu's rows. The stock close button
--- (UIPanelCloseButton) is skinned by a routine that names its icon
--- globally; a second one aborts the skin, and the menu rows stay vanilla.
-local close = CreateFrame("Button", "BotsPanelClose", panel, "UIPanelButtonTemplate")
-close:SetWidth(22) close:SetHeight(22)
-close:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -8, -8)
-close:SetText("x")
+local close = CreateFrame("Button", "BotsPanelClose", panel, "UIPanelCloseButton")
+close:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -6, -6)
 close:SetScript("OnClick", function() panel:Hide() end)
 
 local status = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
@@ -342,8 +337,8 @@ local function SkinBots()
     i = i + 1
   end
   SoloSkin.Backdrop(panel)
+  SoloSkin.Close(close)
   SoloSkin.Controls(panel)
-  SoloSkin.Button(close)
   i = 1
   while roleButtons[i] do
     SoloSkin.Button(roleButtons[i])

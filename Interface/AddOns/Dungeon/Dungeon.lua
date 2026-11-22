@@ -152,10 +152,8 @@ local title = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 title:SetPoint("TOP", f, "TOP", 0, -12)
 title:SetText(L("Dungeon", "副本") .. " " .. VERSION)
 
-local close = CreateFrame("Button", "DungeonClose", f, "UIPanelButtonTemplate")
-close:SetWidth(22) close:SetHeight(22)
-close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -8, -8)
-close:SetText("x")
+local close = CreateFrame("Button", "DungeonClose", f, "UIPanelCloseButton")
+close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -6, -6)
 close:SetScript("OnClick", function()
   if type(Dungeon_SetMode) == "function" then Dungeon_SetMode("list") end
   f:Hide()
@@ -427,8 +425,8 @@ BINDING_NAME_DUNGEON_TOGGLE = L("Toggle dungeon hub", "开关副本中心")
 local function SkinDungeon()
   if not SoloSkin then return end
   SoloSkin.Backdrop(f)
+  SoloSkin.Close(close)
   SoloSkin.Controls(f)
-  SoloSkin.Button(close)
   local i = 1
   if DungeonHub and DungeonHub.modeButtons then
     while DungeonHub.modeButtons[i] do
