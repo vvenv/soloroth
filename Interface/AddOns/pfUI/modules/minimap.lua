@@ -74,62 +74,15 @@ pfUI:RegisterModule("minimap", "vanilla:tbc", function ()
     end
   end)
 
-  -- battleground icon
-  MiniMapBattlefieldFrame:ClearAllPoints()
-  MiniMapBattlefieldFrame:SetPoint("BOTTOMRIGHT", Minimap, 4, -4)
-  MiniMapBattlefieldBorder:Hide()
-  MiniMapBattlefieldFrame:SetScript("OnClick", function()
-    GameTooltip:Hide()
-    if MiniMapBattlefieldFrame.status == "active" then
-      if arg1 == "RightButton" then
-        ToggleDropDownMenu(1, nil, MiniMapBattlefieldDropDown, "MiniMapBattlefieldFrame", -95, -5)
-      elseif IsShiftKeyDown() then
-        ToggleBattlefieldMinimap()
-      else
-        ToggleWorldStateScoreFrame()
-      end
-    elseif arg1 == "RightButton" then
-      ToggleDropDownMenu(1, nil, MiniMapBattlefieldDropDown, "MiniMapBattlefieldFrame", -95, -5)
-    end
-  end)
-
-  -- mail icon
-  MiniMapMailFrame:ClearAllPoints()
-  MiniMapMailFrame:SetPoint("TOPRIGHT", pfUI.minimap, "TOPRIGHT", 0, 0)
-  MiniMapMailBorder:Hide()
-  MiniMapMailIcon:SetTexture(pfUI.media["img:mail"])
-
-  MiniMapMailFrame:SetScript("OnShow", function()
-    if not this.highlight then
-      this.highlight = CreateFrame("Frame", nil, this)
-      this.highlight:SetAllPoints(this)
-      this.highlight:SetFrameLevel(this:GetFrameLevel() + 1)
-
-      this.highlight.tex = this.highlight:CreateTexture("OVERLAY")
-      this.highlight.tex:SetTexture(pfUI.media["img:mail"])
-      this.highlight.tex:SetPoint("TOPLEFT", MiniMapMailIcon, "TOPLEFT", -2, 2)
-      this.highlight.tex:SetPoint("BOTTOMRIGHT", MiniMapMailIcon, "BOTTOMRIGHT", 2, -2)
-      this.highlight.tex:SetVertexColor(1,.5,.5)
-
-      this.highlight:SetScript("OnUpdate", function()
-        if not this.count then this.count = 0 end
-        if not this.modifier then this.modifier = 1 end
-        if this.count >= 10 then this:Hide() end
-
-        this:SetAlpha(this:GetAlpha() + this.modifier)
-
-        if this:GetAlpha() <= 0.1 then
-          this.modifier = 0.05
-          this.count = this.count + 1
-        elseif this:GetAlpha() >= 0.9 then
-          this.modifier = -0.05
-        end
-      end)
-    end
-
-    this.highlight.count = 0
-    this.highlight:Show()
-  end)
+  -- Solo: no mail or battleground queue icons.
+  if MiniMapBattlefieldFrame then
+    MiniMapBattlefieldFrame:Hide()
+    MiniMapBattlefieldFrame.Show = function() end
+  end
+  if MiniMapMailFrame then
+    MiniMapMailFrame:Hide()
+    MiniMapMailFrame.Show = function() end
+  end
 
   -- Create coordinates text frame with location configurable
   pfUI.minimapCoordinates = CreateFrame("Frame", "pfMinimapCoord", pfUI.minimap)

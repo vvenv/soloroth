@@ -1,10 +1,7 @@
 pfUI:RegisterModule("screenshot", "vanilla:tbc", function ()
   if C.screenshot.interval == "0"
     and C.screenshot.levelup == "0"
-    and C.screenshot.pvprank == "0"
     and C.screenshot.faction == "0"
-    and C.screenshot.battleground == "0"
-    and C.screenshot.hk == "0"
     and C.screenshot.loot == "0" then
     return
   end
@@ -51,18 +48,8 @@ pfUI:RegisterModule("screenshot", "vanilla:tbc", function ()
       pfUI.screenshot:RegisterEvent("PLAYER_LEVEL_UP")
     end
   end
-  if C.screenshot.pvprank == "1" then
-    pfUI.screenshot:RegisterEvent("PLAYER_PVP_RANK_CHANGED")
-  end
   if C.screenshot.faction == "1" then
     pfUI.screenshot:RegisterEvent("CHAT_MSG_SYSTEM")
-  end
-  if C.screenshot.battleground ~= "0" then
-    pfUI.screenshot:RegisterEvent("UPDATE_BATTLEFIELD_SCORE")
-    pfUI.screenshot:RegisterEvent("UPDATE_BATTLEFIELD_STATUS")
-  end
-  if C.screenshot.hk == "1" then
-    pfUI.screenshot:RegisterEvent("PLAYER_PVP_KILLS_CHANGED")
   end
   if C.screenshot.loot ~= "0" then
     pfUI.screenshot:RegisterEvent("CHAT_MSG_LOOT")
@@ -87,11 +74,6 @@ pfUI:RegisterModule("screenshot", "vanilla:tbc", function ()
     self._last = now
   end
 
-  function pfUI.screenshot:PLAYER_ENTERING_WORLD()
-    local _
-    _, self._lastRank = GetPVPRankInfo(UnitPVPRank("player"))
-  end
-
   function pfUI.screenshot:SCREENSHOT_SUCCEEDED()
     self:UnregisterEvent("SCREENSHOT_SUCCEEDED")
     self:UnregisterEvent("SCREENSHOT_FAILED")
@@ -107,17 +89,6 @@ pfUI:RegisterModule("screenshot", "vanilla:tbc", function ()
     self:CustomScreenshot("levelup", dt, loc, name)
   end
 
-  function pfUI.screenshot:PLAYER_PVP_RANK_CHANGED()
-    local rankName, rankNumber = GetPVPRankInfo(UnitPVPRank("player"))
-    if self._lastRank and self._lastRank ~= rankNumber then
-      self._lastRank = rankNumber
-      local dt = date("%a, %b %d, %Y %X")
-      local loc = string.format("%s - %s",GetRealZoneText(),GetSubZoneText())
-      local name = string.format("%s : %s %s!",UnitName("player"),RANK, rankName or _G.NONE)
-      self:CustomScreenshot("pvprank", dt, loc, name)
-    end
-  end
-
   function pfUI.screenshot:CHAT_MSG_SYSTEM()
     local _,_, standing, rep = string.find(arg1, FACTION_STANDING_CHANGEDregex)
     if standing and rep then
@@ -125,28 +96,6 @@ pfUI:RegisterModule("screenshot", "vanilla:tbc", function ()
       local loc = string.format("%s - %s",GetRealZoneText(),GetSubZoneText())
       self:CustomScreenshot("faction", dt, loc, string.format("%s:%s!",rep,standing))
     end
-  end
-
-  function pfUI.screenshot:UPDATE_BATTLEFIELD_STATUS()
-    local factioncode = UnitFactionGroup("player") == "Alliance" and 1 or 0
-    if GetBattlefieldInstanceExpiration() > 0 then
-      local won = GetBattlefieldWinner() and GetBattlefieldWinner() == factioncode
-      if C.screenshot.battleground == "2"
-        or (C.screenshot.battleground == "1" and won) then
-        local dt = date("%a, %b %d, %Y %X")
-        local loc = string.format("%s - %s",GetRealZoneText(),GetSubZoneText())
-        self:CustomScreenshot("battleground", dt, loc)
-      end
-    end
-  end
-  pfUI.screenshot.UPDATE_BATTLEFIELD_SCORE = pfUI.screenshot.UPDATE_BATTLEFIELD_STATUS
-
-  function pfUI.screenshot:PLAYER_PVP_KILLS_CHANGED()
-    local _, instancetype = IsInInstance()
-    if instancetype and instancetype == "pvp" then return end -- not if we're in a BG
-    local dt = date("%a, %b %d, %Y %X")
-    local loc = string.format("%s - %s",GetRealZoneText(),GetSubZoneText())
-    self:CustomScreenshot("hk", dt, loc, T["Honorable Kill!"])
   end
 
   function pfUI.screenshot:CHAT_MSG_LOOT()

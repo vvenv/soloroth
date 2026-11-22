@@ -2,8 +2,9 @@
 
 Loads first (`!` sorts before every other folder) and applies the single-player defaults
 (`Solo.lua`, including HUD frame seats under `position`) and every look change to other
-addons. Third-party addon sources are never edited; anything they should do differently
-is done from here.
+addons. Solo gutting of pfUI / Atlas / AtlasLoot (delete modules, BG maps, PvP loot,
+etc.) happens in those addons' own trees; `!Solo` still owns defaults, skins, and
+shutting stock Blizzard frames the client might still raise.
 
 Player-facing copy treats Soloroth windows as one product (command strip under the
 minimap, ESC「界面」for settings). Interface style lives in Options → Graphics

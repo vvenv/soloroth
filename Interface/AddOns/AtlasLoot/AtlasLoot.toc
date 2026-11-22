@@ -18,7 +18,6 @@ Locale\Locale.xml
 Bossnames\BossNames.xml
 Sets\Sets.xml
 Crafting\Crafting.xml
-PvP\PvP.xml
 WorldEvents\WorldEvents.xml
 Factions\Factions.xml
 Instances\Instances.xml

@@ -32,9 +32,8 @@ Atlas_DropDownLayouts_Order = {
 		[2] = ATLAS_DDL_CONTINENT_KALIMDOR;
 		[3] = ATLAS_DDL_WORLDBOSSES;
 		[4] = ATLAS_DDL_TYPE_ENTRANCE;
-		[5] = ATLAS_DDL_BGS;
-		[6] = ATLAS_DDL_DUNGEON_LOCATIONS;
-		[7] = ATLAS_DDL_FLIGHT_PATHS;
+		[5] = ATLAS_DDL_DUNGEON_LOCATIONS;
+		[6] = ATLAS_DDL_FLIGHT_PATHS;
 	};
 	[ATLAS_DDL_PARTYSIZE] = {
 		[1] = ATLAS_DDL_PARTYSIZE_5;
@@ -43,26 +42,23 @@ Atlas_DropDownLayouts_Order = {
 		[4] = ATLAS_DDL_PARTYSIZE_40;
 		[5] = ATLAS_DDL_WORLDBOSSES;
 		[6] = ATLAS_DDL_TYPE_ENTRANCE;
-		[7] = ATLAS_DDL_BGS;
-		[8] = ATLAS_DDL_DUNGEON_LOCATIONS;
-		[9] = ATLAS_DDL_FLIGHT_PATHS;
+		[7] = ATLAS_DDL_DUNGEON_LOCATIONS;
+		[8] = ATLAS_DDL_FLIGHT_PATHS;
 	};
 	[ATLAS_DDL_TYPE] = {
 		[1] = ATLAS_DDL_TYPE_DUNGEONS;
 		[2] = ATLAS_DDL_TYPE_RAIDS;
 		[3] = ATLAS_DDL_WORLDBOSSES;
 		[4] = ATLAS_DDL_TYPE_ENTRANCE;
-		[5] = ATLAS_DDL_BGS;
-		[6] = ATLAS_DDL_DUNGEON_LOCATIONS;
-		[7] = ATLAS_DDL_FLIGHT_PATHS;
+		[5] = ATLAS_DDL_DUNGEON_LOCATIONS;
+		[6] = ATLAS_DDL_FLIGHT_PATHS;
 	};
 	[ATLAS_DDL_ALL] = {
 		[1] = ATLAS_DDL_ALL_MENU;
 		[2] = ATLAS_DDL_WORLDBOSSES;
 		[3] = ATLAS_DDL_TYPE_ENTRANCE;
-		[4] = ATLAS_DDL_BGS;
-		[5] = ATLAS_DDL_DUNGEON_LOCATIONS;
-		[6] = ATLAS_DDL_FLIGHT_PATHS;
+		[4] = ATLAS_DDL_DUNGEON_LOCATIONS;
+		[5] = ATLAS_DDL_FLIGHT_PATHS;
 	};
 };
 
@@ -120,12 +116,6 @@ Atlas_DropDownLayouts = {
 			"TheSunkenTempleEnt",
 			"UldamanEnt",
 			"WailingCavernsEnt",
-		},
-		[ATLAS_DDL_BGS] = {
-			"AlteracValleyNorth",
-			"AlteracValleySouth",
-			"ArathiBasin",
-			"WarsongGulch",
 		},
 		[ATLAS_DDL_DUNGEON_LOCATIONS] = {
 			"DLEast",
@@ -197,12 +187,6 @@ Atlas_DropDownLayouts = {
 			"UldamanEnt",
 			"WailingCavernsEnt",
 		},
-		[ATLAS_DDL_BGS] = {
-			"AlteracValleyNorth",
-			"AlteracValleySouth",
-			"ArathiBasin",
-			"WarsongGulch",
-		},
 		[ATLAS_DDL_DUNGEON_LOCATIONS] = {
 			"DLEast",
 			"DLWest",
@@ -269,12 +253,6 @@ Atlas_DropDownLayouts = {
 			"UldamanEnt",
 			"WailingCavernsEnt",
 		},
-		[ATLAS_DDL_BGS] = {
-			"AlteracValleyNorth",
-			"AlteracValleySouth",
-			"ArathiBasin",
-			"WarsongGulch",
-		},
 		[ATLAS_DDL_DUNGEON_LOCATIONS] = {
 			"DLEast",
 			"DLWest",
@@ -337,12 +315,6 @@ Atlas_DropDownLayouts = {
 			"TheSunkenTempleEnt",
 			"UldamanEnt",
 			"WailingCavernsEnt",
-		},
-		[ATLAS_DDL_BGS] = {
-			"AlteracValleyNorth",
-			"AlteracValleySouth",
-			"ArathiBasin",
-			"WarsongGulch",
 		},
 		[ATLAS_DDL_DUNGEON_LOCATIONS] = {
 			"DLEast",

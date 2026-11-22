@@ -166,11 +166,6 @@ local DefaultAtlasLootOptions = {
 };
 
 AtlasLoot_MenuList = {
-	"PVPMENU",
-	"ABRepMenu",
-	"AVRepMenu",
-	"WSGRepMenu",
-	"PVPSET",
 	"SETMENU",
 	"AQ20SET",
 	"AQ40SET",
@@ -184,7 +179,6 @@ AtlasLoot_MenuList = {
 	"WORLDBLUES",
 	"REPMENU",
 	"WORLDEVENTMENU",
-	"AbyssalCouncil",
 	"ALCHEMYMENU",
 	"CRAFTINGMENU",
 	"SMITHINGMENU",
@@ -1132,16 +1126,6 @@ function AtlasLoot_ShowItemsFrame(dataID, dataSource, boss, pFrame)
 		AtlasLootT1SetMenu();
 	elseif(dataID=="T0SET") then
 		AtlasLootT0SetMenu();
-	elseif(dataID=="PVPMENU") then
-		AtlasLootPvPMenu();
-	elseif(dataID=="WSGRepMenu") then
-		AtlasLootWSGRepMenu();
-	elseif(dataID=="ABRepMenu") then
-		AtlasLootABRepMenu();
-	elseif(dataID=="AVRepMenu") then
-		AtlasLootAVRepMenu();
-	elseif(dataID=="PVPSET") then
-		AtlasLootPVPSetMenu();
 	elseif(dataID=="REPMENU") then
 		AtlasLootRepMenu();
 	elseif(dataID=="SETMENU") then
@@ -1152,8 +1136,6 @@ function AtlasLoot_ShowItemsFrame(dataID, dataSource, boss, pFrame)
 		AtlasLootWorldBluesMenu();
 	elseif(dataID=="WORLDEVENTMENU") then
 		AtlasLootWorldEventMenu();
-	elseif(dataID=="AbyssalCouncil") then
-		AtlasLootAbyssalCouncilMenu();
 	elseif(dataID=="CRAFTINGMENU") then
 		AtlasLoot_CraftingMenu();
 	elseif(dataID=="CRAFTSET") then
@@ -2250,31 +2232,6 @@ AtlasLoot_DewDropDown = {
 		{ AL["World Bosses"], "WorldBosses", "Submenu" },
 	},
 	[3] = {
-		[AL["PvP Rewards"]] = {
-			[1] = { 
-				{ AL["PvP Armor Sets"], "PvPArmorSets", "Submenu" },
-			},
-			[2] = { 
-				{ AL["PvP Accessories"], "PvP60Accessories1", "Table" },
-			},
-			[3] = { 
-				{ AL["Rank 14 Weapons"], "PVPWeapons1", "Table" },
-			},
-			[4] = { 
-				{ AL["PvP Mounts"], "PvPMountsPvP", "Table" },
-			},
-			[5] = { 
-				{ AL["Alterac Valley"], "AVRewards", "Submenu" },
-			},
-			[6] = { 
-				{ AL["Arathi Basin"], "ABRewards", "Submenu" },
-			},
-			[7] = { 
-				{ AL["Warsong Gulch"], "WSGRewards", "Submenu" },
-			},
-		},
-	},
-	[4] = {
 		[AL["Sets/Collections"]] = {
 			[1] = { 
 				{ AL["Pre 60 Sets"], "Pre60Sets", "Submenu" },
@@ -2326,53 +2283,47 @@ AtlasLoot_DewDropDown = {
 			},
 		},
 	},
-	[5] = {
+	[4] = {
 		{ AL["Reputation Factions"], "Factions", "Submenu" },
 	},
-	[6] = {
+	[5] = {
 		[AL["World Events"]] = {
 			[1] = { 
-				{ AL["Abyssal Council"], "AbyssalCouncil1", "Submenu" },
-			},
-			[2] = { 
 				{ AL["Children's Week"], "ChildrensWeek", "Table" },
 			},
-			[3] = { 
+			[2] = { 
 				{ AL["Elemental Invasion"], "ElementalInvasion", "Table" },
 			},
-			[4] = { 
+			[3] = { 
 				{ AL["Feast of Winter Veil"], "Winterviel1", "Table" },
 			},
-			[5] = { 
-				{ AL["Gurubashi Arena Booty Run"], "GurubashiArena", "Table" },
-			},
-			[6] = { 
+			[4] = { 
 				{ AL["Hallow's End"], "Halloween1", "Table" },
 			},
-			[7] = { 
+			[5] = { 
 				{ AL["Harvest Festival"], "HarvestFestival", "Table" },
 			},
-			[8] = { 
+			[6] = { 
 				{ AL["Love is in the Air"], "Valentineday", "Table" },
 			},
-			[9] = { 
+			[7] = { 
 				{ AL["Lunar Festival"], "LunarFestival1", "Table" },
 			},
-			[10] = { 
+			[8] = { 
 				{ AL["Midsummer Fire Festival"], "MidsummerFestival", "Table" },
 			},
-			[11] = { 
+			[9] = { 
 				{ AL["Noblegarden"], "Noblegarden", "Table" },
 			},
-			[12] = { 
+			[10] = { 
 				{ AL["Scourge Invasion"], "ScourgeInvasionEvent1", "Table" },
 			},
-			[13] = { 
+			[11] = { 
 				{ AL["Stranglethorn Fishing Extravaganza"], "FishingExtravaganza", "Table" },
 			},
 		},
 	},
-	[7] = {
+	[6] = {
 		[AL["Crafting"]] = {
 			[1] = { { AL["Alchemy"], "Alchemy", "Submenu" }, },
 			[2] = { { (AL["Blacksmithing"]), "Blacksmithing", "Submenu" }, },
@@ -2802,11 +2753,6 @@ AtlasLoot_DewDropDown_SubTables = {
 		{ AL["Ysondre"], "DYsondre" },
 		{ AL["Lord Kazzak"], "KKazzak"},
 	},
-	["AbyssalCouncil1"] = {
-		{ AL["Abyssal Council"].." - "..AL["Templars"], "AbyssalTemplars" },
-		{ AL["Abyssal Council"].." - "..AL["Dukes"], "AbyssalDukes" },
-		{ AL["Abyssal Council"].." - "..AL["High Council"], "AbyssalLords" },
-	},
 	["Factions"] = {
 		{ AL["Argent Dawn"], "Argent1" },
 		{ AL["Bloodsail Buccaneers"], "Bloodsail1" },
@@ -2984,17 +2930,6 @@ AtlasLoot_DewDropDown_SubTables = {
 		{ AL["Revered Reputation Rewards"], "ABRepRevered5059" },
 		{ AL["Honored Reputation Rewards"], "ABRepHonored5059" },
 		{ AL["Friendly Reputation Rewards"], "ABRepFriendly5059" },
-	},
-	["PvPArmorSets"] = {
-		{ AL["Priest"], "PVPPriest" },
-		{ AL["Mage"], "PVPMage" },
-		{ AL["Warlock"], "PVPWarlock" },
-		{ AL["Rogue"], "PVPRogue" },
-		{ AL["Druid"], "PVPDruid" },
-		{ AL["Hunter"], "PVPHunter" },
-		{ AL["Shaman"], "PVPShaman" },
-		{ AL["Paladin"], "PVPPaladin" },
-		{ AL["Warrior"], "PVPWarrior" },
 	},
 	["WSGRewards"] = {
 		{ AL["Exalted Reputation Rewards"], "WSGRepExalted60" },
@@ -3598,3 +3533,18 @@ function AtlasLoot_GetChatLink(id)
 	local e = string.sub(d, 2)
 	return "\124"..e.."\124H"..b.."\124h["..a.."]\124h\124r"
 end
+
+
+-- Solo: PvP / WishList removed; keep no-op stubs for leftover call sites.
+function AtlasLoot_ShowWishList() end
+function AtlasLoot_AddToWishlist() end
+function AtlasLoot_DeleteFromWishList() end
+function AtlasLoot_GetWishListPage()
+	return {}, 1
+end
+function AtlasLootPvPMenu() end
+function AtlasLootWSGRepMenu() end
+function AtlasLootABRepMenu() end
+function AtlasLootAVRepMenu() end
+function AtlasLootPVPSetMenu() end
+function AtlasLootAbyssalCouncilMenu() end

@@ -2,13 +2,10 @@
   <Include file="..\modules\gui.lua"/>
   <Include file="..\modules\unlock.lua"/>
   <Include file="..\modules\hoverbind.lua"/>
-  <Include file="..\modules\updatenotify.lua"/>
   <Include file="..\modules\actionbar.lua"/>
   <Include file="..\modules\gryphons.lua"/>
   <Include file="..\modules\hunterbar.lua"/>
   <Include file="..\modules\chat.lua"/>
-  <Include file="..\modules\whisperproxy.lua"/>
-  <Include file="..\modules\chatcopy.lua"/>
   <Include file="..\modules\bubbles.lua"/>
   <Include file="..\modules\addons.lua"/>
   <Include file="..\modules\minimap.lua"/>
@@ -21,7 +18,6 @@
   <Include file="..\modules\targettargettarget.lua"/>
   <Include file="..\modules\pet.lua"/>
   <Include file="..\modules\group.lua"/>
-  <Include file="..\modules\raid.lua"/>
   <Include file="..\modules\mouseover.lua"/>
   <Include file="..\modules\castbar.lua"/>
   <Include file="..\modules\skin.lua"/>
@@ -40,7 +36,6 @@
   <Include file="..\modules\buffwatch.lua"/>
   <Include file="..\modules\nameplates.lua"/>
   <Include file="..\modules\loot.lua"/>
-  <Include file="..\modules\roll.lua"/>
   <Include file="..\modules\infight.lua"/>
   <Include file="..\modules\sellvalue.lua"/>
   <Include file="..\modules\eqcompare.lua"/>
@@ -53,14 +48,12 @@
   <Include file="..\modules\feigndeath.lua"/>
   <Include file="..\modules\pixelperfect.lua"/>
   <Include file="..\modules\hdgraphic.lua"/>
-  <Include file="..\modules\share.lua"/>
   <Include file="..\modules\tracking.lua"/>
   <Include file="..\modules\easteregg.lua"/>
   <Include file="..\modules\farmmode.lua"/>
   <Include file="..\modules\pettarget.lua"/>
   <Include file="..\modules\mapreveal.lua"/>
   <Include file="..\modules\unusable.lua"/>
-  <Include file="..\modules\socialmod.lua"/>
   <Include file="..\modules\firstrun.lua"/>
   <Include file="..\modules\addonbuttons.lua"/>
   <Include file="..\modules\afkcam.lua"/>

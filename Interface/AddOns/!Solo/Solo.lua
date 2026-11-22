@@ -174,10 +174,13 @@ local PFUI_INVARIANT = {
   { { "position", "pfDurability", "xpos" }, 1260 },
   { { "position", "pfDurability", "ypos" }, -180 },
   { { "position", "pfDurability", "parent" }, "UIParent" },
+  -- alpha is required: pfUI's map module SetAlphas it at PLAYER_ENTERING_WORLD
+  -- and aborts the windowed skin (size, backdrop, BlackoutWorld:Hide) on nil.
   { { "position", "WorldMapFrame", "anchor" }, "TOPLEFT" },
   { { "position", "WorldMapFrame", "xpos" }, 310 },
   { { "position", "WorldMapFrame", "ypos" }, -70 },
   { { "position", "WorldMapFrame", "scale" }, 0.7 },
+  { { "position", "WorldMapFrame", "alpha" }, 1 },
 }
 
 -- The steps of pfUI's first-run wizard. Style switching replaces the profile
@@ -196,6 +199,7 @@ local function CoercePositions()
       if cfg.xpos ~= nil then cfg.xpos = tonumber(cfg.xpos) or cfg.xpos end
       if cfg.ypos ~= nil then cfg.ypos = tonumber(cfg.ypos) or cfg.ypos end
       if cfg.scale ~= nil then cfg.scale = tonumber(cfg.scale) or cfg.scale end
+      if cfg.alpha ~= nil then cfg.alpha = tonumber(cfg.alpha) or cfg.alpha end
     end
   end
 end

@@ -6,10 +6,8 @@
 	<Script file="Sets.lua"/>
 	<Script file="Factions.lua"/>
 	<Script file="WorldEvents.lua"/>
-	<Script file="PvP.lua"/>
 	<Script file="Crafting.lua"/>
 	<Script file="AtlasLoot.lua"/>
-	<Script file="WishList.lua"/>
 	<Script file="Search.lua"/>
 
 	<Button name="AtlasLootDefaultFrameButtonTemplate" inherits="OptionsButtonTemplate" virtual="true">
@@ -471,28 +469,6 @@
 					</OnClick>
 				</Scripts>
 			</Button>
-			<Button name="AtlasLootDefaultFrameWishListButton" inherits="UIPanelButtonTemplate2" parent="AtlasLootDefaultFrame">
-				<Size>
-					<AbsDimension x="100" y="32"/>
-				</Size>
-				<Anchors>
-					<Anchor point="RIGHT" relativeTo="AtlasLootDefaultFrameSearchBox" relativePoint="LEFT">
-						<Offset>
-							<AbsDimension x="-7" y="0"/>
-						</Offset>
-					</Anchor>
-				</Anchors>
-				<Scripts>
-					<OnClick>
-						AtlasLoot_ShowWishList();
-					</OnClick>
-					<OnShow>
-						local AL = AceLibrary("AceLocale-2.2"):new("AtlasLoot");
-						this:SetText(AL["WishList"]);
-						this:SetFrameLevel( (this:GetParent()):GetFrameLevel() + 1 );
-					</OnShow>
-				</Scripts>
-			</Button>
 		</Frames>
 		<Layers>
 			<Layer level="ARTWORK">
@@ -872,7 +848,7 @@
 						local AL = AceLibrary("AceLocale-2.2"):new("AtlasLoot");
 						this:SetFrameLevel( (this:GetParent()):GetFrameLevel() + 1 );
 						this:SetText(AL["Toggle AL Panel"]);
-						getglobal("AtlasLootInfo_Text2"):SetText(AL["ALT+Click to use WishList."]);
+						getglobal("AtlasLootInfo_Text2"):SetText("");
 					</OnShow>
 					<OnClick>
 						if AtlasLootCharDB.HidePanel then
@@ -1807,30 +1783,9 @@
 					</OnShow>
 				</Scripts>
 			</Button>
-			<Button name="$parent_PvP" inherits="AtlasLootPanelButtonTemplate">
-				<Anchors>
-					<Anchor point="LEFT" relativeTo="$parent_Reputation" relativePoint="RIGHT">
-						<Offset>
-							<AbsDimension x="0" y="0"/>
-						</Offset>
-					</Anchor>
-				</Anchors>
-				<Scripts>
-					<OnClick>
-						AtlasLoot_QuickLooks:Hide();
-						AtlasLootQuickLooksButton:Hide();
-						AtlasLootPvPMenu();
-					</OnClick>
-					<OnShow>
-						local AL = AceLibrary("AceLocale-2.2"):new("AtlasLoot");
-						this:SetText(AL["PvP Rewards"]);
-						this:SetFrameLevel( (this:GetParent()):GetFrameLevel() + 1 );
-					</OnShow>
-				</Scripts>
-			</Button>
 			<Button name="$parent_Crafting" inherits="AtlasLootPanelButtonTemplate">
 				<Anchors>
-					<Anchor point="LEFT" relativeTo="$parent_PvP" relativePoint="RIGHT">
+					<Anchor point="LEFT" relativeTo="$parent_Reputation" relativePoint="RIGHT">
 						<Offset>
 							<AbsDimension x="0" y="0"/>
 						</Offset>
@@ -1845,27 +1800,6 @@
 					<OnShow>
 						local AL = AceLibrary("AceLocale-2.2"):new("AtlasLoot");
 						this:SetText(AL["Crafting"]);
-						this:SetFrameLevel( (this:GetParent()):GetFrameLevel() + 1 );
-					</OnShow>
-				</Scripts>
-			</Button>
-			<Button name="$parent_WishList" inherits="AtlasLootPanelButtonTemplate">
-				<Anchors>
-					<Anchor point="LEFT" relativeTo="$parent_Crafting" relativePoint="RIGHT">
-						<Offset>
-							<AbsDimension x="0" y="0"/>
-						</Offset>
-					</Anchor>
-				</Anchors>
-				<Scripts>
-					<OnClick>
-						AtlasLoot_QuickLooks:Hide();
-						AtlasLootQuickLooksButton:Hide();
-						AtlasLoot_ShowWishList();
-					</OnClick>
-					<OnShow>
-						local AL = AceLibrary("AceLocale-2.2"):new("AtlasLoot");
-						this:SetText(AL["WishList"]);
 						this:SetFrameLevel( (this:GetParent()):GetFrameLevel() + 1 );
 					</OnShow>
 				</Scripts>
@@ -1965,7 +1899,7 @@
 			</Button>
 			<Button name="$parent_Preset2" inherits="AtlasLootPanelButtonTemplate">
 				<Anchors>
-					<Anchor point="TOP" relativeTo="$parent_PvP" relativePoint="BOTTOM">
+					<Anchor point="TOP" relativeTo="$parent_Crafting" relativePoint="BOTTOM">
 						<Offset>
 							<AbsDimension x="0" y="-2"/>
 						</Offset>
@@ -2016,9 +1950,9 @@
 			</Button>
 			<Button name="$parent_Preset3" inherits="AtlasLootPanelButtonTemplate">
 				<Anchors>
-					<Anchor point="TOP" relativeTo="$parent_Crafting" relativePoint="BOTTOM">
+					<Anchor point="LEFT" relativeTo="$parent_Preset2" relativePoint="RIGHT">
 						<Offset>
-							<AbsDimension x="0" y="-2"/>
+							<AbsDimension x="0" y="0"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -2067,9 +2001,9 @@
 			</Button>
 			<Button name="$parent_Preset4" inherits="AtlasLootPanelButtonTemplate">
 				<Anchors>
-					<Anchor point="TOP" relativeTo="$parent_WishList" relativePoint="BOTTOM">
+					<Anchor point="LEFT" relativeTo="$parent_Preset3" relativePoint="RIGHT">
 						<Offset>
-							<AbsDimension x="0" y="-2"/>
+							<AbsDimension x="0" y="0"/>
 						</Offset>
 					</Anchor>
 				</Anchors>

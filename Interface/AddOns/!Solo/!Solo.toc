@@ -11,6 +11,7 @@ NoQuest.lua
 NoHonor.lua
 NoSocial.lua
 NoHelp.lua
+NoCommerce.lua
 MicroBar.lua
 BenillaOptions_zhCN.lua
 PfuiSkin.lua

@@ -28,28 +28,28 @@ local TELE_ALTS = { TELE_ZH, TELE_PY }
 local COL = "|cff44ddff"
 
 local MAPNAME = {
-  [0] = "Eastern Kingdoms", [1] = "Kalimdor", [13] = "Test", [30] = "Alterac Valley",
+  [0] = "Eastern Kingdoms", [1] = "Kalimdor", [13] = "Test",
   [33] = "Shadowfang Keep", [34] = "Stockade", [36] = "Deadmines", [37] = "Azshara Crater",
   [43] = "Wailing Caverns", [47] = "Razorfen Kraul", [48] = "Blackfathom Deeps",
   [70] = "Uldaman", [90] = "Gnomeregan", [109] = "Sunken Temple", [129] = "Razorfen Downs",
   [189] = "Scarlet Monastery", [229] = "Blackrock Spire", [230] = "Blackrock Depths",
   [249] = "Onyxia's Lair", [289] = "Scholomance", [309] = "Zul'Gurub", [329] = "Stratholme",
   [349] = "Maraudon", [369] = "Deeprun Tram", [389] = "Ragefire Chasm", [409] = "Molten Core",
-  [429] = "Dire Maul", [449] = "Alliance PvP", [451] = "GM Island", [469] = "Blackwing Lair",
-  [489] = "Warsong Gulch", [509] = "Ruins of Ahn'Qiraj", [529] = "Arathi Basin",
+  [429] = "Dire Maul", [451] = "GM Island", [469] = "Blackwing Lair",
+  [509] = "Ruins of Ahn'Qiraj",
   [531] = "Temple of Ahn'Qiraj", [533] = "Naxxramas",
 }
 
 local MAPNAME_ZH = {
-  [0] = "东部王国", [1] = "卡利姆多", [13] = "测试", [30] = "奥特兰克山谷",
+  [0] = "东部王国", [1] = "卡利姆多", [13] = "测试",
   [33] = "影牙城堡", [34] = "监狱", [36] = "死亡矿井", [37] = "艾萨拉火山口",
   [43] = "哀嚎洞穴", [47] = "剃刀沼泽", [48] = "黑暗深渊", [70] = "奥达曼",
   [90] = "诺莫瑞根", [109] = "沉没的神庙", [129] = "剃刀高地", [189] = "血色修道院",
   [229] = "黑石塔", [230] = "黑石深渊", [249] = "奥妮克希亚的巢穴", [289] = "通灵学院",
   [309] = "祖尔格拉布", [329] = "斯坦索姆", [349] = "玛拉顿", [369] = "地下铁",
-  [389] = "怒焰裂谷", [409] = "熔火之心", [429] = "厄运之槌", [449] = "联盟 PvP",
-  [451] = "GM 岛", [469] = "黑翼之巢", [489] = "战歌峡谷", [509] = "安其拉废墟",
-  [529] = "阿拉希盆地", [531] = "安其拉神庙", [533] = "纳克萨玛斯",
+  [389] = "怒焰裂谷", [409] = "熔火之心", [429] = "厄运之槌",
+  [451] = "GM 岛", [469] = "黑翼之巢", [509] = "安其拉废墟",
+  [531] = "安其拉神庙", [533] = "纳克萨玛斯",
 }
 
 local function MapLabel(id)

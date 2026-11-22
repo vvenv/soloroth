@@ -661,20 +661,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
 
     SkinButton(pfUI.gui.hoverbind)
 
-    -- share
-    pfUI.gui.share = CreateFrame("Button", nil, pfUI.gui)
-    pfUI.gui.share:SetPoint("LEFT", pfUI.gui.hoverbind, "RIGHT", 5, 0)
-    pfUI.gui.share:SetWidth(110)
-    pfUI.gui.share:SetHeight(25)
-    pfUI.gui.share:SetText(T["Share"])
-    pfUI.gui.share:SetScript("OnClick", function()
-      if pfShare then
-        pfShare:Show()
-        pfShareExport:Click()
-      end
-    end)
-    SkinButton(pfUI.gui.share)
-
     -- searchbar
     local function SearchEntryClick()
       -- clear search focus
@@ -1593,10 +1579,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
     CreateGUIEntry(T["Settings"], T["Screenshot"], function()
       CreateConfig(nil, T["Timer In Minutes"], C.screenshot, "interval")
       CreateConfig(nil, T["Level Up"], C.screenshot, "levelup", "checkbox")
-      CreateConfig(nil, T["PvP Rank"], C.screenshot, "pvprank", "checkbox")
       CreateConfig(nil, T["Reputation Level"], C.screenshot, "faction", "checkbox")
-      CreateConfig(nil, T["Honorable Kill"], C.screenshot, "hk", "checkbox")
-      CreateConfig(nil, T["Battleground Statistics"], C.screenshot, "battleground", "dropdown", pfUI.gui.dropdowns.screenshot_battle)
       CreateConfig(nil, T["Item Looted"], C.screenshot, "loot", "dropdown", pfUI.gui.dropdowns.screenshot_loot)
       CreateConfig(nil, T["Options"], nil, nil, "header")
       CreateConfig(nil, T["Show Description"], C.screenshot, "caption", "checkbox")
@@ -1632,11 +1615,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(U[c], T["Group Options"], nil, nil, "header")
       CreateConfig(nil, T["Enable 40y-Range Check"], C.unitframes, "rangecheck", "checkbox", nil, nil, nil, nil, "vanilla" )
       CreateConfig(nil, T["Range Check Interval"], C.unitframes, "rangechecki", "dropdown", pfUI.gui.dropdowns.uf_rangecheckinterval, nil, nil, nil, "vanilla")
-      CreateConfig(nil, T["Use Raid Frames To Display Group Members"], C.unitframes, "raidforgroup", "checkbox")
-      CreateConfig(nil, T["Always Show Self In Raid Frames"], C.unitframes, "selfinraid", "checkbox")
       CreateConfig(nil, T["Show Self In Group Frames"], C.unitframes, "selfingroup", "checkbox")
-      CreateConfig(nil, T["Hide Group Frames While In Raid"], C.unitframes.group, "hide_in_raid", "checkbox")
-      CreateConfig(nil, T["Max Amount Of Raid Frames"], C.unitframes, "maxraid", "dropdown", pfUI.gui.dropdowns.maxraid)
 
       CreateConfig(U[c], T["Colors"], nil, nil, "header")
       CreateConfig(nil, T["Enable Pastel Colors"], C.unitframes, "pastel", "checkbox")
@@ -1673,7 +1652,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       [9] = { "group",       T["Group"] },
       [10] = { "grouptarget", T["Group-Target"]},
       [11] = { "grouppet",   T["Group-Pet"] },
-      [12] = { "raid",       T["Raid"] },
     }
 
     CreateGUIEntry(T["Unit Frames"], T["Click Casting"], function()
@@ -1902,8 +1880,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Disable Loot Confirmation Dialog (Without Group)"], C.loot, "autopickup", "checkbox")
       CreateConfig(nil, T["Enable Loot Window On MouseCursor"], C.loot, "mousecursor", "checkbox")
       CreateConfig(nil, T["Enable Advanced Master Loot Menu"], C.loot, "advancedloot", "checkbox")
-      CreateConfig(nil, T["Random Roll Announcement Rarity"], C.loot, "rollannouncequal", "dropdown", pfUI.gui.dropdowns.loot_rarity)
-      CreateConfig(nil, T["Detailed Random Roll Announcement"], C.loot, "rollannounce", "checkbox")
       CreateConfig(nil, T["Use Item Rarity Color For Loot-Roll Timer"], C.loot, "raritytimer", "checkbox")
     end)
 
@@ -1913,7 +1889,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Zone Text On Minimap"], C.appearance.minimap, "zonetext", "dropdown", pfUI.gui.dropdowns.minimap_zone_visibility)
       CreateConfig(nil, T["Coordinates On Minimap"], C.appearance.minimap, "coordstext", "dropdown", pfUI.gui.dropdowns.minimap_cords_visibility)
       CreateConfig(nil, T["Coordinates Location"], C.appearance.minimap, "coordsloc", "dropdown", pfUI.gui.dropdowns.minimap_cords_position)
-      CreateConfig(nil, T["Show PvP Icon"], C.unitframes.player, "showPVPMinimap", "checkbox")
       CreateConfig(nil, T["Show Inactive Tracking"], C.appearance.minimap, "tracking_pulse", "checkbox")
       CreateConfig(nil, T["Tracking Icon Size"], C.appearance.minimap, "tracking_size")
       CreateConfig(nil, T["Hide Addon Buttons On Combat"], C.appearance.minimap, "addon_buttons", "checkbox")
