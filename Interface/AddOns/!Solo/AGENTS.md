@@ -42,6 +42,12 @@ pfUI backdrop). Menus use `Solo_PlaceStripMenu`. Do not present the two rows as
   the page (`TOPLEFT 10/12,-10/12`, `BOTTOMRIGHT -32,72..76`) as pfUI's trainer skin does,
   and move title, close and bottom buttons onto it.
 
+## Unlock grid snap
+
+`UnlockSnap.lua` wraps pfUI unlock drag-stop so seats land on the drawn grid
+(screen width / 128). Do not edit `pfUI/modules/unlock.lua`. Dock ±1 and typed
+coords stay free. MessageLog uses the same unlock drag / scroll-scale path.
+
 ## Checking
 
 Run `tools/macos/install-addons.sh` into a scratch `BENILLA_HOME`, open each window from

@@ -20,9 +20,13 @@ The login, realm, character select and character create screens in pfUI's look.
   runs after stock `CharacterSelect_OnShow` / `UpdateCharacterList` (and
   `UpdateAddonButton` only re-hides chrome): a right rail (same inset as Delete)
   sized to the roster; bottom row is one baseline — Back left, Enter (+ rotates)
-  center, Delete right, equal margins.   Character rows sit on the rail midline with centered text; the stock
+  center, Delete right, equal margins. Character rows sit on the rail midline with centered text; the stock
   left-weighted Glue-CharacterSelect-Highlight is cleared and a flat
-  `soloPick` frame marks the selection instead.
+  `soloPick` frame marks the selection instead. Rotate left/right (select and
+  create) use `RotateButton`: flat square face, gold-tinted arc art from
+  `Interface\Glues\Solo\Rotate{Left,Right}.tga` (drawn in `build-patch.py`).
+  On character select, Enter's face is retuned to a shared 36px row with the
+  rotates and recentered on the button so the three faces share one baseline.
 - The skin runs once on `FRAMES_LOADED` (wrapping `GlueParent_OnEvent`), which fires after
   benilla's own glue file, so its Realmlist button is there too.
 - Backdrops go on a child one level below the owner, inset to where the stock art drew.

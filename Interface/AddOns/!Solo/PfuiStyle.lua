@@ -110,10 +110,10 @@ end
 
 SOLOROTH_TOOLTIP_UISTYLE = L(
   "Swaps pfUI fonts, unit frames, action bars and chrome.\n\n"
-    .. "Takes effect after a UI reload. Command strip, dual chat and Solo HUD "
+    .. "Takes effect after a UI reload. Command strip, compact message log and Solo HUD "
     .. "seats stay. Fine-tune further with ESC → Interface (/pfui).",
   "切换 pfUI 的字体、单位框、动作条和边框等外观。\n\n"
-    .. "重新加载界面后生效。命令条、左右双聊天和 Solo 的座位不动。"
+    .. "重新加载界面后生效。命令条、紧凑消息面板和 Solo 的座位不动。"
     .. "细节仍可在 ESC →「界面」(/pfui) 里调。"
 )
 

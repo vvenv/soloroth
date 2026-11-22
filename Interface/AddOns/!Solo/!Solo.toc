@@ -5,6 +5,8 @@
 ## Version: 1.0.0
 ## SavedVariables: Solo_State
 Solo.lua
+UnlockSnap.lua
+MessageLog.lua
 NoQuest.lua
 NoHonor.lua
 NoSocial.lua

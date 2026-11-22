@@ -163,6 +163,97 @@ def write_mpq(path, files):
     os.replace(tmp, path)
 
 
+def _clamp01(x):
+    if x < 0:
+        return 0.0
+    if x > 1:
+        return 1.0
+    return float(x)
+
+
+def _cover(dist, half):
+    """1 inside a stroke of half-width `half`, with a ~1px AA ramp."""
+    return _clamp01(half + 0.75 - dist)
+
+
+def rotate_arrow_tga(clockwise, size=128):
+    """White arc + arrowhead on transparent TGA (32-bit). Drawn CCW, mirrored for CW."""
+    import math
+    cx = cy = (size - 1) * 0.5
+    radius = size * 0.31
+    # ~2.5px stroke at the ~26px on-screen icon size.
+    half = size * 0.048
+    # Math y-up: nearly full ring, gap at lower-right, tip at upper-left.
+    a0 = math.radians(-15)
+    a1 = math.radians(210)
+    head_a = a1
+    tang = head_a + math.pi * 0.5  # travel direction along the CCW arc
+    head_len = size * 0.18
+    head_half = size * 0.12
+    # Tip sits slightly past the arc end so the head clears the stroke.
+    tip_x = cx + math.cos(head_a) * radius + math.cos(tang) * (half * 0.8)
+    tip_y = cy + math.sin(head_a) * radius + math.sin(tang) * (half * 0.8)
+    back_x = tip_x - math.cos(tang) * head_len
+    back_y = tip_y - math.sin(tang) * head_len
+    left_x = back_x + math.cos(tang + math.pi * 0.5) * head_half
+    left_y = back_y + math.sin(tang + math.pi * 0.5) * head_half
+    right_x = back_x + math.cos(tang - math.pi * 0.5) * head_half
+    right_y = back_y + math.sin(tang - math.pi * 0.5) * head_half
+
+    def in_arc(ang):
+        while ang < a0:
+            ang += 2 * math.pi
+        while ang > a1 + 1e-6:
+            ang -= 2 * math.pi
+        return a0 - 0.02 <= ang <= a1 + 0.02
+
+    def edge(ax, ay, bx, by, x, y):
+        return (x - ax) * (by - ay) - (y - ay) * (bx - ax)
+
+    area = edge(tip_x, tip_y, left_x, left_y, right_x, right_y)
+
+    def tri_cover(px, py):
+        if area == 0:
+            return 0.0
+        e0 = edge(tip_x, tip_y, left_x, left_y, px, py)
+        e1 = edge(left_x, left_y, right_x, right_y, px, py)
+        e2 = edge(right_x, right_y, tip_x, tip_y, px, py)
+        if area < 0:
+            e0, e1, e2 = -e0, -e1, -e2
+        if e0 < -1.5 or e1 < -1.5 or e2 < -1.5:
+            return 0.0
+        return _clamp01(min(e0, e1, e2) / 1.5 + 0.25)
+
+    rows = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            mx = x + 0.5
+            my = size - (y + 0.5)
+            dx, dy = mx - cx, my - cy
+            dist = math.hypot(dx, dy)
+            ang = math.atan2(dy, dx)
+            a = _cover(abs(dist - radius), half) if in_arc(ang) else 0.0
+            a = max(a, tri_cover(mx, my))
+            row.append((255, 255, 255, int(255 * _clamp01(a) + 0.5)))
+        rows.append(row)
+
+    if clockwise:
+        rows = [list(reversed(r)) for r in rows]
+
+    # Descriptor: bit 5 = top-left origin; low nibble = 8 alpha bits (32-bpp
+    # with 0 alpha bits refuses decode and draws opaque white).
+    header = struct.pack(
+        "<BBBHHBHHHHBB",
+        0, 0, 2, 0, 0, 0, 0, 0, size, size, 32, 0x28,
+    )
+    body = bytearray()
+    for row in rows:
+        for r, g, b, a in row:
+            body.extend((b, g, r, a))
+    return bytes(header) + bytes(body)
+
+
 def main():
     flags = [a for a in sys.argv[1:] if a.startswith("--")]
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
@@ -190,8 +281,21 @@ def main():
         skin = f.read()
     # Glue Lua cannot read the process env; bake the choice in at patch time.
     skin = ("SoloShowLoginUI = %s\r\n" % ("true" if show_login_ui else "false")).encode() + skin
-    listfile = ("%s\r\nInterface\\GlueXML\\%s\r\n" % (TOC, SKIN)).encode()
-    write_mpq(out, [(TOC, toc), ("Interface\\GlueXML\\" + SKIN, skin), ("(listfile)", listfile)])
+    left = rotate_arrow_tga(False)
+    right = rotate_arrow_tga(True)
+    listfile = (
+        "%s\r\nInterface\\GlueXML\\%s\r\n"
+        "Interface\\Glues\\Solo\\RotateLeft.tga\r\n"
+        "Interface\\Glues\\Solo\\RotateRight.tga\r\n"
+    ) % (TOC, SKIN)
+    files = [
+        (TOC, toc),
+        ("Interface\\GlueXML\\" + SKIN, skin),
+        ("Interface\\Glues\\Solo\\RotateLeft.tga", left),
+        ("Interface\\Glues\\Solo\\RotateRight.tga", right),
+        ("(listfile)", listfile.encode()),
+    ]
+    write_mpq(out, files)
     print("glue skin: %s (login ui %s)" % (out, "shown" if show_login_ui else "hidden"))
 
 

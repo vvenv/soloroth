@@ -118,6 +118,53 @@ local function Buttons(frame)
   end
 end
 
+-- Flat square matching Enter's face: custom arc art (patch-S TGA), gold tint.
+-- Stock Big / UI-Rotation textures stay low-res; Layout sizes these to the face.
+local function RotateButton(button, side)
+  if not button or button.soloSkinned then return end
+  button.soloSkinned = true
+  button:SetNormalTexture("")
+  button:SetPushedTexture("")
+  -- Default square; LayoutCharSelect retunes select to the shared row height.
+  button:SetWidth(36)
+  button:SetHeight(36)
+  if button.SetHitRectInsets then
+    button:SetHitRectInsets(0, 0, 0, 0)
+  end
+
+  local bd = CreateFrame("Frame", nil, button)
+  local level = button:GetFrameLevel()
+  bd:SetFrameLevel(level > 0 and level - 1 or 0)
+  bd:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
+  bd:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0)
+  bd:SetBackdrop(BACKDROP)
+  bd:SetBackdropColor(0, 0, 0, .75)
+  bd:SetBackdropBorderColor(BORDER[1], BORDER[2], BORDER[3], BORDER[4])
+  button.soloBackdrop = bd
+
+  local leaf = (side == "left") and "RotateLeft" or "RotateRight"
+  local icon = button:CreateTexture(nil, "ARTWORK")
+  icon:SetTexture("Interface\\Glues\\Solo\\" .. leaf)
+  icon:SetPoint("TOPLEFT", button, "TOPLEFT", 5, -5)
+  icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -5, 5)
+  icon:SetVertexColor(HOVER[1], HOVER[2], HOVER[3], 1)
+  button.soloIcon = icon
+
+  button:SetHighlightTexture(WHITE)
+  local hl = button:GetHighlightTexture()
+  hl:ClearAllPoints()
+  hl:SetPoint("TOPLEFT", bd, "TOPLEFT", 1, -1)
+  hl:SetPoint("BOTTOMRIGHT", bd, "BOTTOMRIGHT", -1, 1)
+  hl:SetVertexColor(1, 1, 1, .12)
+
+  button:SetPushedTexture(WHITE)
+  local pushed = button:GetPushedTexture()
+  pushed:ClearAllPoints()
+  pushed:SetPoint("TOPLEFT", bd, "TOPLEFT", 1, -1)
+  pushed:SetPoint("BOTTOMRIGHT", bd, "BOTTOMRIGHT", -1, 1)
+  pushed:SetVertexColor(HOVER[1], HOVER[2], HOVER[3], .2)
+end
+
 local function EditBox(box)
   -- The stock Glue-Tooltip-Border background sits 10/4/5/9 inside the box.
   local bd = Panel(box, 8, 3, 3, 7)
@@ -351,13 +398,30 @@ local function LayoutCharSelect()
     CharSelectCharacterName:ClearAllPoints()
     CharSelectCharacterName:SetPoint("BOTTOM", CharSelectEnterWorldButton, "TOP", 0, 18)
   end
-  if CharacterSelectRotateLeft and CharSelectEnterWorldButton then
-    CharacterSelectRotateLeft:ClearAllPoints()
-    CharacterSelectRotateLeft:SetPoint("RIGHT", CharSelectEnterWorldButton, "LEFT", -6, 0)
+  -- Enter face + rotates share one row height, centered on the button (stock
+  -- Button() face sits 3px high and only ~55% tall, so the label and the
+  -- rotate squares read on different baselines).
+  local enter = CharSelectEnterWorldButton
+  local face = enter and enter.soloBackdrop
+  local rowH = 36
+  if enter and face then
+    local faceW = math.floor(enter:GetWidth() * .86 + .5)
+    face:SetWidth(faceW)
+    face:SetHeight(rowH)
+    face:ClearAllPoints()
+    face:SetPoint("CENTER", enter, "CENTER", 0, 0)
   end
-  if CharacterSelectRotateRight and CharSelectEnterWorldButton then
+  if enter and CharacterSelectRotateLeft and CharacterSelectRotateRight then
+    local gap = 6
+    local anchor = face or enter
+    for _, btn in ipairs({ CharacterSelectRotateLeft, CharacterSelectRotateRight }) do
+      btn:SetWidth(rowH)
+      btn:SetHeight(rowH)
+    end
+    CharacterSelectRotateLeft:ClearAllPoints()
+    CharacterSelectRotateLeft:SetPoint("RIGHT", anchor, "LEFT", -gap, 0)
     CharacterSelectRotateRight:ClearAllPoints()
-    CharacterSelectRotateRight:SetPoint("LEFT", CharSelectEnterWorldButton, "RIGHT", 6, 0)
+    CharacterSelectRotateRight:SetPoint("LEFT", anchor, "RIGHT", gap, 0)
   end
   if CharacterSelectBackButton then
     CharacterSelectBackButton:ClearAllPoints()
@@ -403,6 +467,8 @@ local function SkinCharacterSelect()
     HideCharSelectChrome()
   end
   LayoutCharSelect()
+  RotateButton(CharacterSelectRotateLeft, "left")
+  RotateButton(CharacterSelectRotateRight, "right")
 
   -- Own: a child one level down of a model-scene panel can slip under the 3D.
   Own(CharacterSelectCharacterFrame, .6)
@@ -467,6 +533,8 @@ local function SkinCharacterCreate()
   end
 
   EditBox(CharacterCreateNameEdit)
+  RotateButton(CharacterCreateRotateLeft, "left")
+  RotateButton(CharacterCreateRotateRight, "right")
 end
 
 local function SkinDialogs()
