@@ -1424,12 +1424,8 @@ function pfUI.uf:RefreshIndicators(unit)
     end
   end
 
-  if unit.pvpIcon then -- PvP Icon
-    if unit.config.showPVP == "1" and UnitIsPVP(unitstr) then
-      unit.pvpIcon:Show()
-    else
-      unit.pvpIcon:Hide()
-    end
+  if unit.pvpIcon then
+    unit.pvpIcon:Hide()
   end
 
   if unit.restIcon and unit:GetName() == "pfPlayer" then -- Rest Icon

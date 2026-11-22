@@ -621,10 +621,6 @@ function AtlasLoot_AtlasScrollBar_Update()
 					getglobal("AtlasBossLine"..line):Enable();
 					getglobal("AtlasBossLine"..line.."_Loot"):Show();
 					getglobal("AtlasBossLine"..line.."_Selected"):Hide();
-				elseif (AtlasLootBattlegrounds[zoneID]~=nil and AtlasLootBattlegrounds[zoneID][lineplusoffset] ~= nil and AtlasLootBattlegrounds[zoneID][lineplusoffset] ~= "") then
-					getglobal("AtlasBossLine"..line):Enable();
-					getglobal("AtlasBossLine"..line.."_Loot"):Show();
-					getglobal("AtlasBossLine"..line.."_Selected"):Hide();
 				else
 					getglobal("AtlasBossLine"..line):Disable();
 					getglobal("AtlasBossLine"..line.."_Loot"):Hide();
@@ -868,15 +864,6 @@ function AtlasLootBoss_OnClick(name)
 				getglobal(name.."_Loot"):Hide();
 				local _,_,boss = string.find(getglobal(name.."_Text"):GetText(), "|c%x%x%x%x%x%x%x%x%s*[%dX]*[%) ]*(.*[^%,])[%,]?$");
 				AtlasLoot_ShowBossLoot(AtlasLootWBBossButtons[zoneID][id], boss, AtlasFrame);
-				AtlasLootItemsFrame.activeBoss = id;
-				AtlasLoot_AtlasScrollBar_Update();
-			end
-		elseif (AtlasLootBattlegrounds[zoneID] ~= nil and AtlasLootBattlegrounds[zoneID][id] ~= nil and AtlasLootBattlegrounds[zoneID][id] ~= "") then
-			if AtlasLoot_IsLootTableAvailable(AtlasLootBattlegrounds[zoneID][id]) then
-				getglobal(name.."_Selected"):Show();
-				getglobal(name.."_Loot"):Hide();
-				local _,_,boss = string.find(getglobal(name.."_Text"):GetText(), "|c%x%x%x%x%x%x%x%x%s*[%wX]*[%) ]*(.*[^%,])[%,]?$");
-				AtlasLoot_ShowBossLoot(AtlasLootBattlegrounds[zoneID][id], boss, AtlasFrame);
 				AtlasLootItemsFrame.activeBoss = id;
 				AtlasLoot_AtlasScrollBar_Update();
 			end
@@ -2916,26 +2903,6 @@ AtlasLoot_DewDropDown_SubTables = {
 		{ AL["The Postmaster"], "SCARLET" },
 		{ AL["The Twin Blades of Hakkari"], "HakkariBlades" },
 		{ AL["Zul'Gurub Rings"], "ZGRings" },
-	},
-	["AVRewards"] = {
-		{ AL["Ivus the Forest Lord"], "AVIvus" },
-		{ AL["Lokholar the Ice Lord"], "AVLokholar" },
-		{ AL["Exalted Reputation Rewards"], "AVRepExalted" },
-		{ AL["Revered Reputation Rewards"], "AVRepRevered" },
-		{ AL["Honored Reputation Rewards"], "AVRepHonored" },
-		{ AL["Friendly Reputation Rewards"], "AVRepFriendly" },
-	},
-	["ABRewards"] = {
-		{ AL["Exalted Reputation Rewards"], "ABRepExalted" },
-		{ AL["Revered Reputation Rewards"], "ABRepRevered5059" },
-		{ AL["Honored Reputation Rewards"], "ABRepHonored5059" },
-		{ AL["Friendly Reputation Rewards"], "ABRepFriendly5059" },
-	},
-	["WSGRewards"] = {
-		{ AL["Exalted Reputation Rewards"], "WSGRepExalted60" },
-		{ AL["Revered Reputation Rewards"], "WSGRepRevered5059" },
-		{ AL["Honored Reputation Rewards"], "WSGRepHonored5059" },
-		{ AL["Friendly Reputation Rewards"], "WSGRepFriendly4049" },
 	},
 	["Alchemy"] = {
 		{ AtlasLoot_TableNames["AlchemyApprentice1"][1], "AlchemyApprentice1" },

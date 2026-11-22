@@ -119,6 +119,9 @@ local PFUI_INVARIANT = {
   { { "tooltip", "compare", "showalways" }, "1" },
   -- No guild rank / note block on unit tooltips (home guild is always there).
   { { "tooltip", "extguild" }, "0" },
+  -- No PvP flag on the player frame or minimap.
+  { { "unitframes", "player", "showPVP" }, "0" },
+  { { "unitframes", "player", "showPVPMinimap" }, "0" },
   -- Grey items sell themselves at a vendor.
   { { "global", "autosell" }, "1" },
   -- Vertical Actionbar (MultiBarLeft / bar4) off; main + bottom bars cover solo.

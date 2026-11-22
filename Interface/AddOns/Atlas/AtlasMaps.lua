@@ -1343,8 +1343,6 @@ AtlasMaps = {
 		ZoneName = { AtlasLocale["Dungeon Locations"].." ("..AtlasLocale["Eastern Kingdoms"]..")" };
 		Location = { AtlasLocale["Eastern Kingdoms"] };
 		Continent = AtlasLocale["Eastern Kingdoms"];
-		{ BLUE.."A) "..AtlasLocale["Alterac Valley"]..", ".._RED..AtlasLocale["Alterac Mountains"].." / "..AtlasLocale["Hillsbrad Foothills"], ZONE, 2597, 36, 267 };
-		{ BLUE.."B) "..AtlasLocale["Arathi Basin"]..", ".._RED..AtlasLocale["Arathi Highlands"], ZONE, 3358, 45 };
 		{ GREY.."1) "..AtlasLocale["Scarlet Monastery"]..", ".._RED..AtlasLocale["Tirisfal Glades"], ZONE, 796, 85 };
 		{ GREY.."2) "..AtlasLocale["Stratholme"]..", ".._RED..AtlasLocale["Eastern Plaguelands"], ZONE, 2017, 139 };
 		{ GREY.."3) "..AtlasLocale["Naxxramas"]..", ".._RED..AtlasLocale["Eastern Plaguelands"], ZONE, 3456, 139 };
@@ -1360,19 +1358,11 @@ AtlasMaps = {
 		{ GREY.."10) "..AtlasLocale["The Deadmines"]..", ".._RED..AtlasLocale["Westfall"], ZONE, 1581, 40 };
 		{ GREY.."11) "..AtlasLocale["Sunken Temple"]..", ".._RED..AtlasLocale["Swamp of Sorrows"], ZONE, 1417, 8 };
 		{ GREY.."12) "..AtlasLocale["Zul'Gurub"]..", ".._RED..AtlasLocale["Stranglethorn Vale"], ZONE, 19, 33 };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ BLUE..AtlasLocale["Blue"]..": "..ORNG..AtlasLocale["Battlegrounds"] };
-		{ GREY..AtlasLocale["White"]..": "..ORNG..AtlasLocale["Instances"] };
 	};
 	DLWest = {
 		ZoneName = { AtlasLocale["Dungeon Locations"].." ("..AtlasLocale["Kalimdor"]..")" };
 		Location = { AtlasLocale["Kalimdor"] };
 		Continent = AtlasLocale["Kalimdor"];
-		{ BLUE.."A) "..AtlasLocale["Warsong Gulch"]..", ".._RED..AtlasLocale["The Barrens"].." / "..AtlasLocale["Ashenvale"], ZONE, 3277, 17, 331 };
 		{ GREY.."1) "..AtlasLocale["Blackfathom Deeps"]..", ".._RED..AtlasLocale["Ashenvale"], ZONE, 719, 331 };
 		{ GREY.."2) "..AtlasLocale["Ragefire Chasm"]..", ".._RED..AtlasLocale["Orgrimmar"], ZONE, 2437, 1637 };
 		{ GREY.."3) "..AtlasLocale["Wailing Caverns"]..", ".._RED..AtlasLocale["The Barrens"], ZONE, 718, 17 };
@@ -1384,18 +1374,6 @@ AtlasMaps = {
 		{ GREY.."9) "..AtlasLocale["Zul'Farrak"]..", ".._RED..AtlasLocale["Tanaris"], ZONE, 978, 440 };
 		{ GREY.."10) "..AtlasLocale["Ruins of Ahn'Qiraj"]..", ".._RED..AtlasLocale["Silithus"], ZONE, 3429, 1377 };
 		{ GREY..INDENT..AtlasLocale["Temple of Ahn'Qiraj"]..", ".._RED..AtlasLocale["Silithus"], ZONE, 3428, 1377 };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ "" };
-		{ BLUE..AtlasLocale["Blue"]..": "..ORNG..AtlasLocale["Battlegrounds"] };
-		{ GREY..AtlasLocale["White"]..": "..ORNG..AtlasLocale["Instances"] };
 	};
 	FPAllianceEast = {
 		ZoneName = { AtlasLocale["Alliance"].." ("..AtlasLocale["Eastern Kingdoms"]..")" };
