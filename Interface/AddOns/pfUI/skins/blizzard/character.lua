@@ -270,6 +270,22 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
 
     SkillFrameCancelButton:Hide()
 
+    -- Drop the stock detail pane (description / unlearn / skill-ups). Grow the
+    -- list into that slot: stock list 220 + gap 8 + detail 107, and add rows so
+    -- FauxScrollFrame still matches the taller trough (15px step, ~40px slack).
+    SkillDetailScrollFrame:Hide()
+    SkillListScrollFrame:SetHeight(335)
+    local stockRows = SKILLS_TO_DISPLAY
+    SKILLS_TO_DISPLAY = 19
+    for i = stockRows + 1, SKILLS_TO_DISPLAY do
+      local header = CreateFrame("Button", "SkillTypeLabel"..i, SkillFrame, "SkillLabelTemplate")
+      header:SetPoint("LEFT", _G["SkillTypeLabel"..(i - 1)], "LEFT", 0, -18)
+
+      local bar = CreateFrame("StatusBar", "SkillRankFrame"..i, SkillFrame, "SkillStatusBarTemplate")
+      bar:SetID(i)
+      bar:SetPoint("TOPLEFT", _G["SkillRankFrame"..(i - 1)], "BOTTOMLEFT", 0, -3)
+    end
+
     StripTextures(SkillFrameCollapseAllButton)
     SkinCollapseButton(SkillFrameCollapseAllButton, true)
     SkillFrameCollapseAllButton:ClearAllPoints()
@@ -297,26 +313,5 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
 
     StripTextures(SkillListScrollFrame)
     SkinScrollbar(SkillListScrollFrameScrollBar)
-
-    StripTextures(SkillDetailScrollFrame)
-    SkillDetailScrollFrameScrollBar:Hide()
-    SkillDetailScrollChildFrame:Hide()
-
-    SkillDetailCostText:SetParent(SkillDetailScrollFrame)
-    SkillDetailDescriptionText:SetParent(SkillDetailScrollFrame)
-
-    StripTextures(SkillDetailStatusBar)
-    CreateBackdrop(SkillDetailStatusBar)
-    SkillDetailStatusBar:SetStatusBarTexture(pfUI.media["img:bar"])
-    SkillDetailStatusBar:SetParent(SkillDetailScrollFrame)
-
-    StripTextures(SkillDetailStatusBarUnlearnButton)
-    SkillDetailStatusBarUnlearnButton:SetWidth(20)
-    SkillDetailStatusBarUnlearnButton:SetHeight(20)
-    SkillDetailStatusBarUnlearnButton:SetHitRectInsets(0,0,0,0)
-    SkillDetailStatusBarUnlearnButton:ClearAllPoints()
-    SkillDetailStatusBarUnlearnButton:SetPoint("LEFT", SkillDetailStatusBar, "RIGHT", 6, 0)
-    SkillDetailStatusBarUnlearnButton:SetPushedTexture(nil)
-    SkillDetailStatusBarUnlearnButton:SetNormalTexture("Interface\\Buttons\\UI-GroupLoot-Pass-Up")
   end
 end)
