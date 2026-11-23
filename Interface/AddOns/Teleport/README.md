@@ -21,9 +21,9 @@
 
 ## 列表
 
-服务端 `game_tele` 表里的 997 个地点。输入片段即可搜索（`iron` → Ironforge，
-`gurub` → ZulGurub，短别名如 `brd`、`av`、`aq40` 也在里面）。中文客户端下
-中文名、拼音、英文名都能搜。
+服务端 `game_tele` 表里约 978 个地点（战场 AV/WSG/AB 与联盟 PvP 厅已去掉）。
+输入片段即可搜索（`iron` → Ironforge，`gurub` → ZulGurub，短别名如 `brd`、
+`aq40` 也在里面）。中文客户端下中文名、拼音、英文名都能搜。
 
 - 左键 = `.tele <地名>`
 - Shift+左键 = `.go xyz`（按坐标硬跳，`.tele` 名字有歧义时用它）
@@ -52,8 +52,10 @@
 ## 数据是烤进插件里的
 
 `Data_Tele.lua` 从世界数据库导出，搜索在本地完成。表名仍是生成脚本写下的
-`GMBox_Tele`、`GMBox_TeleZH`、`GMBox_TelePY`。数据库变了（比如 `.tele add`
-加了新传送点）就重新生成，再把生成的 `Data_Tele.lua` 拷到本目录：
+`GMBox_Tele`、`GMBox_TeleZH`、`GMBox_TelePY`（三表必须等长、同序；只删英文
+不删中文会导致搜中文传到错地方）。数据库变了（比如 `.tele add` 加了新传送点）
+就重新生成，再把生成的 `Data_Tele.lua` 拷到本目录，并按 map 30/489/529/449
+同步去掉战场行：
 
 ```sh
 ~/vvenv/wow/bin/gmbox-gen-data.sh
