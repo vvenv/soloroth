@@ -1,27 +1,17 @@
 --[[--------------------------------------------------------------------------
 Enchanting uses CraftFrame (no Create All / count), unlike smelting's
-TradeSkill. Add a count box + Create All next to Craft Create, and run that
-many enchants on the same item: first BIND/REPLACE still asks; the rest
-re-target the remembered bag/paperdoll slot and skip the popup.
+TradeSkill. Permanent enchants now CreateItem scrolls, so batching is just
+repeated DoCraft — no item retarget / REPLACE skip.
 
-Needs the Soloroth client deviation that lets ReplaceEnchant commit outside
-a click (craft batch re-target runs from OnUpdate).
-
-Cancel on REPLACE cancel, craft close, cast fail, or count exhausted.
+Cancel on craft close, cast fail, or count exhausted.
 ----------------------------------------------------------------------------]]
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end
 
-local skipReplace = false
 local remaining = 0
-local needRetarget = false
 local pendingNext = false
 local expectStop = false
-local lastBag, lastSlot, lastInv
-local dialogsHooked = false
-local popupShowHooked = false
-local pickupsHooked = false
 local uiReady = false
 
 local input, createAll, minus, plus
@@ -61,26 +51,8 @@ end
 
 local function ClearBatch()
   remaining = 0
-  needRetarget = false
   pendingNext = false
   expectStop = false
-end
-
-local function ClearSession()
-  ClearBatch()
-  skipReplace = false
-end
-
-local function RememberTarget(bag, slot, inv)
-  lastBag, lastSlot, lastInv = bag, slot, inv
-end
-
-local function Retarget()
-  if lastBag ~= nil and lastSlot ~= nil and type(PickupContainerItem) == "function" then
-    PickupContainerItem(lastBag, lastSlot)
-  elseif lastInv ~= nil and type(PickupInventoryItem) == "function" then
-    PickupInventoryItem(lastInv)
-  end
 end
 
 local function QueueCraft()
@@ -89,7 +61,6 @@ local function QueueCraft()
     ClearBatch()
     return
   end
-  needRetarget = true
   DoCraft(idx)
 end
 
@@ -102,80 +73,9 @@ local function StartBatch(count)
   else
     remaining = ClampCount(count, nil)
   end
-  needRetarget = false
   pendingNext = false
   expectStop = false
   DoCraft(idx)
-end
-
-local function HookDialog(which, onAccept, onCancel)
-  local d = StaticPopupDialogs and StaticPopupDialogs[which]
-  if not d or d.soloContinuousEnchant then return end
-  d.soloContinuousEnchant = true
-  local prevAccept = d.OnAccept
-  d.OnAccept = function()
-    if onAccept then onAccept() end
-    if prevAccept then return prevAccept() end
-  end
-  if onCancel then
-    local prevCancel = d.OnCancel
-    d.OnCancel = function()
-      onCancel()
-      if prevCancel then return prevCancel() end
-    end
-  end
-end
-
-local function HookDialogs()
-  if type(StaticPopupDialogs) ~= "table" then return end
-  if not StaticPopupDialogs["REPLACE_ENCHANT"] then return end
-
-  if not dialogsHooked then
-    dialogsHooked = true
-    HookDialog("REPLACE_ENCHANT", function()
-      skipReplace = true
-    end, ClearSession)
-
-    HookDialog("BIND_ENCHANT", function()
-      skipReplace = true
-    end, nil)
-  end
-
-  if popupShowHooked then return end
-  local origShow = StaticPopup_Show
-  if type(origShow) ~= "function" then return end
-  popupShowHooked = true
-  StaticPopup_Show = function(which, text1, text2, data)
-    if which == "REPLACE_ENCHANT" and skipReplace
-        and type(ReplaceEnchant) == "function" then
-      ReplaceEnchant()
-      return
-    end
-    return origShow(which, text1, text2, data)
-  end
-end
-
-local function HookPickups()
-  if pickupsHooked then return end
-  pickupsHooked = true
-  if type(PickupContainerItem) == "function" then
-    local orig = PickupContainerItem
-    PickupContainerItem = function(bag, slot)
-      if SpellIsTargeting and SpellIsTargeting() then
-        RememberTarget(bag, slot, nil)
-      end
-      return orig(bag, slot)
-    end
-  end
-  if type(PickupInventoryItem) == "function" then
-    local orig = PickupInventoryItem
-    PickupInventoryItem = function(slot)
-      if SpellIsTargeting and SpellIsTargeting() then
-        RememberTarget(nil, nil, slot)
-      end
-      return orig(slot)
-    end
-  end
 end
 
 local function SkinCountUi()
@@ -273,9 +173,6 @@ if SoloSkin and SoloSkin.Register then
   end)
 end
 
-HookDialogs()
-HookPickups()
-
 local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_LOGIN")
 f:RegisterEvent("ADDON_LOADED")
@@ -287,22 +184,13 @@ f:RegisterEvent("SPELLCAST_STOP")
 f:RegisterEvent("SPELLCAST_FAILED")
 f:RegisterEvent("SPELLCAST_INTERRUPTED")
 f:SetScript("OnUpdate", function()
-  if pendingNext then
-    pendingNext = false
-    if remaining < 1 then return end
-    QueueCraft()
-    return
-  end
-  if not needRetarget then return end
-  if SpellIsTargeting and SpellIsTargeting() then
-    needRetarget = false
-    Retarget()
-  end
+  if not pendingNext then return end
+  pendingNext = false
+  if remaining < 1 then return end
+  QueueCraft()
 end)
 f:SetScript("OnEvent", function()
   if event == "PLAYER_LOGIN" then
-    HookDialogs()
-    HookPickups()
     if IsAddOnLoaded and IsAddOnLoaded("Blizzard_CraftUI") then
       InstallCraftUi()
     end
@@ -312,9 +200,8 @@ f:SetScript("OnEvent", function()
     InstallCraftUi()
     SkinCountUi()
     SyncInput()
-    HookDialogs()
   elseif event == "CRAFT_CLOSE" then
-    ClearSession()
+    ClearBatch()
   elseif event == "CRAFT_UPDATE" then
     SyncInput()
   elseif event == "SPELLCAST_START" then

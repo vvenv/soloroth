@@ -1,0 +1,1062 @@
+{
+  "item_base": 41000,
+  "spell_base": 35000,
+  "crafts": [
+    {
+      "spell": 7418,
+      "scroll": 41000,
+      "apply": 35000,
+      "enchant": 41,
+      "name": "Enchant Bracer - Minor Health",
+      "name_zh": "附魔护腕 - 初级生命"
+    },
+    {
+      "spell": 7420,
+      "scroll": 41001,
+      "apply": 35001,
+      "enchant": 41,
+      "name": "Enchant Chest - Minor Health",
+      "name_zh": "附魔胸甲 - 初级生命"
+    },
+    {
+      "spell": 7426,
+      "scroll": 41002,
+      "apply": 35002,
+      "enchant": 44,
+      "name": "Enchant Chest - Minor Absorption",
+      "name_zh": "附魔胸甲 - 初级吸收"
+    },
+    {
+      "spell": 7428,
+      "scroll": 41003,
+      "apply": 35003,
+      "enchant": 924,
+      "name": "Enchant Bracer - Minor Deflect",
+      "name_zh": "附魔护腕 - 初级偏斜"
+    },
+    {
+      "spell": 7443,
+      "scroll": 41004,
+      "apply": 35004,
+      "enchant": 24,
+      "name": "Enchant Chest - Minor Mana",
+      "name_zh": "附魔胸甲 - 初级法力"
+    },
+    {
+      "spell": 7454,
+      "scroll": 41005,
+      "apply": 35005,
+      "enchant": 65,
+      "name": "Enchant Cloak - Minor Resistance",
+      "name_zh": "附魔披风 - 初级抗性"
+    },
+    {
+      "spell": 7457,
+      "scroll": 41006,
+      "apply": 35006,
+      "enchant": 66,
+      "name": "Enchant Bracer - Minor Stamina",
+      "name_zh": "附魔护腕 - 初级耐力"
+    },
+    {
+      "spell": 7745,
+      "scroll": 41007,
+      "apply": 35007,
+      "enchant": 241,
+      "name": "Enchant 2H Weapon - Minor Impact",
+      "name_zh": "附魔双手武器 - 初级冲击"
+    },
+    {
+      "spell": 7748,
+      "scroll": 41008,
+      "apply": 35008,
+      "enchant": 242,
+      "name": "Enchant Chest - Lesser Health",
+      "name_zh": "附魔胸甲 - 次级生命"
+    },
+    {
+      "spell": 7766,
+      "scroll": 41009,
+      "apply": 35009,
+      "enchant": 243,
+      "name": "Enchant Bracer - Minor Spirit",
+      "name_zh": "附魔护腕 - 初级精神"
+    },
+    {
+      "spell": 7771,
+      "scroll": 41010,
+      "apply": 35010,
+      "enchant": 783,
+      "name": "Enchant Cloak - Minor Protection",
+      "name_zh": "附魔披风 - 初级防护"
+    },
+    {
+      "spell": 7776,
+      "scroll": 41011,
+      "apply": 35011,
+      "enchant": 246,
+      "name": "Enchant Chest - Lesser Mana",
+      "name_zh": "附魔胸甲 - 次级法力"
+    },
+    {
+      "spell": 7779,
+      "scroll": 41012,
+      "apply": 35012,
+      "enchant": 247,
+      "name": "Enchant Bracer - Minor Agility",
+      "name_zh": "附魔护腕 - 初级敏捷"
+    },
+    {
+      "spell": 7782,
+      "scroll": 41013,
+      "apply": 35013,
+      "enchant": 248,
+      "name": "Enchant Bracer - Minor Strength",
+      "name_zh": "附魔护腕 - 初级力量"
+    },
+    {
+      "spell": 7786,
+      "scroll": 41014,
+      "apply": 35014,
+      "enchant": 249,
+      "name": "Enchant Weapon - Minor Beastslayer",
+      "name_zh": "附魔武器 - 初级屠兽"
+    },
+    {
+      "spell": 7788,
+      "scroll": 41015,
+      "apply": 35015,
+      "enchant": 250,
+      "name": "Enchant Weapon - Minor Striking",
+      "name_zh": "附魔武器 - 初级攻击"
+    },
+    {
+      "spell": 7793,
+      "scroll": 41016,
+      "apply": 35016,
+      "enchant": 723,
+      "name": "Enchant 2H Weapon - Lesser Intellect",
+      "name_zh": "附魔双手武器 - 次级智力"
+    },
+    {
+      "spell": 7857,
+      "scroll": 41017,
+      "apply": 35017,
+      "enchant": 254,
+      "name": "Enchant Chest - Health",
+      "name_zh": "附魔胸甲 - 生命"
+    },
+    {
+      "spell": 7859,
+      "scroll": 41018,
+      "apply": 35018,
+      "enchant": 255,
+      "name": "Enchant Bracer - Lesser Spirit",
+      "name_zh": "附魔护腕 - 次级精神"
+    },
+    {
+      "spell": 7861,
+      "scroll": 41019,
+      "apply": 35019,
+      "enchant": 256,
+      "name": "Enchant Cloak - Lesser Fire Resistance",
+      "name_zh": "附魔披风 - 次级火焰抗性"
+    },
+    {
+      "spell": 7863,
+      "scroll": 41020,
+      "apply": 35020,
+      "enchant": 66,
+      "name": "Enchant Boots - Minor Stamina",
+      "name_zh": "附魔靴子 - 初级耐力"
+    },
+    {
+      "spell": 7867,
+      "scroll": 41021,
+      "apply": 35021,
+      "enchant": 247,
+      "name": "Enchant Boots - Minor Agility",
+      "name_zh": "附魔靴子 - 初级敏捷"
+    },
+    {
+      "spell": 13378,
+      "scroll": 41022,
+      "apply": 35022,
+      "enchant": 66,
+      "name": "Enchant Shield - Minor Stamina",
+      "name_zh": "附魔盾牌 - 初级耐力"
+    },
+    {
+      "spell": 13380,
+      "scroll": 41023,
+      "apply": 35023,
+      "enchant": 255,
+      "name": "Enchant 2H Weapon - Lesser Spirit",
+      "name_zh": "附魔双手武器 - 次级精神"
+    },
+    {
+      "spell": 13419,
+      "scroll": 41024,
+      "apply": 35024,
+      "enchant": 247,
+      "name": "Enchant Cloak - Minor Agility",
+      "name_zh": "附魔披风 - 初级敏捷"
+    },
+    {
+      "spell": 13421,
+      "scroll": 41025,
+      "apply": 35025,
+      "enchant": 744,
+      "name": "Enchant Cloak - Lesser Protection",
+      "name_zh": "附魔披风 - 次级防护"
+    },
+    {
+      "spell": 13464,
+      "scroll": 41026,
+      "apply": 35026,
+      "enchant": 848,
+      "name": "Enchant Shield - Lesser Protection",
+      "name_zh": "附魔盾牌 - 次级防护"
+    },
+    {
+      "spell": 13485,
+      "scroll": 41027,
+      "apply": 35027,
+      "enchant": 255,
+      "name": "Enchant Shield - Lesser Spirit",
+      "name_zh": "附魔盾牌 - 次级精神"
+    },
+    {
+      "spell": 13501,
+      "scroll": 41028,
+      "apply": 35028,
+      "enchant": 724,
+      "name": "Enchant Bracer - Lesser Stamina",
+      "name_zh": "附魔护腕 - 次级耐力"
+    },
+    {
+      "spell": 13503,
+      "scroll": 41029,
+      "apply": 35029,
+      "enchant": 241,
+      "name": "Enchant Weapon - Lesser Striking",
+      "name_zh": "附魔武器 - 次级攻击"
+    },
+    {
+      "spell": 13522,
+      "scroll": 41030,
+      "apply": 35030,
+      "enchant": 804,
+      "name": "Enchant Cloak - Lesser Shadow Resistance",
+      "name_zh": "附魔披风 - 次级暗影抵抗"
+    },
+    {
+      "spell": 13529,
+      "scroll": 41031,
+      "apply": 35031,
+      "enchant": 943,
+      "name": "Enchant 2H Weapon - Lesser Impact",
+      "name_zh": "附魔双手武器 - 次级冲击"
+    },
+    {
+      "spell": 13536,
+      "scroll": 41032,
+      "apply": 35032,
+      "enchant": 823,
+      "name": "Enchant Bracer - Lesser Strength",
+      "name_zh": "附魔护腕 - 次级力量"
+    },
+    {
+      "spell": 13538,
+      "scroll": 41033,
+      "apply": 35033,
+      "enchant": 63,
+      "name": "Enchant Chest - Lesser Absorption",
+      "name_zh": "附魔胸甲 - 次级吸收"
+    },
+    {
+      "spell": 13607,
+      "scroll": 41034,
+      "apply": 35034,
+      "enchant": 843,
+      "name": "Enchant Chest - Mana",
+      "name_zh": "附魔胸甲 - 法力"
+    },
+    {
+      "spell": 13612,
+      "scroll": 41035,
+      "apply": 35035,
+      "enchant": 844,
+      "name": "Enchant Gloves - Mining",
+      "name_zh": "附魔手套 - 采矿"
+    },
+    {
+      "spell": 13617,
+      "scroll": 41036,
+      "apply": 35036,
+      "enchant": 845,
+      "name": "Enchant Gloves - Herbalism",
+      "name_zh": "附魔手套 - 草药学"
+    },
+    {
+      "spell": 13620,
+      "scroll": 41037,
+      "apply": 35037,
+      "enchant": 846,
+      "name": "Enchant Gloves - Fishing",
+      "name_zh": "附魔手套 - 钓鱼"
+    },
+    {
+      "spell": 13622,
+      "scroll": 41038,
+      "apply": 35038,
+      "enchant": 723,
+      "name": "Enchant Bracer - Lesser Intellect",
+      "name_zh": "附魔护腕 - 次级智力"
+    },
+    {
+      "spell": 13626,
+      "scroll": 41039,
+      "apply": 35039,
+      "enchant": 847,
+      "name": "Enchant Chest - Minor Stats",
+      "name_zh": "附魔胸甲 - 初级属性"
+    },
+    {
+      "spell": 13631,
+      "scroll": 41040,
+      "apply": 35040,
+      "enchant": 724,
+      "name": "Enchant Shield - Lesser Stamina",
+      "name_zh": "附魔盾牌 - 次级耐力"
+    },
+    {
+      "spell": 13635,
+      "scroll": 41041,
+      "apply": 35041,
+      "enchant": 848,
+      "name": "Enchant Cloak - Defense",
+      "name_zh": "附魔披风 - 防御"
+    },
+    {
+      "spell": 13637,
+      "scroll": 41042,
+      "apply": 35042,
+      "enchant": 849,
+      "name": "Enchant Boots - Lesser Agility",
+      "name_zh": "附魔靴子 - 次级敏捷"
+    },
+    {
+      "spell": 13640,
+      "scroll": 41043,
+      "apply": 35043,
+      "enchant": 850,
+      "name": "Enchant Chest - Greater Health",
+      "name_zh": "附魔胸甲 - 强效生命"
+    },
+    {
+      "spell": 13642,
+      "scroll": 41044,
+      "apply": 35044,
+      "enchant": 851,
+      "name": "Enchant Bracer - Spirit",
+      "name_zh": "附魔护腕 - 精神"
+    },
+    {
+      "spell": 13644,
+      "scroll": 41045,
+      "apply": 35045,
+      "enchant": 724,
+      "name": "Enchant Boots - Lesser Stamina",
+      "name_zh": "附魔靴子 - 次级耐力"
+    },
+    {
+      "spell": 13646,
+      "scroll": 41046,
+      "apply": 35046,
+      "enchant": 925,
+      "name": "Enchant Bracer - Lesser Deflection",
+      "name_zh": "附魔护腕 - 次级偏斜"
+    },
+    {
+      "spell": 13648,
+      "scroll": 41047,
+      "apply": 35047,
+      "enchant": 852,
+      "name": "Enchant Bracer - Stamina",
+      "name_zh": "附魔护腕 - 耐力"
+    },
+    {
+      "spell": 13653,
+      "scroll": 41048,
+      "apply": 35048,
+      "enchant": 853,
+      "name": "Enchant Weapon - Lesser Beastslayer",
+      "name_zh": "附魔武器 - 次级屠兽"
+    },
+    {
+      "spell": 13655,
+      "scroll": 41049,
+      "apply": 35049,
+      "enchant": 854,
+      "name": "Enchant Weapon - Lesser Elemental Slayer",
+      "name_zh": "附魔武器 - 次级元素杀手"
+    },
+    {
+      "spell": 13657,
+      "scroll": 41050,
+      "apply": 35050,
+      "enchant": 2463,
+      "name": "Enchant Cloak - Fire Resistance",
+      "name_zh": "附魔披风 - 火焰抗性"
+    },
+    {
+      "spell": 13659,
+      "scroll": 41051,
+      "apply": 35051,
+      "enchant": 851,
+      "name": "Enchant Shield - Spirit",
+      "name_zh": "附魔盾牌 - 精神"
+    },
+    {
+      "spell": 13661,
+      "scroll": 41052,
+      "apply": 35052,
+      "enchant": 856,
+      "name": "Enchant Bracer - Strength",
+      "name_zh": "附魔护腕 - 力量"
+    },
+    {
+      "spell": 13663,
+      "scroll": 41053,
+      "apply": 35053,
+      "enchant": 857,
+      "name": "Enchant Chest - Greater Mana",
+      "name_zh": "附魔胸甲 - 强效法力"
+    },
+    {
+      "spell": 13687,
+      "scroll": 41054,
+      "apply": 35054,
+      "enchant": 255,
+      "name": "Enchant Boots - Lesser Spirit",
+      "name_zh": "附魔靴子 - 次级精神"
+    },
+    {
+      "spell": 13689,
+      "scroll": 41055,
+      "apply": 35055,
+      "enchant": 863,
+      "name": "Enchant Shield - Lesser Block",
+      "name_zh": "附魔盾牌 - 次级格挡"
+    },
+    {
+      "spell": 13693,
+      "scroll": 41056,
+      "apply": 35056,
+      "enchant": 943,
+      "name": "Enchant Weapon - Striking",
+      "name_zh": "附魔武器 - 攻击"
+    },
+    {
+      "spell": 13695,
+      "scroll": 41057,
+      "apply": 35057,
+      "enchant": 1897,
+      "name": "Enchant 2H Weapon - Impact",
+      "name_zh": "附魔双手武器 - 冲击"
+    },
+    {
+      "spell": 13698,
+      "scroll": 41058,
+      "apply": 35058,
+      "enchant": 865,
+      "name": "Enchant Gloves - Skinning",
+      "name_zh": "附魔手套 - 剥皮"
+    },
+    {
+      "spell": 13700,
+      "scroll": 41059,
+      "apply": 35059,
+      "enchant": 866,
+      "name": "Enchant Chest - Lesser Stats",
+      "name_zh": "附魔胸甲 - 次级状态"
+    },
+    {
+      "spell": 13746,
+      "scroll": 41060,
+      "apply": 35060,
+      "enchant": 884,
+      "name": "Enchant Cloak - Greater Defense",
+      "name_zh": "附魔披风 - 强效防御"
+    },
+    {
+      "spell": 13794,
+      "scroll": 41061,
+      "apply": 35061,
+      "enchant": 903,
+      "name": "Enchant Cloak - Resistance",
+      "name_zh": "附魔披风 - 抗性"
+    },
+    {
+      "spell": 13815,
+      "scroll": 41062,
+      "apply": 35062,
+      "enchant": 904,
+      "name": "Enchant Gloves - Agility",
+      "name_zh": "附魔手套 - 敏捷"
+    },
+    {
+      "spell": 13817,
+      "scroll": 41063,
+      "apply": 35063,
+      "enchant": 852,
+      "name": "Enchant Shield - Stamina",
+      "name_zh": "附魔盾牌 - 耐力"
+    },
+    {
+      "spell": 13822,
+      "scroll": 41064,
+      "apply": 35064,
+      "enchant": 905,
+      "name": "Enchant Bracer - Intellect",
+      "name_zh": "附魔护腕 - 智力"
+    },
+    {
+      "spell": 13836,
+      "scroll": 41065,
+      "apply": 35065,
+      "enchant": 852,
+      "name": "Enchant Boots - Stamina",
+      "name_zh": "附魔靴子 - 耐力"
+    },
+    {
+      "spell": 13841,
+      "scroll": 41066,
+      "apply": 35066,
+      "enchant": 906,
+      "name": "Enchant Gloves - Advanced Mining",
+      "name_zh": "附魔手套 - 高级采矿"
+    },
+    {
+      "spell": 13846,
+      "scroll": 41067,
+      "apply": 35067,
+      "enchant": 907,
+      "name": "Enchant Bracer - Greater Spirit",
+      "name_zh": "附魔护腕 - 强效精神"
+    },
+    {
+      "spell": 13858,
+      "scroll": 41068,
+      "apply": 35068,
+      "enchant": 908,
+      "name": "Enchant Chest - Superior Health",
+      "name_zh": "附魔胸甲 - 超强生命"
+    },
+    {
+      "spell": 13868,
+      "scroll": 41069,
+      "apply": 35069,
+      "enchant": 909,
+      "name": "Enchant Gloves - Advanced Herbalism",
+      "name_zh": "附魔手套 - 高级草药学"
+    },
+    {
+      "spell": 13882,
+      "scroll": 41070,
+      "apply": 35070,
+      "enchant": 849,
+      "name": "Enchant Cloak - Lesser Agility",
+      "name_zh": "附魔披风 - 次级敏捷"
+    },
+    {
+      "spell": 13887,
+      "scroll": 41071,
+      "apply": 35071,
+      "enchant": 856,
+      "name": "Enchant Gloves - Strength",
+      "name_zh": "附魔手套 - 力量"
+    },
+    {
+      "spell": 13890,
+      "scroll": 41072,
+      "apply": 35072,
+      "enchant": 911,
+      "name": "Enchant Boots - Minor Speed",
+      "name_zh": "附魔靴子 - 初级速度"
+    },
+    {
+      "spell": 13898,
+      "scroll": 41073,
+      "apply": 35073,
+      "enchant": 803,
+      "name": "Enchant Weapon - Fiery Weapon",
+      "name_zh": "附魔武器 - 烈焰"
+    },
+    {
+      "spell": 13905,
+      "scroll": 41074,
+      "apply": 35074,
+      "enchant": 907,
+      "name": "Enchant Shield - Greater Spirit",
+      "name_zh": "附魔盾牌 - 强效精神"
+    },
+    {
+      "spell": 13915,
+      "scroll": 41075,
+      "apply": 35075,
+      "enchant": 912,
+      "name": "Enchant Weapon - Demonslaying",
+      "name_zh": "附魔武器 - 屠魔"
+    },
+    {
+      "spell": 13917,
+      "scroll": 41076,
+      "apply": 35076,
+      "enchant": 913,
+      "name": "Enchant Chest - Superior Mana",
+      "name_zh": "附魔胸甲 - 超强法力"
+    },
+    {
+      "spell": 13931,
+      "scroll": 41077,
+      "apply": 35077,
+      "enchant": 923,
+      "name": "Enchant Bracer - Deflection",
+      "name_zh": "附魔护腕 - 偏斜"
+    },
+    {
+      "spell": 13933,
+      "scroll": 41078,
+      "apply": 35078,
+      "enchant": 926,
+      "name": "Enchant Shield - Frost Resistance",
+      "name_zh": "附魔盾牌 - 冰霜抗性"
+    },
+    {
+      "spell": 13935,
+      "scroll": 41079,
+      "apply": 35079,
+      "enchant": 904,
+      "name": "Enchant Boots - Agility",
+      "name_zh": "附魔靴子 - 敏捷"
+    },
+    {
+      "spell": 13937,
+      "scroll": 41080,
+      "apply": 35080,
+      "enchant": 963,
+      "name": "Enchant 2H Weapon - Greater Impact",
+      "name_zh": "附魔双手武器 - 强效冲击"
+    },
+    {
+      "spell": 13939,
+      "scroll": 41081,
+      "apply": 35081,
+      "enchant": 927,
+      "name": "Enchant Bracer - Greater Strength",
+      "name_zh": "附魔护腕 - 强效力量"
+    },
+    {
+      "spell": 13941,
+      "scroll": 41082,
+      "apply": 35082,
+      "enchant": 928,
+      "name": "Enchant Chest - Stats",
+      "name_zh": "附魔胸甲 - 状态"
+    },
+    {
+      "spell": 13943,
+      "scroll": 41083,
+      "apply": 35083,
+      "enchant": 805,
+      "name": "Enchant Weapon - Greater Striking",
+      "name_zh": "附魔武器 - 强效攻击"
+    },
+    {
+      "spell": 13945,
+      "scroll": 41084,
+      "apply": 35084,
+      "enchant": 929,
+      "name": "Enchant Bracer - Greater Stamina",
+      "name_zh": "附魔护腕 - 强效耐力"
+    },
+    {
+      "spell": 13947,
+      "scroll": 41085,
+      "apply": 35085,
+      "enchant": 930,
+      "name": "Enchant Gloves - Riding Skill",
+      "name_zh": "附魔手套 - 骑乘"
+    },
+    {
+      "spell": 13948,
+      "scroll": 41086,
+      "apply": 35086,
+      "enchant": 931,
+      "name": "Enchant Gloves - Minor Haste",
+      "name_zh": "附魔手套 - 初级加速"
+    },
+    {
+      "spell": 20008,
+      "scroll": 41087,
+      "apply": 35087,
+      "enchant": 1883,
+      "name": "Enchant Bracer - Greater Intellect",
+      "name_zh": "附魔护腕 - 强效智力"
+    },
+    {
+      "spell": 20009,
+      "scroll": 41088,
+      "apply": 35088,
+      "enchant": 1884,
+      "name": "Enchant Bracer - Superior Spirit",
+      "name_zh": "附魔护腕 - 超强精神"
+    },
+    {
+      "spell": 20010,
+      "scroll": 41089,
+      "apply": 35089,
+      "enchant": 1885,
+      "name": "Enchant Bracer - Superior Strength",
+      "name_zh": "附魔护腕 - 超强力量"
+    },
+    {
+      "spell": 20011,
+      "scroll": 41090,
+      "apply": 35090,
+      "enchant": 1886,
+      "name": "Enchant Bracer - Superior Stamina",
+      "name_zh": "附魔护腕 - 超强耐力"
+    },
+    {
+      "spell": 20012,
+      "scroll": 41091,
+      "apply": 35091,
+      "enchant": 1887,
+      "name": "Enchant Gloves - Greater Agility",
+      "name_zh": "附魔手套 - 强效敏捷"
+    },
+    {
+      "spell": 20013,
+      "scroll": 41092,
+      "apply": 35092,
+      "enchant": 927,
+      "name": "Enchant Gloves - Greater Strength",
+      "name_zh": "附魔手套 - 强效力量"
+    },
+    {
+      "spell": 20014,
+      "scroll": 41093,
+      "apply": 35093,
+      "enchant": 1888,
+      "name": "Enchant Cloak - Greater Resistance",
+      "name_zh": "附魔披风 - 强效抗性"
+    },
+    {
+      "spell": 20015,
+      "scroll": 41094,
+      "apply": 35094,
+      "enchant": 1889,
+      "name": "Enchant Cloak - Superior Defense",
+      "name_zh": "附魔披风 - 超级防御"
+    },
+    {
+      "spell": 20016,
+      "scroll": 41095,
+      "apply": 35095,
+      "enchant": 1890,
+      "name": "Enchant Shield - Superior Spirit",
+      "name_zh": "附魔盾牌 - 超强精神"
+    },
+    {
+      "spell": 20017,
+      "scroll": 41096,
+      "apply": 35096,
+      "enchant": 929,
+      "name": "Enchant Shield - Greater Stamina",
+      "name_zh": "附魔盾牌 - 强效耐力"
+    },
+    {
+      "spell": 20020,
+      "scroll": 41097,
+      "apply": 35097,
+      "enchant": 929,
+      "name": "Enchant Boots - Greater Stamina",
+      "name_zh": "附魔靴子 - 强效耐力"
+    },
+    {
+      "spell": 20023,
+      "scroll": 41098,
+      "apply": 35098,
+      "enchant": 1887,
+      "name": "Enchant Boots - Greater Agility",
+      "name_zh": "附魔靴子 - 强效敏捷"
+    },
+    {
+      "spell": 20024,
+      "scroll": 41099,
+      "apply": 35099,
+      "enchant": 851,
+      "name": "Enchant Boots - Spirit",
+      "name_zh": "附魔靴子 - 精神"
+    },
+    {
+      "spell": 20025,
+      "scroll": 41100,
+      "apply": 35100,
+      "enchant": 1891,
+      "name": "Enchant Chest - Greater Stats",
+      "name_zh": "附魔胸甲 - 强效属性"
+    },
+    {
+      "spell": 20026,
+      "scroll": 41101,
+      "apply": 35101,
+      "enchant": 1892,
+      "name": "Enchant Chest - Major Health",
+      "name_zh": "附魔胸甲 - 极效生命"
+    },
+    {
+      "spell": 20028,
+      "scroll": 41102,
+      "apply": 35102,
+      "enchant": 1893,
+      "name": "Enchant Chest - Major Mana",
+      "name_zh": "附魔胸甲 - 极效法力"
+    },
+    {
+      "spell": 20029,
+      "scroll": 41103,
+      "apply": 35103,
+      "enchant": 1894,
+      "name": "Enchant Weapon - Icy Chill",
+      "name_zh": "附魔武器 - 冰寒"
+    },
+    {
+      "spell": 20030,
+      "scroll": 41104,
+      "apply": 35104,
+      "enchant": 1896,
+      "name": "Enchant 2H Weapon - Superior Impact",
+      "name_zh": "附魔双手武器 - 超强冲击"
+    },
+    {
+      "spell": 20031,
+      "scroll": 41105,
+      "apply": 35105,
+      "enchant": 1897,
+      "name": "Enchant Weapon - Superior Striking",
+      "name_zh": "附魔武器 - 超强打击"
+    },
+    {
+      "spell": 20032,
+      "scroll": 41106,
+      "apply": 35106,
+      "enchant": 1898,
+      "name": "Enchant Weapon - Lifestealing",
+      "name_zh": "附魔武器 - 生命偷取"
+    },
+    {
+      "spell": 20033,
+      "scroll": 41107,
+      "apply": 35107,
+      "enchant": 1899,
+      "name": "Enchant Weapon - Unholy Weapon",
+      "name_zh": "附魔武器 - 邪恶武器"
+    },
+    {
+      "spell": 20034,
+      "scroll": 41108,
+      "apply": 35108,
+      "enchant": 1900,
+      "name": "Enchant Weapon - Crusader",
+      "name_zh": "附魔武器 - 十字军"
+    },
+    {
+      "spell": 20035,
+      "scroll": 41109,
+      "apply": 35109,
+      "enchant": 1903,
+      "name": "Enchant 2H Weapon - Major Spirit",
+      "name_zh": "附魔双手武器 - 极效精神"
+    },
+    {
+      "spell": 20036,
+      "scroll": 41110,
+      "apply": 35110,
+      "enchant": 1904,
+      "name": "Enchant 2H Weapon - Major Intellect",
+      "name_zh": "附魔双手武器 - 极效智力"
+    },
+    {
+      "spell": 21931,
+      "scroll": 41111,
+      "apply": 35111,
+      "enchant": 2443,
+      "name": "Enchant Weapon - Winter's Might",
+      "name_zh": "附魔武器 - 寒冬之力"
+    },
+    {
+      "spell": 22749,
+      "scroll": 41112,
+      "apply": 35112,
+      "enchant": 2504,
+      "name": "Enchant  Weapon - Spell Power",
+      "name_zh": "附魔武器 - 法术能量"
+    },
+    {
+      "spell": 22750,
+      "scroll": 41113,
+      "apply": 35113,
+      "enchant": 2505,
+      "name": "Enchant  Weapon - Healing Power",
+      "name_zh": "附魔武器 - 治疗能量"
+    },
+    {
+      "spell": 23799,
+      "scroll": 41114,
+      "apply": 35114,
+      "enchant": 2563,
+      "name": "Enchant Weapon - Strength",
+      "name_zh": "附魔武器 - 力量"
+    },
+    {
+      "spell": 23800,
+      "scroll": 41115,
+      "apply": 35115,
+      "enchant": 2564,
+      "name": "Enchant Weapon - Agility",
+      "name_zh": "附魔武器 - 敏捷"
+    },
+    {
+      "spell": 23801,
+      "scroll": 41116,
+      "apply": 35116,
+      "enchant": 2565,
+      "name": "Enchant Bracer - Mana Regeneration",
+      "name_zh": "附魔护腕 - 法力回复"
+    },
+    {
+      "spell": 23802,
+      "scroll": 41117,
+      "apply": 35117,
+      "enchant": 2566,
+      "name": "Enchant Bracer - Healing Power",
+      "name_zh": "附魔护腕 - 治疗能力"
+    },
+    {
+      "spell": 23803,
+      "scroll": 41118,
+      "apply": 35118,
+      "enchant": 2567,
+      "name": "Enchant Weapon - Mighty Spirit",
+      "name_zh": "附魔武器 - 强效精神"
+    },
+    {
+      "spell": 23804,
+      "scroll": 41119,
+      "apply": 35119,
+      "enchant": 2568,
+      "name": "Enchant Weapon - Mighty Intellect",
+      "name_zh": "附魔武器 - 强效智力"
+    },
+    {
+      "spell": 25072,
+      "scroll": 41120,
+      "apply": 35120,
+      "enchant": 2613,
+      "name": "Enchant Gloves - Threat",
+      "name_zh": "附魔手套 - 威胁"
+    },
+    {
+      "spell": 25073,
+      "scroll": 41121,
+      "apply": 35121,
+      "enchant": 2614,
+      "name": "Enchant Gloves - Shadow Power",
+      "name_zh": "附魔手套 - 暗影能量"
+    },
+    {
+      "spell": 25074,
+      "scroll": 41122,
+      "apply": 35122,
+      "enchant": 2615,
+      "name": "Enchant Gloves - Frost Power",
+      "name_zh": "附魔手套 - 冰霜能量"
+    },
+    {
+      "spell": 25078,
+      "scroll": 41123,
+      "apply": 35123,
+      "enchant": 2616,
+      "name": "Enchant Gloves - Fire Power",
+      "name_zh": "附魔手套 - 火焰能量"
+    },
+    {
+      "spell": 25079,
+      "scroll": 41124,
+      "apply": 35124,
+      "enchant": 2617,
+      "name": "Enchant Gloves - Healing Power",
+      "name_zh": "附魔手套 - 治疗能量"
+    },
+    {
+      "spell": 25080,
+      "scroll": 41125,
+      "apply": 35125,
+      "enchant": 2564,
+      "name": "Enchant Gloves - Superior Agility",
+      "name_zh": "附魔手套 - 超强敏捷"
+    },
+    {
+      "spell": 25081,
+      "scroll": 41126,
+      "apply": 35126,
+      "enchant": 2619,
+      "name": "Enchant Cloak - Greater Fire Resistance",
+      "name_zh": "附魔披风 - 强效火焰抗性"
+    },
+    {
+      "spell": 25082,
+      "scroll": 41127,
+      "apply": 35127,
+      "enchant": 2620,
+      "name": "Enchant Cloak - Greater Nature Resistance",
+      "name_zh": "附魔披风 - 强效自然抗性"
+    },
+    {
+      "spell": 25083,
+      "scroll": 41128,
+      "apply": 35128,
+      "enchant": 910,
+      "name": "Enchant Cloak - Stealth",
+      "name_zh": "附魔披风 - 潜行"
+    },
+    {
+      "spell": 25084,
+      "scroll": 41129,
+      "apply": 35129,
+      "enchant": 2621,
+      "name": "Enchant Cloak - Subtlety",
+      "name_zh": "附魔披风 - 狡诈"
+    },
+    {
+      "spell": 25086,
+      "scroll": 41130,
+      "apply": 35130,
+      "enchant": 2622,
+      "name": "Enchant Cloak - Dodge",
+      "name_zh": "附魔披风 - 躲闪"
+    },
+    {
+      "spell": 27837,
+      "scroll": 41131,
+      "apply": 35131,
+      "enchant": 2646,
+      "name": "Enchant 2H Weapon - Agility",
+      "name_zh": "附魔双手武器 - 敏捷"
+    }
+  ]
+}

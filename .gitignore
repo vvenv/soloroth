@@ -7,6 +7,8 @@
 !/.gitignore
 !/.gitmodules
 !/README.md
+!/GUIDE.md
+!/DEVELOP.md
 !/BUILDING.md
 !/LICENSE
 !/THIRD-PARTY-NOTICES.md
@@ -26,6 +28,7 @@
 /tools/*
 !/tools/macos/
 !/tools/achievements/
+!/tools/enchant-scrolls/
 !/tools/glue-skin/
 !/tools/lib/
 

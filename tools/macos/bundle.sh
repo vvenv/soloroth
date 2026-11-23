@@ -25,6 +25,20 @@ export_client_env() {
     export WGPU_BACKEND="${WGPU_BACKEND:-metal}"
 }
 
+# Data/patch-T.MPQ: Spell.dbc where enchant crafts CreateItem scrolls.
+# Needs tools/enchant-scrolls/map.json (from gen-enchant-scrolls.py).
+rebuild_enchant_scrolls_patch() {
+    if [ "${WOW_STOCK_UI:-}" = 1 ]; then
+        python3 "$root/tools/enchant-scrolls/build-patch.py" "$root/Data" --remove
+        return
+    fi
+    if [ ! -f "$root/tools/enchant-scrolls/map.json" ]; then
+        echo "enchant-scrolls: no map.json — skip patch-T" >&2
+        return
+    fi
+    python3 "$root/tools/enchant-scrolls/build-patch.py" "$root/Data"
+}
+
 # Data/patch-S.MPQ for the pfUI-style glue screens. The launcher often starts
 # the client via start-client.sh while the server is already up — rebuild here
 # too so a glue-skin edit is not stuck behind a full play.sh.
