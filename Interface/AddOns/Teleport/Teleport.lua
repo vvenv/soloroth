@@ -539,9 +539,12 @@ mm:SetScript("OnDragStart", function()
 end)
 mm:SetScript("OnDragStop", function() this:SetScript("OnUpdate", nil) end)
 mm:SetScript("OnEnter", function()
-  GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-  GameTooltip:AddLine(L("Teleport", "传送"))
-  GameTooltip:AddLine(L("Left click: open or close", "左键：打开/关闭"), 0.8, 0.8, 0.8)
+  if Solo_StripButtonTip then
+    Solo_StripButtonTip(L("Teleport", "传送"), "TELEPORT_TOGGLE")
+  else
+    GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+    GameTooltip:SetText(L("Teleport", "传送"), 1, 1, 1)
+  end
   GameTooltip:Show()
 end)
 mm:SetScript("OnLeave", function() GameTooltip:Hide() end)

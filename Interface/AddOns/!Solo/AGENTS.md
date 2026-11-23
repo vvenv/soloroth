@@ -17,7 +17,10 @@ that in README; this file stays in addon terms.
 
 `MicroBar.lua` wraps the micro row and the feature row in `SoloCommandStrip` (one
 pfUI backdrop). Menus use `Solo_PlaceStripMenu`. Do not present the two rows as
-"system vs addon" in player docs.
+"system vs addon" in player docs. Feature-button hover tips go through
+`Solo_StripButtonTip` (same `MicroButtonTooltipText` title+(key) and the same
+`GameTooltip_AddNewbieTip` anchor path as the micro row, on the pfUI-skinned
+`GameTooltip`).
 
 ## pfUI skins
 

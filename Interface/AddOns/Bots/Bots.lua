@@ -272,9 +272,12 @@ mm:SetScript("OnClick", function()
   ToggleMenu()
 end)
 mm:SetScript("OnEnter", function()
-  GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-  GameTooltip:AddLine(L("Party", "组队"))
-  GameTooltip:AddLine(L("Left: duo, trio or five", "左键：两人、三人或五人"), .8, .8, .8)
+  if Solo_StripButtonTip then
+    Solo_StripButtonTip(L("Party", "组队"), "BOTS_TOGGLE")
+  else
+    GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+    GameTooltip:SetText(L("Party", "组队"), 1, 1, 1)
+  end
   GameTooltip:AddLine(L("Right: dismiss", "右键：解散"), .8, .8, .8)
   GameTooltip:Show()
 end)

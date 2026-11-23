@@ -584,8 +584,12 @@ mm:SetScript("OnClick", function()
   ToggleMenu()
 end)
 mm:SetScript("OnEnter", function()
-  GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-  GameTooltip:AddLine(L("Solo farming", "单人挂机"))
+  if Solo_StripButtonTip then
+    Solo_StripButtonTip(L("Solo farming", "单人挂机"), "SOLOFARM_TOGGLE")
+  else
+    GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+    GameTooltip:SetText(L("Solo farming", "单人挂机"), 1, 1, 1)
+  end
   if state.mode == "fight" then
     GameTooltip:AddLine(MODE_NAME.fight, .8, .8, .8)
   elseif state.mode then
@@ -593,7 +597,7 @@ mm:SetScript("OnEnter", function()
   else
     GameTooltip:AddLine(L("Not farming.", "没有在挂机。"), .8, .8, .8)
   end
-  GameTooltip:AddLine(L("Left: menu   Right: stop", "左键：菜单   右键：停止"), .7, .7, .7)
+  GameTooltip:AddLine(L("Right: stop", "右键：停止"), .7, .7, .7)
   GameTooltip:Show()
 end)
 mm:SetScript("OnLeave", function() GameTooltip:Hide() end)

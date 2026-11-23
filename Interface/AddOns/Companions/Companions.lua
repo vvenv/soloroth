@@ -263,9 +263,12 @@ end)
 mm:SetScript("OnDragStop", function() this:SetScript("OnUpdate", nil) end)
 mm:SetScript("OnClick", function() Toggle() end)
 mm:SetScript("OnEnter", function()
-  GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-  GameTooltip:AddLine(L("Pets", "宠物"))
-  GameTooltip:AddLine(L("Left: companions and mounts", "左键：小动物与坐骑"), .8, .8, .8)
+  if Solo_StripButtonTip then
+    Solo_StripButtonTip(L("Pets", "宠物"), "COMPANIONS_TOGGLE")
+  else
+    GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+    GameTooltip:SetText(L("Pets", "宠物"), 1, 1, 1)
+  end
   GameTooltip:Show()
 end)
 mm:SetScript("OnLeave", function() GameTooltip:Hide() end)

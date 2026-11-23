@@ -70,6 +70,32 @@ function Solo_EnsureDefaultKey(command, key, db, flag)
   end
 end
 
+-- Command-strip feature buttons: same title+(key) string as the stock micro
+-- row (MicroButtonTooltipText), and the same anchor path as
+-- GameTooltip_AddNewbieTip (default seat → pfUI bottom-right / chat / free).
+-- Caller may AddLine extra rows, then Show().
+function Solo_StripButtonTip(title, binding)
+  local text = title or ""
+  if type(MicroButtonTooltipText) == "function" and binding then
+    text = MicroButtonTooltipText(text, binding)
+  elseif binding and type(GetBindingKey) == "function" then
+    local key = GetBindingKey(binding)
+    if key and key ~= "" then
+      local open = NORMAL_FONT_COLOR_CODE or "|cffffd200"
+      local close = FONT_COLOR_CODE_CLOSE or "|r"
+      text = text .. " " .. open .. "(" .. key .. ")" .. close
+    end
+  end
+  -- Micro buttons: tips on → SetDefaultAnchor (ANCHOR_NONE → 右下角); tips
+  -- off → ANCHOR_RIGHT. Match that so the two rows never disagree.
+  if SHOW_NEWBIE_TIPS == "1" and type(GameTooltip_SetDefaultAnchor) == "function" then
+    GameTooltip_SetDefaultAnchor(GameTooltip, this)
+  else
+    GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+  end
+  GameTooltip:SetText(text, 1.0, 1.0, 1.0)
+end
+
 -- -------------------------------------------------------------------- pfUI --
 
 -- Solo product constraints, written every login (and after a style switch).

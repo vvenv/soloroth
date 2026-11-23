@@ -384,9 +384,12 @@ mm:SetScript("OnClick", function()
   Toggle()
 end)
 mm:SetScript("OnEnter", function()
-  GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-  GameTooltip:AddLine(L("Dungeon", "副本"))
-  GameTooltip:AddLine(L("Left: open the hub", "左键：打开副本中心"), 0.8, 0.8, 0.8)
+  if Solo_StripButtonTip then
+    Solo_StripButtonTip(L("Dungeon", "副本"), "DUNGEON_TOGGLE")
+  else
+    GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+    GameTooltip:SetText(L("Dungeon", "副本"), 1, 1, 1)
+  end
   GameTooltip:AddLine(L("Right: reset instances", "右键：重置副本"), 0.8, 0.8, 0.8)
   if type(DungeonProgress_Tooltip) == "function" then DungeonProgress_Tooltip() end
   GameTooltip:Show()
