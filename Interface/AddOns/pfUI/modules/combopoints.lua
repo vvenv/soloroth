@@ -6,8 +6,8 @@ pfUI:RegisterModule("combopoints", "vanilla:tbc", function ()
   ComboFrame:UnregisterAllEvents()
 
   local _, class = UnitClass("player")
-  local combo_width = C["unitframes"]["combowidth"]
-  local combo_height = C["unitframes"]["comboheight"]
+  local combo_width = ConfigSize(C["unitframes"]["combowidth"])
+  local combo_height = ConfigSize(C["unitframes"]["comboheight"])
   pfUI.combopoints = {}
 
   for point = 1, 5 do

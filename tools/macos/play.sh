@@ -54,29 +54,6 @@ save_login() {
     echo "saved the login to $login"
 }
 
-# WOW_SHOW_LOGIN_UI=1 force show, =0 force hide; unset + no login.env → show
-# so a cancelled first-launch dialog can still type into the stock boxes.
-login_ui_patch_args() {
-    local key value show=""
-    if [ -f "$login" ]; then
-        while IFS='=' read -r key value; do
-            case "$key" in WOW_SHOW_LOGIN_UI) show="$value" ;; esac
-        done < "$login"
-    fi
-    show="${WOW_SHOW_LOGIN_UI:-$show}"
-    case "$show" in
-        1|true|yes) printf '%s\n' --show-login-ui ;;
-        0|false|no) printf '%s\n' --hide-login-ui ;;
-        *)
-            if [ ! -f "$login" ]; then
-                printf '%s\n' --show-login-ui
-            else
-                printf '%s\n' --hide-login-ui
-            fi
-            ;;
-    esac
-}
-
 first_login() {
     local maria="$root/server/mariadb/bin/mariadb" probe user pass n
     probe="$(sed -n 's/^WOW_USER=//p' "$root/.probe-identity" 2>/dev/null || true)"
@@ -105,17 +82,10 @@ first_login() {
 [ -f "$login" ] || first_login
 # Optional HD / model overlays from benilla-config/visual.env
 bash "$root/tools/macos/apply-visual.sh"
-# pfUI-style login / character screens: Data/patch-S.MPQ, rebuilt off the
-# stock GlueXML.toc each launch; WOW_STOCK_UI=1 drops it with benilla's layer.
-# The patch also bakes whether the stock AccountLoginUI overlay is shown.
-if [ "${WOW_STOCK_UI:-}" = 1 ]; then
-    python3 "$root/tools/glue-skin/build-patch.py" "$root/Data" --remove
-else
-    # shellcheck disable=SC2046
-    python3 "$root/tools/glue-skin/build-patch.py" "$root/Data" $(login_ui_patch_args)
-fi
 # shellcheck source=bundle.sh
 source "$root/tools/macos/bundle.sh"
+# pfUI-style glue screens (Data/patch-S.MPQ); same rebuild as start-client.sh.
+rebuild_glue_patch
 export_client_env
 # Soloroth.app's launcher window starts the server and the account itself,
 # then runs the client via start-client.sh (staged as Contents/MacOS/Soloroth

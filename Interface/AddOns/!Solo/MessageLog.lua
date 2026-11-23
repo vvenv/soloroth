@@ -7,13 +7,36 @@ A private ScrollingMessageFrame inside the panel draws the lines (bottom-up)
 above the bags / time / gold strip. ChatFrame1:AddMessage is forwarded.
 
 Layout matches other pfUI seats: UpdateMovable so ESC →「界面」→ unlock can
-drag and mouse-wheel scale (UnlockSnap snaps drag-stop). No separate grip.
+drag and resize (UnlockSnap snaps drag-stop). Panel width/height are grid
+cells via SetWidth/SetHeight — never SetScale. Defaults 32×7; unlock writes
+position.pfSoloMessageLog.width/height.
 ----------------------------------------------------------------------------]]
 
-local WIDTH = 400
-local HEIGHT = 88
-local STRIP = 20
+-- Default panel size in grid cells (1 cell = screen width / 128).
+-- 32×7 ≈ 400×88 px at 1600-wide.
+local WIDTH_CELLS = 32
+local HEIGHT_CELLS = 7
+local STRIP = 20 -- chrome stays in pixels
 local PAD = 4
+
+local function CellsToPx(n)
+  n = tonumber(n) or 0
+  if pfUI and pfUI.api and pfUI.api.GridToPixel then
+    return pfUI.api.GridToPixel(n)
+  end
+  local w = GetScreenWidth and GetScreenWidth()
+  if not w or w <= 0 then w = 1600 end
+  return n * (w / 128)
+end
+
+local function SavedSizeCells()
+  local pos = pfUI_config and pfUI_config.position and pfUI_config.position.pfSoloMessageLog
+  local w = pos and tonumber(pos.width) or WIDTH_CELLS
+  local h = pos and tonumber(pos.height) or HEIGHT_CELLS
+  if w < 1 then w = WIDTH_CELLS end
+  if h < 1 then h = HEIGHT_CELLS end
+  return w, h
+end
 
 local panel
 local display
@@ -62,6 +85,11 @@ local function RefreshTime()
 end
 
 local function HidePfUIChat()
+  -- Also re-applies migrated cell widths (old pixel values blow up via ConfigSize).
+  if type(Solo_SuppressPfUIChatFrames) == "function" then
+    Solo_SuppressPfUIChatFrames()
+    return
+  end
   if not pfUI then return end
   if pfUI.chat then
     if pfUI.chat.left then pfUI.chat.left:Hide() end
@@ -211,9 +239,10 @@ local function EnsurePanel()
   -- pf-prefix so unlock mode labels it "SoloMessageLog".
   panel = CreateFrame("Frame", "pfSoloMessageLog", UIParent)
   panel:SetFrameStrata("BACKGROUND")
-  panel:SetWidth(WIDTH)
-  panel:SetHeight(HEIGHT)
-  panel:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 4, 4)
+  local cw, ch = SavedSizeCells()
+  panel:SetWidth(CellsToPx(cw))
+  panel:SetHeight(CellsToPx(ch))
+  panel:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
   panel:SetBackdrop({
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -352,9 +381,11 @@ function Solo_InstallMessageLog()
     local chatVisible = left and top and left > -100 and top < parentH + 100
     local rightShown = pfUI and pfUI.chat and pfUI.chat.right and pfUI.chat.right:IsShown()
     local leftShown = pfUI and pfUI.chat and pfUI.chat.left and pfUI.chat.left:IsShown()
+    local panelRight = pfUI and pfUI.panel and pfUI.panel.right and pfUI.panel.right:IsShown()
+    local panelLeft = pfUI and pfUI.panel and pfUI.panel.left and pfUI.panel.left:IsShown()
     local extra = ChatFrame2 and ChatFrame2:IsShown()
     local badDisplay = display:GetParent() ~= panel
-    if chatVisible or rightShown or leftShown or extra or badDisplay then
+    if chatVisible or rightShown or leftShown or panelRight or panelLeft or extra or badDisplay then
       Solo_PlaceMessageLog()
     end
   end)

@@ -28,7 +28,17 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
   C.position["WorldMapFrame"] = C.position["WorldMapFrame"] or { alpha = 1.0, scale = 0.7 }
   C.position["WorldMapFrame"].parent = nil
   local alpha = C.position["WorldMapFrame"].alpha
-  local scale = C.position["WorldMapFrame"].scale
+  -- Prefer grid `size` (effective width in cells); fall back to legacy scale.
+  local scale = C.position["WorldMapFrame"].scale or 0.7
+  local function ApplyMapSize()
+    local cfg = C.position["WorldMapFrame"]
+    if cfg and cfg.size and ApplyFrameSize then
+      local s = ApplyFrameSize(WorldMapFrame, cfg.size)
+      if s then scale = s end
+      return
+    end
+    WorldMapFrame:SetScale(scale or .85)
+  end
 
   local pfMapLoader = CreateFrame("Frame")
   pfMapLoader:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -52,8 +62,7 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
         this:EnableKeyboard(false)
         this:EnableMouseWheel(1)
 
-        -- set back to default scale
-        WorldMapFrame:SetScale(scale or .85)
+        ApplyMapSize()
       end)
 
       HookScript(WorldMapFrame, "OnMouseWheel", function()
@@ -65,12 +74,17 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
         if IsControlKeyDown() then
           local oldscale = WorldMapFrame:GetScale()
           local point, rel, relpoint, offx, offy = WorldMapFrame:GetPoint()
-          scale = clamp(oldscale + arg1/10, 0.1, 2.0)
+          -- ±1 grid cell of effective width.
+          local w = WorldMapFrame:GetWidth()
+          local cells = (w and w > 0) and PixelToGrid(w * oldscale) or 40
+          cells = math.max(1, cells + arg1)
+          local newscale = GridToPixel(cells) / w
+          scale = clamp(newscale, 0.1, 2.0)
 
-          -- recalculate world frame position based on old and new scale
-          if point == "TOPLEFT" and relpoint == "TOPLEFT" then
-            offx = offx*oldscale/scale
-            offy = offy*oldscale/scale
+          -- Keep visual seat when zooming; any saved unlock anchor.
+          if point and offx and offy and oldscale and oldscale ~= 0 then
+            offx = offx * oldscale / scale
+            offy = offy * oldscale / scale
             WorldMapFrame:SetPoint(point, rel, relpoint, offx, offy)
           end
 
@@ -78,7 +92,16 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
           UpdateTooltipScale()
         end
 
-        SaveMovable(this, true)
+        SaveMovable(this)
+        local cfg = C.position["WorldMapFrame"]
+        if cfg then
+          local w = WorldMapFrame:GetWidth()
+          if w and w > 0 then
+            cfg.size = PixelToGrid(w * WorldMapFrame:GetScale())
+            cfg.scale = nil
+          end
+          cfg.alpha = alpha
+        end
       end)
 
       HookScript(WorldMapFrame, "OnDragStart", function()
@@ -87,12 +110,26 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
 
       HookScript(WorldMapFrame, "OnDragStop",function()
         WorldMapFrame:StopMovingOrSizing()
-        SaveMovable(this, true)
+        -- Bake into the logical seat (LoadMovable / Solo use pfAnchor).
+        local a, x, y = ConvertFrameAnchor(this, this.pfAnchor or GetBestAnchor(this) or "TOPLEFT")
+        if x and y then
+          this.pfAnchor = a
+          this:ClearAllPoints()
+          this:SetPoint(a, UIParent, a, x, y)
+        end
+        SaveMovable(this)
+        local cfg = C.position["WorldMapFrame"]
+        if cfg then
+          local w = WorldMapFrame:GetWidth()
+          if w and w > 0 then
+            cfg.size = PixelToGrid(w * WorldMapFrame:GetScale())
+            cfg.scale = nil
+          end
+        end
       end)
     end
 
     WorldMapFrame:SetAlpha(alpha)
-    WorldMapFrame:SetScale(scale)
     UpdateTooltipScale()
 
     WorldMapFrame:ClearAllPoints()
@@ -100,6 +137,8 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
     WorldMapFrame:SetWidth(WorldMapButton:GetWidth() + 15)
     WorldMapFrame:SetHeight(WorldMapButton:GetHeight() + 55)
     LoadMovable(WorldMapFrame)
+    ApplyMapSize()
+    scale = WorldMapFrame:GetScale()
 
     -- skin
     WorldMapFrameCloseButton:SetPoint("TOPRIGHT", WorldMapFrame, "TOPRIGHT", 0, 0)

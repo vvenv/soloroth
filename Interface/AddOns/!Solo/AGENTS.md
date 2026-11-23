@@ -2,14 +2,16 @@
 
 Loads first (`!` sorts before every other folder) and applies the single-player defaults
 (`Solo.lua`, including HUD frame seats under `position`) and every look change to other
-addons. Solo gutting of pfUI / Atlas / AtlasLoot (delete modules, BG maps, PvP loot,
-etc.) happens in those addons' own trees; `!Solo` still owns defaults, skins, and
-shutting stock Blizzard frames the client might still raise.
+addons. pfUI, Atlas, and AtlasLoot are solo code: gutting (delete modules, BG maps, PvP
+loot, etc.) happens in those trees. Bag sorting is pfUI's, not a separate addon. `!Solo`
+still owns defaults, skins, and shutting stock Blizzard frames the client might still raise.
 
 Player-facing copy treats Soloroth windows as one product (command strip under the
 minimap, ESC「界面」for settings). Interface style lives in Options → Graphics
 (`/style`, `PfuiStyle.lua` + `PfuiStylesData.lua`); Solo invariant keys stay in
-`Solo.lua`. Keep that in README; this file stays in addon terms.
+`Solo.lua` (product constraints every login; HUD `position.*` only when that
+frame has no `xpos` yet, so Save/Load profile and unlock drags stick). Keep
+that in README; this file stays in addon terms.
 
 ## Command strip
 
@@ -24,8 +26,9 @@ pfUI backdrop). Menus use `Solo_PlaceStripMenu`. Do not present the two rows as
   `ADDON_LOADED "pfUI"`. pfUI is not last: AtlasLoot loads it first, before Bots,
   GMBox, Items and Teleport. An addon that loads after that event must also call `pfUI:RegisterSkin` itself when
   `pfUI` is already there, or the skin never runs and stock buttons stay gold.
-  `PfuiSkin.lua` registers benilla's own windows ("Benilla") and relabels
-  `GameMenuButtonPFUI` to Interface / 「界面」.
+  `PfuiSkin.lua` registers benilla's own windows ("Benilla"), relabels
+  `GameMenuButtonPFUI` to Interface / 「界面」, and re-stacks the ESC menu
+  after Edit Mode / Support are hidden (settings → leave → resume).
 - A skin body runs in pfUI's environment, so `CreateBackdrop`, `SkinButton`, … are globals
   there. A file-scope local function is not: call `pfUI.api.X` in helpers, or `setfenv` them
   as `PfuiSkin.lua` does.
@@ -43,11 +46,37 @@ pfUI backdrop). Menus use `Solo_PlaceStripMenu`. Do not present the two rows as
   the page (`TOPLEFT 10/12,-10/12`, `BOTTOMRIGHT -32,72..76`) as pfUI's trainer skin does,
   and move title, close and bottom buttons onto it.
 
-## Unlock grid snap
+## Unlock grid units
 
-`UnlockSnap.lua` wraps pfUI unlock drag-stop so seats land on the drawn grid
-(screen width / 128). Do not edit `pfUI/modules/unlock.lua`. Dock ±1 and typed
-coords stay free. MessageLog uses the same unlock drag / scroll-scale path.
+Layout uses **grid cells**: 1 cell = `GetScreenWidth() / 128` (same step for X
+and Y). Stored `position.*.xpos/ypos` are whole cells. Unlock size uses
+`position.*.width/height` (cells) with `SetWidth`/`SetHeight` via
+`LoadMovable` / `SaveUnlockSize` — never `SetScale` (that broke seat math).
+Drop leftover `position.*.size/scale` except `WorldMapFrame.size` (map
+Ctrl+wheel zoom). Unitframe/chat/castbar/etc. layout `width`/`height` in
+config are cells; `ConfigSize` → pixels at apply time. Unlock four-corner drag
+and dock W/H sync those module keys (action bars save `position.*.width/height`
+as the outer box; `BarFitToSize` / `BarSquarePads` keep square icons and put
+leftover space into axis padding so the button grid reaches both edges — dock
+W/H stick to what you set). Unitframes scale `width`/`height`/`pheight`
+together to the unlock box (power bar no longer floors how small the frame
+can go). Action-bar `GetWidth`/`GetHeight` include the panel border (backdrop
+flush on the frame, not outside), so unlock grid snap matches the visible
+outer edge. Icon/font/spacing sizes stay pixels.
+
+`UnlockSnap.lua` wraps drag-stop as a second snap pass. Dock ±1 and typed
+coords are already in cells. MessageLog uses unlock drag/resize; default
+32×7 cells, overridable via `position.pfSoloMessageLog.width/height`.
+
+pfUI unlock (Soloroth-tuned): drag keeps the current anchor; within half a
+cell of a green mid-line that axis snaps to 0 (±1 is kept); seats snap to
+integer cells; the dock labels centre-relative axes as 中X/中Y and shows W/H
+in cells. BOTTOM means bottom edge with X from the vertical mid-line. Helpers
+live in `pfUI/api/api.lua`
+(`GridStep`, `GridToPixel`, `PixelToGrid`, `ConfigSize`, `SaveUnlockSize`;
+`ApplyFrameSize` is map-only). Older pixel SavedVariables migrate via
+`Solo.lua` (`global.grid_layout = "2"`; re-runs if widths/offsets still look
+like pixels).
 
 ## Checking
 

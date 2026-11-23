@@ -421,8 +421,8 @@ pfUI:RegisterModule("buffwatch", "vanilla:tbc", function ()
     local br, bg, bb, ba = strsplit(",", config.bordercolor)
     local tr, tg, tb, ta = strsplit(",", config.textcolor)
 
-    pfUI.uf.player.buffbar:SetWidth(config.width == "-1" and pfUI.uf.player:GetWidth() or config.width)
-    pfUI.uf.player.buffbar:SetHeight(config.height)
+    pfUI.uf.player.buffbar:SetWidth(config.width == "-1" and pfUI.uf.player:GetWidth() or ConfigSize(config.width))
+    pfUI.uf.player.buffbar:SetHeight(ConfigSize(config.height))
     pfUI.uf.player.buffbar.threshold = tonumber(config.threshold)
     pfUI.uf.player.buffbar.config = config
     pfUI.uf.player.buffbar.buffcmp = config.sort == "asc" and asc or desc
@@ -448,8 +448,8 @@ pfUI:RegisterModule("buffwatch", "vanilla:tbc", function ()
     local tr, tg, tb, ta = strsplit(",", config.textcolor)
 
     pfUI.uf.player.debuffbar = CreateBuffBarFrame("Player", "HARMFUL")
-    pfUI.uf.player.debuffbar:SetWidth(config.width == "-1" and pfUI.uf.player:GetWidth() or config.width)
-    pfUI.uf.player.debuffbar:SetHeight(config.height)
+    pfUI.uf.player.debuffbar:SetWidth(config.width == "-1" and pfUI.uf.player:GetWidth() or ConfigSize(config.width))
+    pfUI.uf.player.debuffbar:SetHeight(ConfigSize(config.height))
     pfUI.uf.player.debuffbar.threshold = tonumber(config.threshold)
     pfUI.uf.player.debuffbar.config = config
     pfUI.uf.player.debuffbar.buffcmp = config.sort == "asc" and asc or desc
@@ -476,8 +476,8 @@ pfUI:RegisterModule("buffwatch", "vanilla:tbc", function ()
     local tr, tg, tb, ta = strsplit(",", config.textcolor)
 
     pfUI.uf.target.debuffbar = CreateBuffBarFrame("Target", "HARMFUL")
-    pfUI.uf.target.debuffbar:SetWidth(config.width == "-1" and pfUI.uf.target:GetWidth() or config.width)
-    pfUI.uf.target.debuffbar:SetHeight(config.height)
+    pfUI.uf.target.debuffbar:SetWidth(config.width == "-1" and pfUI.uf.target:GetWidth() or ConfigSize(config.width))
+    pfUI.uf.target.debuffbar:SetHeight(ConfigSize(config.height))
     pfUI.uf.target.debuffbar.config = config
     pfUI.uf.target.debuffbar.buffcmp = config.sort == "asc" and asc or desc
     pfUI.uf.target.debuffbar.color = { r = r, g = g, b = b, a = a }

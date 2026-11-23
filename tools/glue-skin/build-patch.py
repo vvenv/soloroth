@@ -179,20 +179,24 @@ def _cover(dist, half):
 def rotate_arrow_tga(clockwise, size=128):
     """White arc + arrowhead on transparent TGA (32-bit). Drawn CCW, mirrored for CW."""
     import math
-    cx = cy = (size - 1) * 0.5
+    cx = (size - 1) * 0.5
+    # Gap sits at the bottom, so a centered circle reads high in the button;
+    # nudge the whole glyph down so the ink mass sits on the face midline.
+    cy = (size - 1) * 0.5 - size * 0.08
     radius = size * 0.31
     # ~2.5px stroke at the ~26px on-screen icon size.
     half = size * 0.048
-    # Math y-up: nearly full ring, gap at lower-right, tip at upper-left.
-    a0 = math.radians(-15)
-    a1 = math.radians(210)
-    head_a = a1
-    tang = head_a + math.pi * 0.5  # travel direction along the CCW arc
-    head_len = size * 0.18
-    head_half = size * 0.12
-    # Tip sits slightly past the arc end so the head clears the stroke.
-    tip_x = cx + math.cos(head_a) * radius + math.cos(tang) * (half * 0.8)
-    tip_y = cy + math.sin(head_a) * radius + math.sin(tang) * (half * 0.8)
+    # Math y-up: stroke ends at ~8 o'clock; tip follows the CCW tangent
+    # (down, slightly inward). Long sharp head so it reads at 26px.
+    a0 = math.radians(-40)
+    a1 = math.radians(200)
+    tang = a1 + math.pi * 0.5
+    head_len = size * 0.28
+    head_half = size * 0.09
+    end_x = cx + math.cos(a1) * radius
+    end_y = cy + math.sin(a1) * radius
+    tip_x = end_x + math.cos(tang) * (head_len * 0.72)
+    tip_y = end_y + math.sin(tang) * (head_len * 0.72)
     back_x = tip_x - math.cos(tang) * head_len
     back_y = tip_y - math.sin(tang) * head_len
     left_x = back_x + math.cos(tang + math.pi * 0.5) * head_half

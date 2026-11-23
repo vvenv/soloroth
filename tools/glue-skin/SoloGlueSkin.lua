@@ -72,6 +72,19 @@ local function HideTextures(frame)
   end
 end
 
+-- Stock Normal/Highlight/DisabledText sit CENTER -3,+3 for the tall red art;
+-- pin every FontString to the flat face (GlueButtonTemplate has all three).
+local function LabelOnFace(button, face)
+  if not button or not face then return end
+  for _, r in ipairs({ button:GetRegions() }) do
+    if r:GetObjectType() == "FontString" then
+      r:ClearAllPoints()
+      -- y=-2: glyph ink sits above the baseline; geometric center reads high.
+      r:SetPoint("CENTER", face, "CENTER", 0, -2)
+    end
+  end
+end
+
 -- The red Glue-Panel-Button art fills 86% of the button's width and about
 -- half its height, centered a little above the middle, under the label.
 local function Button(button)
@@ -92,6 +105,7 @@ local function Button(button)
   bd:SetBackdropColor(0, 0, 0, .75)
   bd:SetBackdropBorderColor(BORDER[1], BORDER[2], BORDER[3], BORDER[4])
   button.soloBackdrop = bd
+  LabelOnFace(button, bd)
 
   button:SetHighlightTexture(WHITE)
   local hl = button:GetHighlightTexture()
@@ -410,6 +424,7 @@ local function LayoutCharSelect()
     face:SetHeight(rowH)
     face:ClearAllPoints()
     face:SetPoint("CENTER", enter, "CENTER", 0, 0)
+    LabelOnFace(enter, face)
   end
   if enter and CharacterSelectRotateLeft and CharacterSelectRotateRight then
     local gap = 6

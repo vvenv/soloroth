@@ -18,10 +18,10 @@ Docs (Chinese unless noted):
   from the MPQ patch chain, never loose files. Soloroth-only UI goes in addons or in a patch
   MPQ under `Data/` (see `tools/glue-skin/`), not in the client.
 - `server/core` — submodule soloroth-server (vmangos plus bots and achievements).
-- `Interface/AddOns/` — the addon set. SortBags stays as shipped. pfUI, Atlas, and
-  AtlasLoot may be trimmed in place for solo (no social/PvP/AH/mail/trade/BG dead
-  code). Defaults, skins, and remaining look changes still go through `!Solo`
-  (see its `AGENTS.md`).
+- `Interface/AddOns/` — the addon set. pfUI, Atlas, and AtlasLoot are owned solo
+  code: trim them in place (no social/PvP/AH/mail/trade/BG, no other-client or
+  expansion leftovers). Bag sorting lives in pfUI, not a separate addon. Defaults,
+  skins, and remaining look changes still go through `!Solo` (see its `AGENTS.md`).
 - `tools/macos/` — build, install, run scripts. `tools/macos/launcher/` — Soloroth.app's
   launcher window (AppKit, built by `make-app.sh`): the art with no text over it but the
   logo, the slogan, the bottom bar and the promo slot. Heroes (picked at random, each

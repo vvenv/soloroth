@@ -10,18 +10,6 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     ["FRIENDLY_PLAYER"] = { .2, .6, 1, .8 }
   }
 
-  local offtanks = {}
-
-  local combatstate = {
-    -- gets overwritten by user config
-    ["OFFTANK"]  = { r = .7, g = .4, b = .2, a = 1 },
-    ["NOTHREAT"] = { r = .7, g = .7, b = .2, a = 1 },
-    ["THREAT"]   = { r = .7, g = .2, b = .2, a = 1 },
-    ["CASTING"]  = { r = .7, g = .2, b = .7, a = 1 },
-    ["STUN"]     = { r = .2, g = .7, b = .7, a = 1 },
-    ["NONE"]     = { r = .2, g = .2, b = .2, a = 1 },
-  }
-
   local elitestrings = {
     ["elite"] = "+",
     ["rareelite"] = "R+",
@@ -39,29 +27,6 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
 
   -- cache default border color
   local er, eg, eb, ea = GetStringColor(pfUI_config.appearance.border.color)
-
-  local function GetCombatStateColor(guid)
-    local target = guid.."target"
-    local color = false
-
-    if UnitAffectingCombat("player") and UnitAffectingCombat(guid) and not UnitCanAssist("player", guid) then
-      if C.nameplates.ccombatcasting == "1" and (UnitCastingInfo(guid) or UnitChannelInfo(guid)) then
-        color = combatstate.CASTING
-      elseif C.nameplates.ccombatthreat == "1" and UnitIsUnit(target, "player") then
-        color = combatstate.THREAT
-      elseif C.nameplates.ccombatofftank == "1" and UnitName(target) and offtanks[strlower(UnitName(target))] then
-        color = combatstate.OFFTANK
-      elseif C.nameplates.ccombatofftank == "1" and pfUI.uf and pfUI.uf.raid and pfUI.uf.raid.tankrole[UnitName(target)] then
-        color = combatstate.OFFTANK
-      elseif C.nameplates.ccombatnothreat == "1" and UnitExists(target) then
-        color = combatstate.NOTHREAT
-      elseif C.nameplates.ccombatstun == "1" and not UnitExists(target) and not UnitIsPlayer(guid) then
-        color = combatstate.STUN
-      end
-    end
-
-    return color
-  end
 
   local function DoNothing()
     return
@@ -275,7 +240,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     if not nameplate.debuffs[i] then return end
 
     -- update debuff positions
-    local width = tonumber(C.nameplates.width)
+    local width = ConfigSize(C.nameplates.width)
     local debuffsize = tonumber(C.nameplates.debuffsize)
     local debuffoffset = tonumber(C.nameplates.debuffoffset)
     local limit = floor(width / debuffsize)
@@ -506,27 +471,18 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     local hptexture = pfUI.media[C.nameplates.healthtexture]
     local rawborder, default_border = GetBorderSize("nameplates")
 
-    local plate_width = C.nameplates.width + 50
-    local plate_height = C.nameplates.heighthealth + font_size + 5
-    local plate_height_cast = C.nameplates.heighthealth + font_size + 5 + C.nameplates.heightcast + 5
+    local np_w = ConfigSize(C.nameplates.width)
+    local np_hh = ConfigSize(C.nameplates.heighthealth)
+    local np_hc = ConfigSize(C.nameplates.heightcast)
+    local plate_width = np_w + 50
+    local plate_height = np_hh + font_size + 5
+    local plate_height_cast = np_hh + font_size + 5 + np_hc + 5
     local combo_size = 5
 
-    local width = tonumber(C.nameplates.width)
+    local width = np_w
     local debuffsize = tonumber(C.nameplates.debuffsize)
     local healthoffset = tonumber(C.nameplates.health.offset)
     local orientation = C.nameplates.verticalhealth == "1" and "VERTICAL" or "HORIZONTAL"
-
-    local c = combatstate -- load combat state colors
-    c.CASTING.r, c.CASTING.g, c.CASTING.b, c.CASTING.a = GetStringColor(C.nameplates.combatcasting)
-    c.THREAT.r, c.THREAT.g, c.THREAT.b, c.THREAT.a = GetStringColor(C.nameplates.combatthreat)
-    c.NOTHREAT.r, c.NOTHREAT.g, c.NOTHREAT.b, c.NOTHREAT.a = GetStringColor(C.nameplates.combatnothreat)
-    c.OFFTANK.r, c.OFFTANK.g, c.OFFTANK.b, c.OFFTANK.a = GetStringColor(C.nameplates.combatofftank)
-    c.STUN.r, c.STUN.g, c.STUN.b, c.STUN.a = GetStringColor(C.nameplates.combatstun)
-
-    offtanks = {}
-    for k, v in pairs({strsplit("#", C.nameplates.combatofftanks)}) do
-      offtanks[string.lower(v)] = true
-    end
 
     nameplate:SetWidth(plate_width)
     nameplate:SetHeight(plate_height)
@@ -537,8 +493,8 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     nameplate.health:SetOrientation(orientation)
     nameplate.health:SetPoint("TOP", nameplate.name, "BOTTOM", 0, healthoffset)
     nameplate.health:SetStatusBarTexture(hptexture)
-    nameplate.health:SetWidth(C.nameplates.width)
-    nameplate.health:SetHeight(C.nameplates.heighthealth)
+    nameplate.health:SetWidth(np_w)
+    nameplate.health:SetHeight(np_hh)
     nameplate.health.hlr, nameplate.health.hlg, nameplate.health.hlb, nameplate.health.hla = hlr, hlg, hlb, hla
 
     CreateBackdrop(nameplate.health, default_border)
@@ -548,8 +504,8 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
 
     nameplate.guild:SetFont(font, font_size, font_style)
 
-    nameplate.glow:SetWidth(C.nameplates.width + 60)
-    nameplate.glow:SetHeight(C.nameplates.heighthealth + 30)
+    nameplate.glow:SetWidth(np_w + 60)
+    nameplate.glow:SetHeight(np_hh + 30)
     nameplate.glow:SetVertexColor(glowr, glowg, glowb, glowa)
 
     nameplate.raidicon:ClearAllPoints()
@@ -571,7 +527,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
 
     nameplate.castbar:SetPoint("TOPLEFT", nameplate.health, "BOTTOMLEFT", 0, -default_border*3)
     nameplate.castbar:SetPoint("TOPRIGHT", nameplate.health, "BOTTOMRIGHT", 0, -default_border*3)
-    nameplate.castbar:SetHeight(C.nameplates.heightcast)
+    nameplate.castbar:SetHeight(np_hc)
     nameplate.castbar:SetStatusBarTexture(hptexture)
     nameplate.castbar:SetStatusBarColor(.9,.8,0,1)
     CreateBackdrop(nameplate.castbar, default_border)
@@ -580,7 +536,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     nameplate.castbar.spell:SetFont(font, font_size, "OUTLINE")
     nameplate.castbar.icon:SetPoint("BOTTOMLEFT", nameplate.castbar, "BOTTOMRIGHT", default_border*3, 0)
     nameplate.castbar.icon:SetPoint("TOPLEFT", nameplate.health, "TOPRIGHT", default_border*3, 0)
-    nameplate.castbar.icon:SetWidth(C.nameplates.heightcast + default_border*3 + C.nameplates.heighthealth)
+    nameplate.castbar.icon:SetWidth(np_hc + default_border*3 + np_hh)
     CreateBackdrop(nameplate.castbar.icon, default_border)
 
     nameplates:OnDataChanged(nameplate)
@@ -603,11 +559,6 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     local red, green, blue = plate.original.healthbar:GetStatusBarColor()
     local unittype = GetUnitType(red, green, blue) or "ENEMY_NPC"
     local font_size = C.nameplates.use_unitfonts == "1" and C.global.font_unit_size or C.global.font_size
-
-    -- use superwow unit guid as unitstr if possible
-    if superwow_active and not unitstr then
-      unitstr = plate.parent:GetName(1)
-    end
 
     -- ignore players with npc names if plate level is lower than player level
     if ulevel and ulevel > (level == "??" and -1 or level) then player = nil end
@@ -654,17 +605,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
       plate.glow:Show() else plate.glow:Hide()
     end
 
-    -- target indicator
-    if superwow_active and C.nameplates.outcombatstate == "1" then
-      local guid = plate.parent:GetName(1) or ""
-
-      -- determine color based on combat state
-      local color = GetCombatStateColor(guid)
-      if not color then color = combatstate.NONE end
-
-      -- set border color
-      plate.health.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
-    elseif target and C.nameplates.targethighlight == "1" then
+    if target and C.nameplates.targethighlight == "1" then
       plate.health.backdrop:SetBackdropBorderColor(plate.health.hlr, plate.health.hlg, plate.health.hlb, plate.health.hla)
     elseif C.nameplates.outfriendlynpc == "1" and unittype == "FRIENDLY_NPC" then
       plate.health.backdrop:SetBackdropBorderColor(unpack(unitcolors[unittype]))
@@ -773,19 +714,6 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
       r, g, b, a = RAID_CLASS_COLORS[class].r, RAID_CLASS_COLORS[class].g, RAID_CLASS_COLORS[class].b, 1
     elseif unittype == "FRIENDLY_PLAYER" and C.nameplates["friendclassc"] == "1" and class and RAID_CLASS_COLORS[class] then
       r, g, b, a = RAID_CLASS_COLORS[class].r, RAID_CLASS_COLORS[class].g, RAID_CLASS_COLORS[class].b, 1
-    end
-
-    if superwow_active and unitstr and UnitIsTapped(unitstr) and not UnitIsTappedByPlayer(unitstr) then
-      r, g, b, a = .5, .5, .5, .8
-    end
-
-    if superwow_active and C.nameplates.barcombatstate == "1" then
-      local guid = plate.parent:GetName(1) or ""
-      local color = GetCombatStateColor(guid)
-
-      if color then
-        r, g, b, a = color.r, color.g, color.b, color.a
-      end
     end
 
     if r ~= plate.cache.r or g ~= plate.cache.g or b ~= plate.cache.b then
@@ -980,8 +908,8 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     local w, h = nameplate.health:GetWidth(), nameplate.health:GetHeight()
     if target and C.nameplates.targetzoom == "1" then
       local zoomval = tonumber(C.nameplates.targetzoomval)+1
-      local wc = tonumber(C.nameplates.width)*zoomval
-      local hc = tonumber(C.nameplates.heighthealth)*(zoomval*.9)
+      local wc = ConfigSize(C.nameplates.width)*zoomval
+      local hc = ConfigSize(C.nameplates.heighthealth)*(zoomval*.9)
       local animation = false
 
       if wc >= w then
@@ -1005,8 +933,8 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
         nameplate.health.zoomed = true
       end
     elseif nameplate.health.zoomed or nameplate.health.zoomTransition then
-      local wc = tonumber(C.nameplates.width)
-      local hc = tonumber(C.nameplates.heighthealth)
+      local wc = ConfigSize(C.nameplates.width)
+      local hc = ConfigSize(C.nameplates.heighthealth)
       local animation = false
 
       if wc <= w then
@@ -1036,12 +964,6 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
       -- detect cast or channel bars
       cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitCastingInfo(target and "target" or name)
       if not cast then channel, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitChannelInfo(target and "target" or name) end
-
-      -- read enemy casts from SuperWoW if enabled
-      if superwow_active then
-        cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitCastingInfo(nameplate.parent:GetName(1))
-        if not cast then channel, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitChannelInfo(nameplate.parent:GetName(1)) end
-      end
 
       if not cast and not channel then
         nameplate.castbar:Hide()

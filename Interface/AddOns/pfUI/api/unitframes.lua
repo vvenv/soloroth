@@ -390,14 +390,15 @@ end
 function pfUI.uf:UpdateFrameSize()
   local rawborder, default_border = GetBorderSize("unitframes")
   local spacing = self.config.pspace * GetPerfectPixel()
-  local width = self.config.width
-  local height = self.config.height
-  local pheight = self.config.pheight
+  -- Layout width/height are grid cells (screen width / 128).
+  local width = ConfigSize(self.config.width)
+  local height = ConfigSize(self.config.height)
+  local pheight = ConfigSize(self.config.pheight)
   local ptwidth = self.config.portraitwidth
   local ptheight = self.config.portraitheight
 
   local real_height = height + spacing + pheight + 2*default_border
-  if spacing ~= abs(spacing) and abs(spacing) > tonumber(pheight) then
+  if spacing ~= abs(spacing) and abs(spacing) > abs(pheight) then
     real_height = height
     spacing = 0
   end
@@ -411,10 +412,11 @@ function pfUI.uf:UpdateFrameSize()
       self.portrait:SetHeight(real_height)
       portrait = real_height + spacing + 2*default_border
     else
-      -- use custom portrait size
-      self.portrait:SetWidth(ptwidth)
-      self.portrait:SetHeight(ptheight)
-      portrait = ptwidth + spacing + 2*default_border
+      -- use custom portrait size (grid cells)
+      local pw, ph = ConfigSize(ptwidth), ConfigSize(ptheight)
+      self.portrait:SetWidth(pw)
+      self.portrait:SetHeight(ph)
+      portrait = pw + spacing + 2*default_border
     end
   end
 
@@ -465,8 +467,8 @@ function pfUI.uf:UpdateConfig()
   f.hp:ClearAllPoints()
   f.hp:SetPoint("TOP", 0, 0)
 
-  f.hp:SetWidth(f.config.width)
-  f.hp:SetHeight(f.config.height)
+  f.hp:SetWidth(ConfigSize(f.config.width))
+  f.hp:SetHeight(ConfigSize(f.config.height))
   if tonumber(f.config.height) < 0 then f.hp:Hide() end
   pfUI.api.CreateBackdrop(f.hp, default_border)
 
@@ -489,8 +491,8 @@ function pfUI.uf:UpdateConfig()
 
   f.power:ClearAllPoints()
   f.power:SetPoint(f.config.panchor, f.hp, relative_point, f.config.poffx, -2 * default_border - spacing + f.config.poffy * GetPerfectPixel())
-  f.power:SetWidth((f.config.pwidth ~= "-1" and f.config.pwidth or f.config.width))
-  f.power:SetHeight(f.config.pheight)
+  f.power:SetWidth(ConfigSize(f.config.pwidth ~= "-1" and f.config.pwidth or f.config.width))
+  f.power:SetHeight(ConfigSize(f.config.pheight))
   if tonumber(f.config.pheight) < 0 then f.power:Hide() end
 
   pfUI.api.CreateBackdrop(f.power, default_border)
@@ -646,8 +648,8 @@ function pfUI.uf:UpdateConfig()
   f.powerCenterText:SetPoint("TOPLEFT",f.power.bar, "TOPLEFT", f.config.txtpowercenteroffx, 1 + tonumber(f.config.txtpowercenteroffy))
   f.powerCenterText:SetPoint("BOTTOMRIGHT",f.power.bar, "BOTTOMRIGHT", f.config.txtpowercenteroffx, f.config.txtpowercenteroffy)
 
-  f.incHeal:SetHeight(f.config.height)
-  f.incHeal:SetWidth(f.config.width)
+  f.incHeal:SetHeight(ConfigSize(f.config.height))
+  f.incHeal:SetWidth(ConfigSize(f.config.width))
   f.incHeal.texture:SetTexture(pfUI.media["img:bar"])
   local cr, cg, cb, ca = GetStringColor(f.config.healcolor)
   cr, cg, cb, ca = tonumber(cr), tonumber(cg), tonumber(cb), tonumber(ca)
@@ -1031,8 +1033,8 @@ function pfUI.uf.OnUpdate()
       this.predictstate = heal - health - maxHealth
 
       if heal > 0 and (health < maxHealth or overhealperc > 0 ) then
-        local width = this.config.width
-        local height = this.config.height
+        local width = ConfigSize(this.config.width)
+        local height = ConfigSize(this.config.height)
 
         if this.config.verticalbar == "0" then
           local healthWidth = width * (health / maxHealth)
@@ -2101,20 +2103,16 @@ function pfUI.uf:ClickAction(button)
       -- run click cast action
       local is_macro = string.find(this.clickactions[modstring], "^%/(.+)")
 
-      if superwow_active and not is_macro then
-        CastSpellByName(this.clickactions[modstring], unitstr)
+      local tswitch = UnitIsUnit(unitstr, "target")
+      TargetUnit(unitstr)
+
+      if is_macro then
+        RunMacroText(this.clickactions[modstring])
       else
-        local tswitch = UnitIsUnit(unitstr, "target")
-        TargetUnit(unitstr)
-
-        if is_macro then
-          RunMacroText(this.clickactions[modstring])
-        else
-          CastSpellByName(this.clickactions[modstring])
-        end
-
-        if not tswitch then TargetLastTarget() end
+        CastSpellByName(this.clickactions[modstring])
       end
+
+      if not tswitch then TargetLastTarget() end
 
       return
     end

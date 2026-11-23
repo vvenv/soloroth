@@ -7,7 +7,10 @@ The login, realm, character select and character create screens in pfUI's look.
   `.2,.2,.2`, black `.75`), and `build-patch.py` ships it in `Data/patch-S.MPQ` next to a
   copy of the stock `GlueXML.toc` with the file appended. The toc is read from the player's
   chain at build time; nothing from the install is committed.
-- `play.sh` rebuilds the patch each launch; `WOW_STOCK_UI=1` removes it.
+- `play.sh` and `start-client.sh` rebuild the patch each client launch
+  (`rebuild_glue_patch` in `tools/macos/bundle.sh`); `WOW_STOCK_UI=1` removes it.
+  Soloroth.app's「开始游戏」only runs `start-client.sh` when the server is
+  already up — that path must rebuild too, or a glue-skin edit never shows.
 - The AccountLogin page is removed by default (`SoloShowLoginUI = false` prepended by
   `build-patch.py --hide-login-ui`): the ModelFFX is hidden and a black blank covers
   GlueParent until character select. Going back from character select (or a disconnect)

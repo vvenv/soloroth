@@ -15,14 +15,14 @@ It is not affiliated with or endorsed by Blizzard Entertainment and ships no gam
 
 ## Third-party addons
 
-`Interface/AddOns` carries the 1.12 addons the game is set up with, unmodified (the Chinese that `tools/macos/localize-addons.py` adds goes onto the installed copies only). They are not covered by this project's GPL: each keeps its own licence and belongs to its authors. Those marked "none shipped" come without a licence file; they are included as the vanilla community has long passed them around, and an author who wants one removed can open an issue.
+`Interface/AddOns` carries the 1.12 addons the game is set up with. pfUI, Atlas, and AtlasLoot are trimmed for this solo client (social, PvP, auction, mail, trade, battlegrounds, and other-client code are not shipped). SortBags' sorter lives in `Interface/AddOns/pfUI/modules/bagsort.lua`. The Chinese that `tools/macos/localize-addons.py` adds goes onto the installed copies only. They are not covered by this project's GPL: each keeps its own licence and belongs to its authors. Those marked "none shipped" come without a licence file; they are included as the vanilla community has long passed them around, and an author who wants one removed can open an issue.
 
 | Addon | Version | Author | Licence | Source |
 | --- | --- | --- | --- | --- |
 | pfUI | 5.5.4 | Eric Mauser (Shagu) | MIT (`pfUI/LICENSE`) | https://github.com/shagu/pfUI |
 | Atlas | 1.12.0 | Dan Gilbert | none shipped | http://www.atlasmod.com |
 | AtlasLoot | 4.06.06 | Daviesh | none shipped | AtlasLoot Enhanced for 1.12 |
-| SortBags | vanilla | shirsig | none shipped | https://github.com/shirsig/SortBags-vanilla |
+| SortBags (now `pfUI/modules/bagsort.lua`) | vanilla | shirsig | none shipped | https://github.com/shirsig/SortBags-vanilla |
 
 Teleport, Items, GMBox, Dungeon, Bots, Achievements and !Solo in the same folder are this project's own, under its GPL-3.0.
 

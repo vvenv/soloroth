@@ -73,8 +73,8 @@ pfUI:RegisterModule("chat", "vanilla:tbc", function ()
   end
 
   pfUI.chat.left:SetFrameStrata("BACKGROUND")
-  pfUI.chat.left:SetWidth(C.chat.left.width)
-  pfUI.chat.left:SetHeight(C.chat.left.height)
+  pfUI.chat.left:SetWidth(ConfigSize(C.chat.left.width))
+  pfUI.chat.left:SetHeight(ConfigSize(C.chat.left.height))
   pfUI.chat.left:SetPoint("BOTTOMLEFT", 2*default_border,2*default_border)
   pfUI.chat.left:SetScript("OnShow", function() pfUI.chat:RefreshChat() end)
   UpdateMovable(pfUI.chat.left)
@@ -248,8 +248,8 @@ pfUI:RegisterModule("chat", "vanilla:tbc", function ()
 
   pfUI.chat.right = CreateFrame("Frame", "pfChatRight", UIParent)
   pfUI.chat.right:SetFrameStrata("BACKGROUND")
-  pfUI.chat.right:SetWidth(C.chat.right.width)
-  pfUI.chat.right:SetHeight(C.chat.right.height)
+  pfUI.chat.right:SetWidth(ConfigSize(C.chat.right.width))
+  pfUI.chat.right:SetHeight(ConfigSize(C.chat.right.height))
   pfUI.chat.right:SetPoint("BOTTOMRIGHT", -2*default_border,2*default_border)
   pfUI.chat.right:SetScript("OnShow", function() pfUI.chat:RefreshChat() end)
   UpdateMovable(pfUI.chat.right)
@@ -607,40 +607,50 @@ pfUI:RegisterModule("chat", "vanilla:tbc", function ()
       ChatFrameEditBoxLanguage:SetHeight(22)
     end
   else
-    pfUI.chat.editbox:SetHeight(C.chat.text.input_height)
+    local ih = ConfigSize(C.chat.text.input_height)
+    pfUI.chat.editbox:SetHeight(ih)
 
     if ChatFrameEditBoxLanguage then
       SkinButton(ChatFrameEditBoxLanguage)
-      ChatFrameEditBoxLanguage:SetWidth(C.chat.text.input_height)
-      ChatFrameEditBoxLanguage:SetHeight(C.chat.text.input_height)
+      ChatFrameEditBoxLanguage:SetWidth(ih)
+      ChatFrameEditBoxLanguage:SetHeight(ih)
     end
   end
 
-  -- to make sure the bars are set up properly, we need to wait.
+  -- Command line sits flush on the top action bar (bars[6] = pfActionBarTop).
+  -- Not a free unlock seat: a saved UIParent position would not track the bar.
+  -- Still UpdateMovable so unlock mode shows the box (drag snaps it back here).
+  local function DockChatInput()
+    local anchor = pfUI.chat.left
+    if pfUI.bars and pfUI.bars[6] and pfUI.bars[6]:IsShown() then
+      anchor = pfUI.bars[6]
+    elseif pfUI.bars and pfUI.bars[1] and pfUI.bars[1]:IsShown() then
+      anchor = pfUI.bars[1]
+    end
+    if not anchor then return end
+
+    if pfUI_config and pfUI_config.position then
+      pfUI_config.position["pfChatInputBox"] = nil
+    end
+    pfUI.chat.editbox.pfAnchor = nil
+    pfUI.chat.editbox:ClearAllPoints()
+    if C.chat.text.input_width ~= "0" then
+      pfUI.chat.editbox:SetWidth(ConfigSize(C.chat.text.input_width))
+      pfUI.chat.editbox:SetPoint("BOTTOM", anchor, "TOP", 0, 0)
+    else
+      pfUI.chat.editbox:SetPoint("BOTTOMLEFT", anchor, "TOPLEFT", 0, 0)
+      pfUI.chat.editbox:SetPoint("BOTTOMRIGHT", anchor, "TOPRIGHT", 0, 0)
+    end
+    -- init=true so unlock exit does not restore a pre-dock snapshot.
+    UpdateMovable(pfUI.chat.editbox, true)
+  end
+
   local pfChatArrangeFrame = CreateFrame("Frame", "pfChatArrange", UIParent)
   pfChatArrangeFrame:RegisterEvent("CVAR_UPDATE")
   pfChatArrangeFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-  pfChatArrangeFrame:SetScript("OnEvent", function()
-    pfUI.chat.editbox:ClearAllPoints()
-
-    local anchor = pfUI.chat.left
-    if pfUI.bars and pfUI.bars[6]:IsShown() then
-      anchor = pfUI.bars[6]
-    elseif pfUI.bars and pfUI.bars[1]:IsShown() then
-      anchor = pfUI.bars[1]
-    end
-
-    if C.chat.text.input_width ~= "0" then
-      pfUI.chat.editbox:SetPoint("BOTTOM", anchor, "TOP", 0, default_border*3)
-      pfUI.chat.editbox:SetWidth(C.chat.text.input_width)
-    else
-      pfUI.chat.editbox:SetWidth(anchor:GetWidth())
-      pfUI.chat.editbox:SetPoint("BOTTOMLEFT", anchor, "TOPLEFT", 0, default_border*3)
-      pfUI.chat.editbox:SetPoint("BOTTOMRIGHT", anchor, "TOPRIGHT", 0, default_border*3)
-    end
-
-    UpdateMovable(pfUI.chat.editbox)
-  end)
+  pfChatArrangeFrame:SetScript("OnEvent", DockChatInput)
+  pfUI.chat.editbox.OnMove = DockChatInput
+  DockChatInput()
 
 
   ChatFrameEditBox:SetParent(pfUI.chat.editbox)

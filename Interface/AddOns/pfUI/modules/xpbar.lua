@@ -236,8 +236,8 @@ end
 
     b.xp_color = C.panel.xp.xp_color
     b.rest_color = C.panel.xp.rest_color
-    b.width = t == "XP" and C.panel.xp.xp_width or C.panel.xp.rep_width
-    b.height = t == "XP" and C.panel.xp.xp_height or C.panel.xp.rep_height
+    b.width = ConfigSize(t == "XP" and C.panel.xp.xp_width or C.panel.xp.rep_width)
+    b.height = ConfigSize(t == "XP" and C.panel.xp.xp_height or C.panel.xp.rep_height)
     b.mode = t == "XP" and C.panel.xp.xp_mode or C.panel.xp.rep_mode
     b.timeout = t == "XP" and tonumber(C.panel.xp.xp_timeout) or tonumber(C.panel.xp.rep_timeout)
     b.anchor = t == "XP" and C.panel.xp.xp_anchor or C.panel.xp.rep_anchor

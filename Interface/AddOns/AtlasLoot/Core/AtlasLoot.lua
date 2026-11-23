@@ -445,6 +445,13 @@ function AtlasLootOptions_Init()
 	if AtlasLootCharDB.FirstTime == nil then
 		AtlasLootOptions_Fresh();
 	end
+	-- !Solo sets FirstTime before this runs, so Fresh() is skipped and the
+	-- slider values stay nil. SetValue(nil) errors. Fill only missing keys.
+	for key, value in pairs(DefaultAtlasLootOptions) do
+		if AtlasLootCharDB[key] == nil then
+			AtlasLootCharDB[key] = value
+		end
+	end
 	--Initialise all the check boxes on the options frame
 	AtlasLootOptionsFrameSafeLinks:SetChecked(AtlasLootCharDB.SafeLinks);
 	AtlasLootOptionsFrameAllLinks:SetChecked(AtlasLootCharDB.AllLinks);

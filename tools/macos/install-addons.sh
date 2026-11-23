@@ -3,9 +3,8 @@
 # the client's addon folder (benilla-config/AddOns): Teleport, Items, Companions,
 # GMBox, Dungeon, Bots, !Solo and Achievements (teleport, items, pets/mounts, GM tools,
 # the dungeon hub, the party button, single-player defaults, achievements)
-# and the vetted
-# third-party addons (pfUI, Atlas, AtlasLoot, SortBags;
-# see THIRD-PARTY-NOTICES.md). localize-addons.py then adds Chinese
+# and the absorbed UI addons (pfUI, Atlas, AtlasLoot; bag sorting is inside
+# pfUI; see THIRD-PARTY-NOTICES.md). localize-addons.py then adds Chinese
 # where an addon lacks it, on the installed copies.
 #
 # The first run also copies saved settings from an old 1.12 zhCN client

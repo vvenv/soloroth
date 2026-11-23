@@ -703,8 +703,10 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       return f
     end
 
+    -- Share was removed for solo; search used to sit after it. Anchor after
+    -- hoverbind or LEFT resolves to UIParent and the bar stretches off-screen.
     pfUI.gui.search = CreateFrame("EditBox", nil, pfUI.gui)
-    pfUI.gui.search:SetPoint("LEFT", pfUI.gui.share, "RIGHT", 5, 0)
+    pfUI.gui.search:SetPoint("LEFT", pfUI.gui.hoverbind, "RIGHT", 5, 0)
     pfUI.gui.search:SetPoint("TOPRIGHT", pfUI.gui.frames.area.backdrop, "BOTTOMRIGHT", 0, -5)
     pfUI.gui.search:SetHeight(25)
     pfUI.gui.search:SetAutoFocus(false)
@@ -1077,9 +1079,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
         "TOP:" .. T["Top"],
         "BOTTOM:" .. T["Bottom"],
       },
-      ["gmserver_text"] = {
-        "elysium:" .. T["Elysium Based Core"],
-      },
       ["buffbarfilter"] = {
         "none:"      .. T["None"],
         "whitelist:" .. T["Whitelist"],
@@ -1156,13 +1155,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
         "32:" .. T["Medium"],
         "64:" .. T["Large"],
         "128:" .. T["Huge"],
-      },
-      ["mapcircle"] = {
-        "5:" .. T["Tiny"],
-        "3:" .. T["Small"],
-        "1:" .. T["Medium"],
-        "-1:" .. T["Large"],
-        "-3:" .. T["Huge"],
       },
       ["maptooltip"] = {
         ".10:10%",
@@ -1532,8 +1524,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Border Color"], C.appearance.border, "color", "color")
       CreateConfig(U["mapreveal"], T["Map Reveal Color"], C.appearance.worldmap, "mapreveal_color", "color")
       CreateConfig(U["mapreveal"], T["Map Exploration Points"], C.appearance.worldmap, "mapexploration", "checkbox")
-      CreateConfig(U["mapcolors"], T["Map Group/Raid Circle Size"], C.appearance.worldmap, "groupcircles", "dropdown", pfUI.gui.dropdowns.mapcircle)
-      CreateConfig(U["mapcolors"], T["Colorize player name on WorldMap"], C.appearance.worldmap, "colornames", "checkbox")
       CreateConfig(U["map"], T["Map Tooltip Scale"], C.appearance.worldmap, "tooltipsize", "dropdown", pfUI.gui.dropdowns.maptooltip)
       CreateConfig(nil) -- spacer
       CreateConfig(nil, T["Enable Frame Shadow"], C.appearance.border, "shadow", "checkbox")
@@ -1588,11 +1578,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Hide All UI Elements"], C.screenshot, "hideui", "checkbox")
     end)
 
-    CreateGUIEntry(T["Settings"], T["GM-Mode"], function()
-      CreateConfig(nil, T["Disable GM-Mode"], C.gm, "disable", "checkbox")
-      CreateConfig(nil, T["Selected Core"], C.gm, "server", "dropdown", pfUI.gui.dropdowns.gmserver_text)
-    end)
-
     CreateGUIEntry(T["Unit Frames"], T["General"], function()
       CreateConfig(nil, T["Disable pfUI Unit Frames"], C.unitframes, "disable", "checkbox")
       CreateConfig(nil, T["Healthbar Animation Speed"], C.unitframes, "animation_speed", "dropdown", pfUI.gui.dropdowns.uf_animationspeed)
@@ -1631,11 +1616,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Rage Color"], C.unitframes, "ragecolor", "color")
       CreateConfig(nil, T["Energy Color"], C.unitframes, "energycolor", "color")
       CreateConfig(nil, T["Focus Color"], C.unitframes, "focuscolor", "color")
-
-      CreateConfig(nil, T["SuperWoW Settings"], nil, nil, "header")
-      CreateConfig(nil, T["Show Druid Mana Bar"], C.unitframes, "druidmanabar", "checkbox", nil, nil, nil, nil, "vanilla" )
-      CreateConfig(nil, T["Druid Mana Bar Height"], C.unitframes, "druidmanaheight", nil, nil, nil, nil, nil, "vanilla" )
-      CreateConfig(nil, T["Druid Mana Bar Text"], C.unitframes, "druidmanatext", "checkbox", nil, nil, nil, nil, "vanilla" )
     end)
 
     -- Shared Unit- and Groupframes
@@ -1644,14 +1624,13 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       [1] = { "player",      T["Player"] },
       [2] = { "target",      T["Target"] },
       [3] = { "ttarget",     T["Target-Target"]},
-      [4] = { "tttarget",    T["Target-Target-Target"]},
-      [5] = { "pet",         T["Pet"] },
-      [6] = { "ptarget",     T["Pet-Target"]},
-      [7] = { "focus",       T["Focus"] },
-      [8] = { "focustarget", T["Focus-Target"] },
-      [9] = { "group",       T["Group"] },
-      [10] = { "grouptarget", T["Group-Target"]},
-      [11] = { "grouppet",   T["Group-Pet"] },
+      [4] = { "pet",         T["Pet"] },
+      [5] = { "ptarget",     T["Pet-Target"]},
+      [6] = { "focus",       T["Focus"] },
+      [7] = { "focustarget", T["Focus-Target"] },
+      [8] = { "group",       T["Group"] },
+      [9] = { "grouptarget", T["Group-Target"]},
+      [10] = { "grouppet",   T["Group-Pet"] },
     }
 
     CreateGUIEntry(T["Unit Frames"], T["Click Casting"], function()
@@ -1697,7 +1676,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateGUIEntry(T["Unit Frames"], t, function()
         -- link Update tables
         U.ttarget     = U["targettarget"]
-        U.tttarget    = U["targettargettarget"]
         U.ptarget     = U["pettarget"]
         U.grouptarget = U["group"]
         U.grouppet    = U["group"]
@@ -2334,60 +2312,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(U["nameplates"], T["Always Show On Units With Missing HP"], C.nameplates, "fullhealth", "checkbox")
       CreateConfig(U["nameplates"], T["Always Show On Target Units"], C.nameplates, "target", "checkbox")
       CreateConfig(U["nameplates"], T["Vertical Healthbar"], C.nameplates, "verticalhealth", "checkbox")
-
-      CreateConfig(nil, T["SuperWoW Settings"], nil, nil, "header")
-      CreateConfig(U["nameplates"], T["Overwrite Border Color With Combat State"], C.nameplates, "outcombatstate", "checkbox")
-      CreateConfig(U["nameplates"], T["Overwrite Health Color With Combat State"], C.nameplates, "barcombatstate", "checkbox")
-      CreateConfig(U["nameplates"], T["Overwrite If Unit Is Attacking You"], C.nameplates, "ccombatthreat", "checkbox")
-      CreateConfig(U["nameplates"], T["Overwrite If Unit Is Attacking Off-Tank"], C.nameplates, "ccombatofftank", "checkbox")
-      CreateConfig(U["nameplates"], T["Overwrite If Unit Is Attacking Others"], C.nameplates, "ccombatnothreat", "checkbox")
-      CreateConfig(U["nameplates"], T["Overwrite If Unit Is Attacking No One"], C.nameplates, "ccombatstun", "checkbox")
-      CreateConfig(U["nameplates"], T["Overwrite If Unit Is Casting"], C.nameplates, "ccombatcasting", "checkbox")
-      CreateConfig(U["nameplates"], T["Unit Is Attacking You Color"], C.nameplates, "combatthreat", "color")
-      CreateConfig(U["nameplates"], T["Unit Is Attacking Off-Tank Color"], C.nameplates, "combatofftank", "color")
-      CreateConfig(U["nameplates"], T["Unit Is Attacking Others Color"], C.nameplates, "combatnothreat", "color")
-      CreateConfig(U["nameplates"], T["Unit Is Attacking No One Color"], C.nameplates, "combatstun", "color")
-      CreateConfig(U["nameplates"], T["Unit Is Casting Color"], C.nameplates, "combatcasting", "color")
-      CreateConfig(U["nameplates"], T["Off-Tank Names"], C.nameplates, "combatofftanks", "list")
-    end)
-
-    CreateGUIEntry(T["Thirdparty"], T["Integrations"], function()
-      CreateConfig(nil, T["Show Meters By Default"], C.thirdparty, "showmeter", "checkbox")
-      CreateConfig(nil, T["Use Chat Colors for Meters"], C.thirdparty, "chatbg", "checkbox")
-      CreateConfig(nil, "ShaguDPS (" .. T["Skin"] .. ")", C.thirdparty.shagudps, "skin", "checkbox")
-      CreateConfig(nil, "ShaguDPS (" .. T["Dock"] .. ")", C.thirdparty.shagudps, "dock", "checkbox")
-      CreateConfig(nil, "DPSMate (" .. T["Skin"] .. ")", C.thirdparty.dpsmate, "skin", "checkbox")
-      CreateConfig(nil, "DPSMate (" .. T["Dock"] .. ")", C.thirdparty.dpsmate, "dock", "checkbox")
-      CreateConfig(nil, "Recount (" .. T["Skin"] .. ")", C.thirdparty.recount, "skin", "checkbox", nil, nil, nil, nil, "tbc")
-      CreateConfig(nil, "Recount (" .. T["Dock"] .. ")", C.thirdparty.recount, "dock", "checkbox", nil, nil, nil, nil, "tbc")
-      CreateConfig(nil, "Omen (" .. T["Skin"] .. ")", C.thirdparty.omen, "skin", "checkbox", nil, nil, nil, nil, "tbc")
-      CreateConfig(nil, "Omen (" .. T["Dock"] .. ")", C.thirdparty.omen, "dock", "checkbox", nil, nil, nil, nil, "tbc")
-      CreateConfig(nil, "SWStats (" .. T["Skin"] .. ")", C.thirdparty.swstats, "skin", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "SWStats (" .. T["Dock"] .. ")", C.thirdparty.swstats, "dock", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "KLH Threat Meter (" .. T["Skin"] .. ")", C.thirdparty.ktm, "skin", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "KLH Threat Meter (" .. T["Dock"] .. ")", C.thirdparty.ktm, "dock", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "TW Threatmeter (" .. T["Skin"] .. ")", C.thirdparty.twt, "skin", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "TW Threatmeter (" .. T["Dock"] .. ")", C.thirdparty.twt, "dock", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "WIM", C.thirdparty.wim, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "HealComm", C.thirdparty.healcomm, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "SortBags", C.thirdparty.sortbags, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "Bag_Sort", C.thirdparty.bag_sort, "enable", "checkbox", nil, nil, nil, nil, "tbc")
-      CreateConfig(nil, "MrPlow", C.thirdparty.mrplow, "enable", "checkbox")
-      CreateConfig(nil, "BetterCharacterStats", C.thirdparty.bcs, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "Crafty", C.thirdparty.crafty, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "CleverMacro", C.thirdparty.clevermacro, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "AckisRecipeList", C.thirdparty.ackis, "enable", "checkbox", nil, nil, nil, nil, "tbc")
-      CreateConfig(nil, "SheepWatch", C.thirdparty.sheepwatch, "enable", "checkbox", nil, nil, nil, nil, "tbc")
-      CreateConfig(nil, "TotemTimers", C.thirdparty.totemtimers, "enable", "checkbox", nil, nil, nil, nil, "tbc")
-      CreateConfig(nil, "DruidBar", C.thirdparty.druidbar, "enable", "checkbox", nil, nil, nil, nil, "tbc")
-      CreateConfig(nil, "BCEPGP", C.thirdparty.bcepgp, "enable", "checkbox", nil, nil, nil, nil, "tbc")
-      CreateConfig(nil, "FlightMap", C.thirdparty.flightmap, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "TheoryCraft", C.thirdparty.theorycraft, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "SuperMacro", C.thirdparty.supermacro, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "AtlasLoot", C.thirdparty.atlasloot, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "MyRolePlay", C.thirdparty.myroleplay, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "DruidManaBar", C.thirdparty.druidmana, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
-      CreateConfig(nil, "NoteIt", C.thirdparty.noteit, "enable", "checkbox", nil, nil, nil, nil, "vanilla")
     end)
 
     CreateGUIEntry(T["Components"], T["Modules"], function()

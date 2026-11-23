@@ -1,6 +1,6 @@
 pfUI:RegisterModule("minimap", "vanilla:tbc", function ()
   local rawborder, border = GetBorderSize()
-  local size = tonumber(C.appearance.minimap.size) or 140
+  local size = ConfigSize(C.appearance.minimap.size or "11")
 
   if MiniMapWorldMapButton then MiniMapWorldMapButton:Hide() end
   if MinimapToggleButton then MinimapToggleButton:Hide() end
@@ -31,7 +31,7 @@ pfUI:RegisterModule("minimap", "vanilla:tbc", function ()
   end)
 
   pfUI.minimap.UpdateConfig = function(self)
-    size = tonumber(C.appearance.minimap.size) or 140
+    size = ConfigSize(C.appearance.minimap.size or "11")
 
     pfUI.minimap:SetWidth(size)
     pfUI.minimap:SetHeight(size)

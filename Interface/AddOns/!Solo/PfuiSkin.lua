@@ -5,7 +5,9 @@ a pfUI skin (so pfUI's "disable skin" setting covers it too):
   * the ESC menu: no Edit Mode rung (benilla has nothing behind it) and no
     Support / Help rung (NoHelp.lua shuts that window); pfUI's own config
     rung is relabelled "Interface" / 「界面」 so players open settings as a
-    product feature, not a third-party addon panel;
+    product feature, not a third-party addon panel. Visible rungs are
+    re-stacked (settings / leave / resume) with even rung spacing and larger
+    gaps between groups, so hiding Edit Mode / Support leaves no holes;
   * the options window: no Game/AddOns tabs (AddOns has nothing behind it,
     Game alone is the whole window), and pfUI's backdrops, buttons,
     checkboxes, sliders, dropdowns, scroll bars and search box;
@@ -23,36 +25,73 @@ end
 local function SkinGameMenu()
   local editMode = BenillaGameMenuButtonEditMode
   local support = BenillaGameMenuButtonSupport
-  local macros = GameMenuButtonMacros
-  if not editMode then return end
-  local point, relativeTo, relativePoint, x, y = editMode:GetPoint()
-  local drop = editMode:GetHeight() or 0
-  editMode:Hide()
-  if support then
-    drop = drop + (support:GetHeight() or 0)
-    support:Hide()
-  end
-  if macros and point then
-    macros:ClearAllPoints()
-    macros:SetPoint(point, relativeTo, relativePoint, x, y)
-  end
-  if drop > 0 then
-    GameMenuFrame:SetHeight(GameMenuFrame:GetHeight() - drop)
-  end
-  -- pfUI's Game Menu skin already inserts GameMenuButtonPFUI → pfUI.gui.
+  if editMode then editMode:Hide() end
+  if support then support:Hide() end
+
+  -- pfUI parks the title above the frame (TOP +16), so the era's 32/28
+  -- insets leave a hollow band; tighten to match the skinned look. ITEM
+  -- between rungs in a group; GAP between settings / leave / resume.
+  local TOP, BOTTOM, ITEM, GAP = -12, 16, 6, 20
+
   local function LabelUI()
     local ui = GameMenuButtonPFUI
     if ui and ui.SetText then
       ui:SetText(ZH and "界面" or "Interface")
     end
   end
+
+  local function Layout()
+    local ui = GameMenuButtonPFUI
+    local addons = GameMenuButtonPFUIAddOns
+    local options = GameMenuButtonOptions
+    local macros = GameMenuButtonMacros
+    local logout = GameMenuButtonLogout
+    local quit = GameMenuButtonQuit
+    local cont = GameMenuButtonContinue
+    if not (ui and options and macros and logout and quit and cont) then return end
+
+    local function place(btn, above, dy)
+      btn:ClearAllPoints()
+      if above then
+        btn:SetPoint("TOP", above, "BOTTOM", 0, dy or 0)
+      else
+        btn:SetPoint("TOP", GameMenuFrame, "TOP", 0, TOP)
+      end
+    end
+
+    -- Settings: Interface, AddOns, Options, Macros
+    place(ui)
+    local prev = ui
+    local items = 0
+    if addons then
+      place(addons, prev, -ITEM)
+      prev = addons
+      items = items + 1
+    end
+    place(options, prev, -ITEM)
+    place(macros, options, -ITEM)
+    items = items + 3
+    -- Leave
+    place(logout, macros, -GAP)
+    place(quit, logout, -ITEM)
+    items = items + 1
+    -- Resume
+    place(cont, quit, -GAP)
+
+    local bh = options:GetHeight() or 21
+    local n = addons and 7 or 6
+    GameMenuFrame:SetHeight((-TOP) + n * bh + items * ITEM + 2 * GAP + BOTTOM)
+  end
+
   LabelUI()
+  Layout()
   if GameMenuFrame and not GameMenuFrame.soloUILabel then
     GameMenuFrame.soloUILabel = true
     local prev = GameMenuFrame:GetScript("OnShow")
     GameMenuFrame:SetScript("OnShow", function()
       if prev then prev() end
       LabelUI()
+      Layout()
     end)
   end
 end

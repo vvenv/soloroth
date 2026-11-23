@@ -90,7 +90,7 @@ local function MarkCurrent(b, current)
 end
 
 local f = CreateFrame("Frame", "GMBoxFrame", UIParent)
-f:SetWidth(600) f:SetHeight(440)
+f:SetWidth(600) f:SetHeight(374)
 f:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
 Backdrop(f)
 f:SetMovable(true) f:EnableMouse(true) f:RegisterForDrag("LeftButton")
@@ -147,10 +147,6 @@ local TOOLROWS = {
   { L("Money / level", "金钱 / 等级"), {
     { "+10g", ".modify money 100000" }, { "+100g", ".modify money 1000000" },
     { "+1 level", ".levelup 1", "+1 级" }, { "+5 levels", ".levelup 5", "+5 级" },
-  } },
-  { L("Player", "玩家"), {
-    { "Go to", ".goname %s", "去他那" }, { "Summon", ".namego %s", "召来" },
-    { "Kill target", ".die", "杀死目标" }, { "Player info", ".pinfo %s", "玩家信息" },
   } },
 }
 
@@ -212,36 +208,12 @@ for r = 1, table.getn(TOOLROWS) do
                      96 + (c - 1) * 108, toolY + 3)
     b.cmd = defs[c][2]
     b:SetScript("OnClick", function()
-      local cmd = this.cmd
-      if string.find(cmd, "%%s") then
-        local who = GMBoxName:GetText()
-        if not who or who == "" then
-          if UnitExists("target") and UnitIsPlayer("target") then who = UnitName("target") end
-        end
-        if not who or who == "" then msg(L("type a player name in the box first", "先在下面的框里填玩家名")) return end
-        cmd = string.gsub(cmd, "%%s", who)
-      end
-      msg(Cmd(cmd))
+      msg(Cmd(this.cmd))
     end)
   end
   toolY = toolY - 32
 end
 
-local nameBox = CreateFrame("EditBox", "GMBoxName", tools, "InputBoxTemplate")
-table.insert(skin.edits, nameBox)
-nameBox:SetWidth(150) nameBox:SetHeight(20)
-nameBox:SetPoint("TOPLEFT", tools, "TOPLEFT", 96, toolY - 4)
-nameBox:SetAutoFocus(false)
-nameBox:SetScript("OnEscapePressed", function() this:ClearFocus() end)
-nameBox:SetScript("OnEnterPressed", function() this:ClearFocus() end)
-Label(tools, L("Player name", "玩家名"), "GameFontNormalSmall", "RIGHT", nameBox, "LEFT", -8, 0)
-local grabTarget = Button(tools, 80, 20, L("Use target", "取当前目标"), "LEFT", nameBox, "RIGHT", 8, 0)
-grabTarget:SetScript("OnClick", function()
-  if UnitExists("target") then nameBox:SetText(UnitName("target"))
-  else msg(L("no target", "没有目标")) end
-end)
-
-toolY = toolY - 34
 local rawBox = CreateFrame("EditBox", "GMBoxRaw", tools, "InputBoxTemplate")
 table.insert(skin.edits, rawBox)
 rawBox:SetWidth(360) rawBox:SetHeight(20)

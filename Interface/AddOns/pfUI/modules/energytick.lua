@@ -58,23 +58,25 @@ pfUI:RegisterModule("energytick", "vanilla:tbc", function ()
       this.start, this.max, this.current = GetTime(), 2, 0
     end
 
-    local pos = (C.unitframes.player.pwidth ~= "-1" and C.unitframes.player.pwidth or C.unitframes.player.width) * (this.current / this.max)
+    local pos = ConfigSize(C.unitframes.player.pwidth ~= "-1" and C.unitframes.player.pwidth or C.unitframes.player.width) * (this.current / this.max)
     if not C.unitframes.player.pheight then return end
-    this.spark:SetPoint("LEFT", pos-((C.unitframes.player.pheight+5)/2), 0)
+    local ph = ConfigSize(C.unitframes.player.pheight)
+    this.spark:SetPoint("LEFT", pos-((ph+5)/2), 0)
   end)
 
   energytick.spark = energytick:CreateTexture(nil, 'OVERLAY')
   energytick.spark:SetTexture("Interface\\CastingBar\\UI-CastingBar-Spark")
-  energytick.spark:SetHeight(C.unitframes.player.pheight + 15)
-  energytick.spark:SetWidth(C.unitframes.player.pheight + 5)
+  energytick.spark:SetHeight(ConfigSize(C.unitframes.player.pheight) + 15)
+  energytick.spark:SetWidth(ConfigSize(C.unitframes.player.pheight) + 5)
   energytick.spark:SetBlendMode('ADD')
 
   -- update spark size on player frame changes
   local hookUpdateConfig = pfUI.uf.player.UpdateConfig
   function pfUI.uf.player.UpdateConfig()
     -- update spark sizes
-    energytick.spark:SetHeight(C.unitframes.player.pheight + 15)
-    energytick.spark:SetWidth(C.unitframes.player.pheight + 5)
+    local ph = ConfigSize(C.unitframes.player.pheight)
+    energytick.spark:SetHeight(ph + 15)
+    energytick.spark:SetWidth(ph + 5)
 
     -- run default unitframe update function
     hookUpdateConfig(pfUI.uf.player)

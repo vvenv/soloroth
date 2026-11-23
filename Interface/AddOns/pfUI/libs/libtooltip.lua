@@ -139,21 +139,6 @@ function GameTooltip.SetTradeSkillItem(self, skillIndex, reagentIndex)
   return pfHookSetTradeSkillItem(self, skillIndex, reagentIndex)
 end
 
-local pfHookSetAuctionItem = GameTooltip.SetAuctionItem
-function GameTooltip.SetAuctionItem(self, atype, index)
-  _, _, libtooltip.itemCount = GetAuctionItemInfo(atype, index)
-  libtooltip.itemLink = GetAuctionItemLink(atype, index)
-  return pfHookSetAuctionItem(self, atype, index)
-end
-
-local pfHookSetAuctionSellItem = GameTooltip.SetAuctionSellItem
-function GameTooltip.SetAuctionSellItem(self)
-  local itemName, _, itemCount = GetAuctionSellItemInfo()
-  libtooltip.itemCount = itemCount
-  libtooltip.itemLink = GetItemLinkByName(itemName)
-  return pfHookSetAuctionSellItem(self)
-end
-
 local pfHookSetTradePlayerItem = GameTooltip.SetTradePlayerItem
 function GameTooltip.SetTradePlayerItem(self, index)
   libtooltip.itemLink = GetTradePlayerItemLink(index)

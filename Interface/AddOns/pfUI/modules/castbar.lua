@@ -86,12 +86,6 @@ pfUI:RegisterModule("castbar", "vanilla:tbc", function ()
       local query = this.unitstr ~= "" and this.unitstr or this.unitname
       if not query then return end
 
-      -- transform all non player unitstrings to unit guids
-      if superwow_active and this.unitstr and not UnitIsUnit(this.unitstr, 'player') then
-        local _, guid = UnitExists(this.unitstr)
-        query = guid or query
-      end
-
       local cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitCastingInfo(query)
       if not cast then
         -- scan for channel spells if no cast was found
@@ -214,17 +208,17 @@ pfUI:RegisterModule("castbar", "vanilla:tbc", function ()
 
     if pfUI.uf.player then
       local anchor = pfUI.uf.player.portrait:GetHeight() > pfUI.uf.player:GetHeight() and pfUI.uf.player.power or pfUI.uf.player
-      local width = C.castbar.player.width ~= "-1" and C.castbar.player.width or anchor:GetWidth()
+      local width = C.castbar.player.width ~= "-1" and ConfigSize(C.castbar.player.width) or anchor:GetWidth()
       pfUI.castbar.player:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -pfUI.castbar.player.spacing)
       pfUI.castbar.player:SetWidth(width)
     else
-      local width = C.castbar.player.width ~= "-1" and C.castbar.player.width or 200
+      local width = C.castbar.player.width ~= "-1" and ConfigSize(C.castbar.player.width) or 200
       pfUI.castbar.player:SetPoint("CENTER", 0, -200)
       pfUI.castbar.player:SetWidth(width)
     end
 
     if C.castbar.player.height ~= "-1" then
-      pfUI.castbar.player:SetHeight(C.castbar.player.height)
+      pfUI.castbar.player:SetHeight(ConfigSize(C.castbar.player.height))
     end
 
     UpdateMovable(pfUI.castbar.player)
@@ -242,17 +236,17 @@ pfUI:RegisterModule("castbar", "vanilla:tbc", function ()
 
     if pfUI.uf.target then
       local anchor = pfUI.uf.target.portrait:GetHeight() > pfUI.uf.target:GetHeight() and pfUI.uf.target.power or pfUI.uf.target
-      local width = C.castbar.target.width ~= "-1" and C.castbar.target.width or anchor:GetWidth()
+      local width = C.castbar.target.width ~= "-1" and ConfigSize(C.castbar.target.width) or anchor:GetWidth()
       pfUI.castbar.target:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -pfUI.castbar.target.spacing)
       pfUI.castbar.target:SetWidth(width)
     else
-      local width = C.castbar.target.width ~= "-1" and C.castbar.target.width or 200
+      local width = C.castbar.target.width ~= "-1" and ConfigSize(C.castbar.target.width) or 200
       pfUI.castbar.target:SetPoint("CENTER", 0, -225)
       pfUI.castbar.target:SetWidth(width)
     end
 
     if C.castbar.target.height ~= "-1" then
-      pfUI.castbar.target:SetHeight(C.castbar.target.height)
+      pfUI.castbar.target:SetHeight(ConfigSize(C.castbar.target.height))
     end
 
     UpdateMovable(pfUI.castbar.target)
@@ -274,12 +268,12 @@ pfUI:RegisterModule("castbar", "vanilla:tbc", function ()
     end
 
     local anchor = pfUI.uf.focus.portrait:GetHeight() > pfUI.uf.focus:GetHeight() and pfUI.uf.focus.power or pfUI.uf.focus
-    local width = C.castbar.focus.width ~= "-1" and C.castbar.focus.width or anchor:GetWidth()
+    local width = C.castbar.focus.width ~= "-1" and ConfigSize(C.castbar.focus.width) or anchor:GetWidth()
     pfUI.castbar.focus:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -pfUI.castbar.focus.spacing)
     pfUI.castbar.focus:SetWidth(width)
 
     if C.castbar.focus.height ~= "-1" then
-      pfUI.castbar.focus:SetHeight(C.castbar.focus.height)
+      pfUI.castbar.focus:SetHeight(ConfigSize(C.castbar.focus.height))
     end
 
     -- keep unit values in sync with focus unitframe

@@ -235,14 +235,14 @@ pfUI:RegisterModule("bags", "vanilla:tbc", function ()
       if not pfUI.bag.left then pfUI.bag.left = CreateFrame("Frame", "pfBank", UIParent) end
       anchor = { "BOTTOMLEFT", (pfUI.chat and pfUI.chat.left or nil), "BOTTOMRIGHT", "TOPLEFT", "TOPRIGHT" }
       rowlength = tonumber(C.appearance.bags.bankrowlength)
-      cwidth = C.chat.left.width
+      cwidth = ConfigSize(C.chat.left.width)
       iterate = pfUI.BANK
       frame = pfUI.bag.left
     else
       if not pfUI.bag.right then pfUI.bag.right = CreateFrame("Frame", "pfBag", UIParent) end
       rowlength = tonumber(C.appearance.bags.bagrowlength)
       anchor = { "BOTTOMRIGHT", (pfUI.chat and pfUI.chat.right or nil), "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT" }
-      cwidth = C.chat.right.width
+      cwidth = ConfigSize(C.chat.right.width)
       iterate = pfUI.BACKPACK
       frame = pfUI.bag.right
     end
@@ -700,6 +700,33 @@ pfUI:RegisterModule("bags", "vanilla:tbc", function ()
     pfUI.bag:ReanchorAdditions()
   end
 
+  local function CreateSortButton(frame, anchor, onclick, tip)
+    if frame.sort then return end
+    frame.sort = CreateFrame("Button", nil, frame)
+    frame.sort:SetPoint("TOPRIGHT", anchor, "TOPLEFT", -default_border*3, 0)
+    CreateBackdrop(frame.sort, default_border)
+    frame.sort:SetHeight(12)
+    frame.sort:SetWidth(12)
+    frame.sort.texture = frame.sort:CreateTexture(nil, "OVERLAY")
+    frame.sort.texture:SetTexture(pfUI.media["img:sort"])
+    frame.sort.texture:SetPoint("TOPLEFT", frame.sort, "TOPLEFT", 2, -2)
+    frame.sort.texture:SetPoint("BOTTOMRIGHT", frame.sort, "BOTTOMRIGHT", -2, 2)
+    frame.sort.texture:SetVertexColor(.25,.25,.25,1)
+    frame.sort:SetScript("OnClick", onclick)
+    frame.sort:SetScript("OnEnter", function()
+      frame.sort.backdrop:SetBackdropBorderColor(1,1,.25,1)
+      frame.sort.texture:SetVertexColor(1,1,.25,1)
+      GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+      GameTooltip:SetText(tip)
+      GameTooltip:Show()
+    end)
+    frame.sort:SetScript("OnLeave", function()
+      CreateBackdrop(frame.sort, default_border)
+      frame.sort.texture:SetVertexColor(.25,.25,.25,1)
+      if GameTooltip:IsOwned(this) then GameTooltip:Hide() end
+    end)
+  end
+
   function pfUI.bag:CreateAdditions(frame)
     -- bag additions
     if frame == pfUI.bag.right then
@@ -959,6 +986,8 @@ pfUI:RegisterModule("bags", "vanilla:tbc", function ()
         end)
       end
 
+      CreateSortButton(frame, frame.keys, function() pfUI.SortBags() end, T["Sort Bags"])
+
       -- gold string
       if not frame.gold and (C.appearance.bags.movable == "1" or not pfUI.panel) then
         frame.gold = CreateFrame("Frame", "pfBagGoldString", frame)
@@ -983,7 +1012,7 @@ pfUI:RegisterModule("bags", "vanilla:tbc", function ()
         frame.search.db = {}
         frame.search:SetHeight(12)
         frame.search:SetPoint("TOPLEFT", frame, "TOPLEFT", default_border, -default_border)
-        frame.search:SetPoint("TOPRIGHT", frame.keys, "TOPLEFT", -default_border*3, -default_border)
+        frame.search:SetPoint("TOPRIGHT", frame.sort, "TOPLEFT", -default_border*3, -default_border)
         CreateBackdrop(frame.search, default_border)
 
         frame.search.edit = CreateFrame("EditBox", "pfUIBagSearch", frame.search, "InputBoxTemplate")
@@ -1121,6 +1150,8 @@ pfUI:RegisterModule("bags", "vanilla:tbc", function ()
           end
         end)
       end
+
+      CreateSortButton(frame, frame.bags, function() pfUI.SortBankBags() end, T["Sort Bank"])
     end
   end
 end)

@@ -628,32 +628,137 @@ function pfUI.api.wipe(src)
   return src
 end
 
+-- [ GridStep ]
+-- One unlock-grid cell in pixels: screen width / 128 (same step for X and Y).
+function pfUI.api.GridStep()
+  local w = GetScreenWidth()
+  if not w or w <= 0 then return 10 end
+  return w / 128
+end
+
+-- [ GridToPixel ]
+-- Grid cells → pixels. Sentinel "-1" / -1 passes through unchanged.
+function pfUI.api.GridToPixel(n)
+  if n == nil or n == "" then return n end
+  if n == "-1" or tonumber(n) == -1 then return n == "-1" and "-1" or -1 end
+  local v = tonumber(n)
+  if not v then return n end
+  return v * GridStep()
+end
+
+-- [ PixelToGrid ]
+-- Pixels → whole grid cells (nearest integer). Float noise from
+-- GetLeft/GetBottom must not leak into seats, size, or the dock.
+function pfUI.api.PixelToGrid(px)
+  local v = tonumber(px)
+  if not v then return px end
+  local step = GridStep()
+  if step <= 0 then return floor(v + 0.5) end
+  return floor(v / step + 0.5)
+end
+
+-- [ ConfigSize ]
+-- Layout config value (cells) → pixels for SetWidth/SetHeight.
+-- Sentinel "-1" / -1 stays as -1 (follow parent / disabled).
+function pfUI.api.ConfigSize(v)
+  if v == nil or v == "" then return v end
+  if v == "-1" or tonumber(v) == -1 then return -1 end
+  local n = tonumber(v)
+  if not n then return v end
+  return n * GridStep()
+end
+
+-- [ ApplyFrameSize ]
+-- WorldMap-only zoom: set scale so effective width equals `size` grid cells.
+-- HUD unlock no longer uses SetScale (it broke ConvertFrameAnchor seats).
+-- Returns the applied scale, or nil if width is not usable yet.
+function pfUI.api.ApplyFrameSize(frame, size)
+  size = tonumber(size)
+  if not frame or not size or size <= 0 then return nil end
+  local w = frame:GetWidth()
+  if not w or w <= 0 then return nil end
+  local scale = GridToPixel(size) / w
+  if scale < 0.1 then scale = 0.1 end
+  if scale > 2 then scale = 2 end
+  frame:SetScale(scale)
+  return scale
+end
+
 -- [ Load Movable ]
 -- Loads the positions of a Frame.
+-- xpos/ypos are grid cells (screen width / 128). Unlock size uses
+-- position.width/height (cells) via SetWidth/SetHeight — never SetScale
+-- (WorldMap keeps size for map.lua ApplyMapSize after LoadMovable).
 -- 'frame'      [frame]        the frame that should be positioned.
 -- 'init'       [bool]         treats the current position as initial data
 function pfUI.api.LoadMovable(frame, init)
-  -- update position data
+  -- update position data (also snapshot native size / config for unlock Reset)
   if not frame.posdata or init then
-    frame.posdata = { scale = frame:GetScale(), pos = {} }
+    frame.posdata = {
+      scale = frame:GetScale(),
+      pos = {},
+      width = frame:GetWidth(),
+      height = frame:GetHeight(),
+    }
+    if frame.config then
+      frame.posdata.cfgWidth = frame.config.width
+      frame.posdata.cfgHeight = frame.config.height
+    end
+    local n = frame:GetName()
+    if n and strsub(n, 1, 11) == "pfActionBar" and C.bars then
+      local ids = {
+        Main = 1, Paging = 2, Right = 3, Vertical = 4, Left = 5, Top = 6,
+        StanceBar1 = 7, StanceBar2 = 8, StanceBar3 = 9, StanceBar4 = 10,
+        Stances = 11, Pet = 12,
+      }
+      local id = ids[strsub(n, 12)]
+      if id and C.bars["bar"..id] then
+        frame.posdata.icon_size = C.bars["bar"..id].icon_size
+        frame.posdata.formfactor = C.bars["bar"..id].formfactor
+      end
+    end
     for i=1,frame:GetNumPoints() do
       frame.posdata.pos[i] = { frame:GetPoint(i) }
     end
   end
 
   if pfUI_config["position"][frame:GetName()] then
-    if pfUI_config["position"][frame:GetName()]["parent"] then
-      frame:SetParent(_G[pfUI_config["position"][frame:GetName()]["parent"]])
+    local cfg = pfUI_config["position"][frame:GetName()]
+    if cfg["parent"] then
+      frame:SetParent(_G[cfg["parent"]])
     end
 
-    if pfUI_config["position"][frame:GetName()]["scale"] then
-      frame:SetScale(pfUI_config["position"][frame:GetName()].scale)
+    -- Drop unlock-era SetScale sizing; keep WorldMapFrame.size for map.lua.
+    local name = frame:GetName()
+    if name ~= "WorldMapFrame" then
+      cfg["size"] = nil
+      cfg["scale"] = nil
+      if frame:GetScale() ~= 1 then frame:SetScale(1) end
     end
 
-    if pfUI_config["position"][frame:GetName()]["xpos"] then
-      local anchor = pfUI_config["position"][frame:GetName()]["anchor"] or "TOPLEFT"
+    if cfg["xpos"] ~= nil then
+      local anchor = cfg["anchor"] or "TOPLEFT"
+      if anchor == "CENTERBOTTOM" then
+        anchor = "BOTTOM"
+        cfg["anchor"] = "BOTTOM"
+      end
+      local point = pfUI.api.NativePoint(anchor)
+      frame.pfAnchor = anchor
       frame:ClearAllPoints()
-      frame:SetPoint(anchor, pfUI_config["position"][frame:GetName()].xpos, pfUI_config["position"][frame:GetName()].ypos)
+      -- Always against UIParent: the 3-arg form uses the current parent,
+      -- which is wrong after a drag pin or a temporary reparent.
+      -- xpos/ypos are grid cells.
+      frame:SetPoint(point, UIParent, point,
+        GridToPixel(cfg.xpos),
+        GridToPixel(cfg.ypos))
+    end
+
+    -- Unlock width/height (cells). Action bars keep these as the outer box;
+    -- icon_size/formfactor only fill the interior.
+    if name ~= "WorldMapFrame" then
+      local w, h = tonumber(cfg.width), tonumber(cfg.height)
+      if w and w > 0 then frame:SetWidth(GridToPixel(w)) end
+      if h and h > 0 then frame:SetHeight(GridToPixel(h)) end
     end
   elseif frame.posdata and frame.posdata.pos[1] then
     frame:ClearAllPoints()
@@ -663,22 +768,63 @@ function pfUI.api.LoadMovable(frame, init)
       local a, b, c, d, e = unpack(point)
       if a and b then frame:SetPoint(a,b,c,d,e) end
     end
+
+    if frame.posdata.width and frame.posdata.width > 0 then
+      frame:SetWidth(frame.posdata.width)
+    end
+    if frame.posdata.height and frame.posdata.height > 0 then
+      frame:SetHeight(frame.posdata.height)
+    end
   end
 end
 
 -- [ Save Movable ]
 -- Save the positions of a Frame.
--- 'frame'      [frame]        the frame that should be saved.
-function pfUI.api.SaveMovable(frame, scale)
-  local anchor, _, _, xpos, ypos = frame:GetPoint()
-  C.position[frame:GetName()] = C.position[frame:GetName()] or {}
-  C.position[frame:GetName()]["xpos"] = round(xpos)
-  C.position[frame:GetName()]["ypos"] = round(ypos)
-  C.position[frame:GetName()]["anchor"] = anchor
-  C.position[frame:GetName()]["parent"] = frame:GetParent() and frame:GetParent():GetName() or nil
-  if scale then
-    C.position[frame:GetName()]["scale"] = frame:GetScale()
+-- Always re-derive offsets from the live rect via ConvertFrameAnchor.
+-- StartMoving pins TOPLEFT against the screen root; those GetPoint
+-- numbers must not be stored under BOTTOM/CENTER.
+-- xpos/ypos stored as whole grid cells. width/height (cells) are left
+-- alone here — unlock writes them via SaveUnlockSize. map.lua writes
+-- WorldMapFrame.size itself.
+function pfUI.api.SaveMovable(frame, _)
+  local point = frame:GetPoint()
+  local anchor = frame.pfAnchor or point or "TOPLEFT"
+  if anchor == "CENTERBOTTOM" then anchor = "BOTTOM" end
+
+  local a, xpos, ypos = pfUI.api.ConvertFrameAnchor(frame, anchor)
+  if not xpos or not ypos then
+    -- No rect yet: do not store raw GetPoint pixels as cells.
+    return
   end
+  anchor = a
+
+  frame.pfAnchor = anchor
+  C.position[frame:GetName()] = C.position[frame:GetName()] or {}
+  local cfg = C.position[frame:GetName()]
+  cfg["xpos"] = PixelToGrid(xpos)
+  cfg["ypos"] = PixelToGrid(ypos)
+  cfg["anchor"] = anchor
+  cfg["parent"] = frame:GetParent() and frame:GetParent():GetName() or nil
+  if frame:GetName() ~= "WorldMapFrame" then
+    cfg["size"] = nil
+    cfg["scale"] = nil
+  end
+end
+
+-- [ Save Unlock Size ]
+-- Store unlock width/height in grid cells (including action bars: outer box
+-- stays exact; BarFitToSize only picks icons to fill it).
+function pfUI.api.SaveUnlockSize(frame, width, height)
+  if not frame or not frame.GetName then return end
+  local name = frame:GetName()
+  if not name or name == "WorldMapFrame" then return end
+
+  width = tonumber(width)
+  height = tonumber(height)
+  C.position[name] = C.position[name] or {}
+  local cfg = C.position[name]
+  if width and width > 0 then cfg.width = width else cfg.width = nil end
+  if height and height > 0 then cfg.height = height else cfg.height = nil end
 end
 
 -- [ Update Movable ]
@@ -806,38 +952,46 @@ function pfUI.api.SetAutoPoint(frame, parent, spacing)
   end
 end
 
+-- [ NativePoint ]
+-- Maps saved unlock anchors to a WoW SetPoint point. CENTERBOTTOM was a
+-- short-lived alias of BOTTOM; old seats still load.
+function pfUI.api.NativePoint(anchor)
+  if anchor == "CENTERBOTTOM" then return "BOTTOM" end
+  return anchor or "TOPLEFT"
+end
+
 -- [ GetBestAnchor ]
--- Returns the best anchor of a frame, based on its position
+-- Returns the anchor whose SetPoint offsets are smallest (|x|+|y|).
+-- Screen-third grids always shoved mid-lower HUD into BOTTOMLEFT and wiped
+-- CENTER; minimizing offsets keeps centre-relative seats (CENTER / BOTTOM /
+-- TOP / LEFT / RIGHT) when that is what the placement is.
 -- 'self'       [frame]        the frame that should be checked
 -- returns:     [string]       the name of the best anchor
 function pfUI.api.GetBestAnchor(self)
-  local scale = self:GetScale()
-  local x, y = self:GetCenter()
-  local a = GetScreenWidth()  / scale / 3
-  local b = GetScreenWidth()  / scale / 3 * 2
-  local c = GetScreenHeight() / scale / 3 * 2
-  local d = GetScreenHeight() / scale / 3
-  if not x or not y then return end
-
-  if x < a and y > c then
+  if not self or not self.GetCenter or not self:GetCenter() then
     return "TOPLEFT"
-  elseif x > a and x < b and y > c then
-    return "TOP"
-  elseif x > b and y > c then
-    return "TOPRIGHT"
-  elseif x < a and y > d and y < c then
-    return "LEFT"
-  elseif x > a and x < b and y > d and y < c then
-    return "CENTER"
-  elseif x > b and y > d and y < c then
-    return "RIGHT"
-  elseif x < a and y < d then
-    return "BOTTOMLEFT"
-  elseif x > a and x < b and y < d then
-    return "BOTTOM"
-  elseif x > b and y < d then
-    return "BOTTOMRIGHT"
   end
+
+  local candidates = {
+    "TOPLEFT", "TOP", "TOPRIGHT",
+    "LEFT", "CENTER", "RIGHT",
+    "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT",
+  }
+  local best, bestscore = "CENTER", nil
+  for i = 1, table.getn(candidates) do
+    local a, x, y = pfUI.api.ConvertFrameAnchor(self, candidates[i])
+    if x and y then
+      local score = math.abs(x) + math.abs(y)
+      -- Prefer centre-relative names on a tie.
+      if a == "CENTER" then score = score - 0.02 end
+      if a == "BOTTOM" then score = score - 0.01 end
+      if not bestscore or score < bestscore then
+        bestscore = score
+        best = a
+      end
+    end
+  end
+  return best
 end
 
 -- [ ConvertFrameAnchor ]
@@ -846,31 +1000,62 @@ end
 -- 'anchor'     [string]       the new anchor that shall be used
 -- returns:     anchor, x, y   can directly be used in SetPoint()
 function pfUI.api.ConvertFrameAnchor(self, anchor)
-  local scale, x, y, _ = self:GetScale(), nil, nil, nil
+  if anchor == "CENTERBOTTOM" then anchor = "BOTTOM" end
+  if not self or not self.GetLeft or not self:GetLeft() then
+    return anchor, nil, nil
+  end
 
+  -- GetLeft/GetTop/GetBottom/GetCenter divide by the frame's effective scale.
+  -- Multiply back into UIParent SetPoint space. Using GetScale() alone is wrong
+  -- when UIParent itself is scaled; effective/parent matches SetPoint offsets.
+  -- Never divide screen size by scale: that double-counts and pulls seats
+  -- toward the mid-lines / top when scale ≠ 1 (map zoom, or old unlock size).
+  local us = UIParent:GetEffectiveScale()
+  local es = self:GetEffectiveScale()
+  local s = (es and us and us > 0) and (es / us) or self:GetScale()
+  if not s or s == 0 then s = 1 end
+
+  local function LeftX()
+    return self:GetLeft() * s
+  end
+  local function RightX()
+    return self:GetRight() * s - GetScreenWidth()
+  end
+  local function BottomY()
+    return self:GetBottom() * s
+  end
+  local function TopY()
+    return self:GetTop() * s - GetScreenHeight()
+  end
+  local function CenterX()
+    local cx = self:GetCenter()
+    return cx * s - GetScreenWidth() / 2
+  end
+  local function CenterY()
+    local _, cy = self:GetCenter()
+    return cy * s - GetScreenHeight() / 2
+  end
+
+  local x, y
   if anchor == "CENTER" then
-    x, y = self:GetCenter()
-    x, y = x - GetScreenWidth()/2/scale, y - GetScreenHeight()/2/scale
+    x, y = CenterX(), CenterY()
   elseif anchor == "TOPLEFT" then
-    x, y = self:GetLeft(), self:GetTop() - GetScreenHeight()/scale
+    x, y = LeftX(), TopY()
   elseif anchor == "TOP" then
-    x, _ = self:GetCenter()
-    x, y = x - GetScreenWidth()/2/scale, self:GetTop() - GetScreenHeight()/scale
+    x, y = CenterX(), TopY()
   elseif anchor == "TOPRIGHT" then
-    x, y = self:GetRight() - GetScreenWidth()/scale, self:GetTop() - GetScreenHeight()/scale
+    x, y = RightX(), TopY()
   elseif anchor == "RIGHT" then
-    _, y = self:GetCenter()
-    x, y = self:GetRight() - GetScreenWidth()/scale, y - GetScreenHeight()/2/scale
+    x, y = RightX(), CenterY()
   elseif anchor == "BOTTOMRIGHT" then
-    x, y = self:GetRight() - GetScreenWidth()/scale, self:GetBottom()
+    x, y = RightX(), BottomY()
   elseif anchor == "BOTTOM" then
-    x, _ = self:GetCenter()
-    x, y = x - GetScreenWidth()/2/scale, self:GetBottom()
+    -- X from the vertical mid-line, Y from the bottom edge.
+    x, y = CenterX(), BottomY()
   elseif anchor == "BOTTOMLEFT" then
-    x, y = self:GetLeft(), self:GetBottom()
+    x, y = LeftX(), BottomY()
   elseif anchor == "LEFT" then
-    _, y = self:GetCenter()
-    x, y = self:GetLeft(), y - GetScreenHeight()/2/scale
+    x, y = LeftX(), CenterY()
   end
 
   return anchor, round(x, 2), round(y, 2)
@@ -1125,15 +1310,96 @@ end
 -- 'bar'        frame reference,
 -- 'barsize'    integer number of buttons,
 -- 'formfactor' string formfactor in cols x rows,
--- 'padding'    the spacing between buttons
-function pfUI.api.BarLayoutSize(bar,barsize,formfactor,iconsize,bordersize,padding)
+-- 'padding'    horizontal spacing (and vertical when padH omitted)
+-- 'padH'       optional vertical spacing
+-- Outer size includes the panel border (drawn flush on the bar frame), so
+-- GetWidth/GetHeight match the visible silhouette unlock snaps to.
+function pfUI.api.BarLayoutSize(bar,barsize,formfactor,iconsize,bordersize,padding,padH)
   assert(barsize > 0 and barsize <= NUM_ACTIONBAR_BUTTONS,"BarLayoutSize: barsize "..tostring(barsize).." is invalid")
   local formfactor = pfUI.api.BarLayoutFormfactor(formfactor)
   local cols, rows = unpack(pfGridmath[barsize][formfactor])
-  local width = (iconsize + bordersize*2+padding) * cols + padding
-  local height = (iconsize + bordersize*2+padding) * rows + padding
+  local padW = tonumber(padding) or 3
+  padH = tonumber(padH) or padW
+  iconsize = tonumber(iconsize) or 8
+  bordersize = tonumber(bordersize) or 3
+  local width = bordersize*2 + cols*(iconsize + bordersize*2) + (cols+1)*padW
+  local height = bordersize*2 + rows*(iconsize + bordersize*2) + (rows+1)*padH
   bar._size = {width,height}
   return bar._size
+end
+
+-- [ Bar Square Pads ]
+-- Largest square icon that fits in `width`×`height` with pad >= minpad on
+-- both axes, then stretch padW/padH so the grid exactly fills the box.
+-- returns: icon, padW, padH
+function pfUI.api.BarSquarePads(cols, rows, width, height, bordersize, minpad)
+  cols = tonumber(cols) or 1
+  rows = tonumber(rows) or 1
+  width = tonumber(width) or 1
+  height = tonumber(height) or 1
+  bordersize = tonumber(bordersize) or 3
+  minpad = tonumber(minpad) or 3
+  if cols < 1 then cols = 1 end
+  if rows < 1 then rows = 1 end
+  if width < 1 then width = 1 end
+  if height < 1 then height = 1 end
+
+  -- span = 2b + n*(I+2b) + (n+1)*pad  with pad >= minpad
+  local function imax(span, n)
+    return (span - bordersize*2 - minpad*(n+1))/n - bordersize*2
+  end
+  local icon = math.floor(math.min(imax(width, cols), imax(height, rows)) + 0.5)
+  if icon < 8 then icon = 8 end
+  if icon > 64 then icon = 64 end
+
+  local function pad(span, n)
+    local p = (span - bordersize*2 - n*(icon + bordersize*2)) / (n + 1)
+    if p < minpad then p = minpad end
+    return p
+  end
+  return icon, pad(width, cols), pad(height, rows)
+end
+
+-- [ Bar Fit To Size ]
+-- Pick formfactor + square icon_size so a bar best fills a target pixel box.
+-- Uses BarSquarePads: icons stay square; leftover space goes into spacing so
+-- the grid reaches both edges (e.g. 36×3 is full width, not height-limited slack).
+-- returns: formfactor string (e.g. "6 x 2"), icon_size number
+function pfUI.api.BarFitToSize(barsize, width, height, bordersize, padding)
+  barsize = tonumber(barsize) or 0
+  width = tonumber(width) or 0
+  height = tonumber(height) or 0
+  bordersize = tonumber(bordersize) or 3
+  padding = tonumber(padding) or 3
+  if barsize < 1 or not pfGridmath[barsize] then
+    return "1 x 1", 8
+  end
+  if width < 1 then width = 1 end
+  if height < 1 then height = 1 end
+
+  local options = pfUI.api.BarLayoutOptions(barsize)
+  local bestFF, bestIcon, bestScore = options[1], 8, -1e9
+  local targetAspect = width / height
+
+  for i, opt in ipairs(options) do
+    local cols, rows = unpack(pfGridmath[barsize][i])
+    if cols and rows and cols > 0 and rows > 0 then
+      local icon, padW, padH = pfUI.api.BarSquarePads(cols, rows, width, height, bordersize, padding)
+      local gridAspect = cols / rows
+      local aspectErr = math.abs(gridAspect - targetAspect)
+      local padSkew = math.abs(padW - padH)
+      -- Prefer larger icons and layouts whose grid matches the box; slight
+      -- penalty when pads must diverge a lot to fill.
+      local score = icon * 10 - aspectErr * 50 - padSkew * 0.05
+      if score > bestScore then
+        bestScore = score
+        bestFF = opt
+        bestIcon = icon
+      end
+    end
+  end
+
+  return bestFF, bestIcon
 end
 
 -- [ Bar Button Anchor ] --
@@ -1143,17 +1409,22 @@ end
 -- 'formfactor'   string formfactor in cols x rows
 -- 'iconsize'     size of the button
 -- 'bordersize'   default bordersize
--- 'padding'      the spacing between buttons
-function pfUI.api.BarButtonAnchor(button,basename,buttonindex,barsize,formfactor,iconsize,bordersize,padding)
+-- 'padding'      horizontal spacing between buttons
+-- 'padH'         optional vertical spacing (defaults to padding)
+-- First button clears panel border + its own outside-drawn button border.
+function pfUI.api.BarButtonAnchor(button,basename,buttonindex,barsize,formfactor,iconsize,bordersize,padding,padH)
   assert(barsize > 0 and barsize <= NUM_ACTIONBAR_BUTTONS,"BarButtonAnchor: barsize "..tostring(barsize).." is invalid")
   local formfactor = pfUI.api.BarLayoutFormfactor(formfactor)
   local parent = button:GetParent()
   local cols, rows = unpack(pfGridmath[barsize][formfactor])
+  local padW = tonumber(padding) or 3
+  padH = tonumber(padH) or padW
+  bordersize = tonumber(bordersize) or 3
   if buttonindex == 1 then
-    button._anchor = {"TOPLEFT", parent, "TOPLEFT", bordersize+padding, -bordersize-padding}
+    button._anchor = {"TOPLEFT", parent, "TOPLEFT", bordersize*2+padW, -(bordersize*2+padH)}
   else
     local col = buttonindex-((math.ceil(buttonindex/cols)-1)*cols)
-    button._anchor = col==1 and {"TOP",_G[basename..(buttonindex-cols)],"BOTTOM",0,-(bordersize*2+padding)} or {"LEFT",_G[basename..(buttonindex-1)],"RIGHT",(bordersize*2+padding),0}
+    button._anchor = col==1 and {"TOP",_G[basename..(buttonindex-cols)],"BOTTOM",0,-(bordersize*2+padH)} or {"LEFT",_G[basename..(buttonindex-1)],"RIGHT",(bordersize*2+padW),0}
   end
   return button._anchor
 end

@@ -10,6 +10,18 @@ pfUI:RegisterModule("actionbar", "vanilla:tbc", function ()
   local rawborder, border = GetBorderSize("actionbars")
   local bpad = rawborder > 1 and border - GetPerfectPixel() or GetPerfectPixel()
 
+  -- Bar size includes panel chrome; keep the backdrop on the frame edge so
+  -- GetWidth/GetHeight equal the visible outer silhouette.
+  local function FlushBarBackdrop(f)
+    if not f or not f.backdrop then return end
+    f.backdrop:ClearAllPoints()
+    f.backdrop:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+    f.backdrop:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
+    if f.SetHitRectInsets and (not InCombatLockdown or not InCombatLockdown()) then
+      f:SetHitRectInsets(0, 0, 0, 0)
+    end
+  end
+
   local eventcache = { } -- contains a list of events that shall be processed later -> [event] = true
   local updatecache = { } -- contains a list of buttons slots that shall be refreshed later -> [slot] = true
   local buttoncache = { } -- contains a list of all buttons ever created -> [slot] = frame
@@ -1250,7 +1262,25 @@ pfUI:RegisterModule("actionbar", "vanilla:tbc", function ()
     local font = pfUI.font_unit
     local font_size = C.global.font_unit_size
 
-    local realsize = size+border*2
+    size = tonumber(size) or 8
+    spacing = tonumber(spacing) or 3
+    local padW, padH = spacing, spacing
+    local unlockW, unlockH
+    do
+      local pos = C.position and C.position["pfActionBar" .. barnames[i]]
+      local cellW = pos and tonumber(pos.width)
+      local cellH = pos and tonumber(pos.height)
+      if cellW and cellH and cellW >= 1 and cellH >= 1 then
+        unlockW, unlockH = GridToPixel(cellW), GridToPixel(cellH)
+        local ff = BarLayoutFormfactor(formfactor)
+        local cols, rows = unpack(pfGridmath[buttons][ff])
+        -- Square icons; leftover box space becomes axis padding so both
+        -- edges fill (12×1 in a 36×3 seat no longer leaves a side gap).
+        local icon, pw, ph = BarSquarePads(cols, rows, unlockW, unlockH, border, spacing)
+        size, padW, padH = icon, pw, ph
+        C.bars["bar"..i].icon_size = tostring(icon)
+      end
+    end
 
     -- create frame
     local init = not bars[i]
@@ -1352,7 +1382,7 @@ pfUI:RegisterModule("actionbar", "vanilla:tbc", function ()
       bars[i][j] = CreateActionButton(bars[i], i, j)
       bars[i][j].bar = i
 
-      BarButtonAnchor(bars[i][j], buttonbasename, j, buttons, formfactor, size, border, spacing)
+      BarButtonAnchor(bars[i][j], buttonbasename, j, buttons, formfactor, size, border, padW, padH)
       bars[i][j]:ClearAllPoints()
       bars[i][j]:SetPoint(unpack(bars[i][j]._anchor))
       bars[i][j]:Show()
@@ -1382,10 +1412,15 @@ pfUI:RegisterModule("actionbar", "vanilla:tbc", function ()
       EnablePaging(bars[i])
     end
 
-    -- adjust actionbar size
-    BarLayoutSize(bars[i], buttons, formfactor, size, border, spacing)
-    bars[i]:SetWidth(bars[i]._size[1])
-    bars[i]:SetHeight(bars[i]._size[2])
+    -- adjust actionbar size (unlock W/H is the outer box when saved)
+    BarLayoutSize(bars[i], buttons, formfactor, size, border, padW, padH)
+    if unlockW and unlockH then
+      bars[i]:SetWidth(unlockW)
+      bars[i]:SetHeight(unlockH)
+    else
+      bars[i]:SetWidth(bars[i]._size[1])
+      bars[i]:SetHeight(bars[i]._size[2])
+    end
     bars[i]:ClearAllPoints()
     if i == 1 then -- main
       bars[i]:SetPoint("BOTTOM", 0, 2*border)
@@ -1428,6 +1463,7 @@ pfUI:RegisterModule("actionbar", "vanilla:tbc", function ()
     -- apply backdrop settings
     if background == "1" then
       CreateBackdrop(bars[i], border)
+      FlushBarBackdrop(bars[i])
       CreateBackdropShadow(bars[i])
       bars[i].backdrop:Show()
     elseif bars[i].backdrop then
@@ -1441,6 +1477,7 @@ pfUI:RegisterModule("actionbar", "vanilla:tbc", function ()
         bars[1].mergedBackdrop:SetPoint("TOPLEFT", bars[6], "TOPLEFT", 0, 0)
         bars[1].mergedBackdrop:SetPoint("BOTTOMRIGHT", bars[1], "BOTTOMRIGHT", 0, 0)
         CreateBackdrop(bars[1].mergedBackdrop)
+        FlushBarBackdrop(bars[1].mergedBackdrop)
 
         local _, anchor, _ = bars[6]:GetPoint()
         if anchor == bars[1] and C.bars.bar1.enable == "1"

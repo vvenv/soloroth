@@ -80,8 +80,8 @@ local PFUI_INVARIANT = {
   { { "appearance", "worldmap", "mapreveal" }, "1" },
   { { "appearance", "worldmap", "mapexploration" }, "1" },
   -- Minimap: bigger, with the zone name and coordinates always on.
-  -- Size 170 matches MicroBar's strip width under the minimap.
-  { { "appearance", "minimap", "size" }, "170" },
+  -- Size in whole grid cells (screen width / 128); 14 = 175px at 1600-wide.
+  { { "appearance", "minimap", "size" }, "14" },
   { { "appearance", "minimap", "zonetext" }, "on" },
   { { "appearance", "minimap", "coordstext" }, "on" },
   -- pfUI kills the stock MainMenuBar; without this the character / spellbook /
@@ -126,64 +126,59 @@ local PFUI_INVARIANT = {
   { { "global", "autosell" }, "1" },
   -- Vertical Actionbar (MultiBarLeft / bar4) off; main + bottom bars cover solo.
   { { "bars", "bar4", "enable" }, "0" },
-  -- Modules with nothing to do alone, or that only serve other players.
-  { { "disabled", "raid" }, "1" },                -- a five-player party at most
-  { { "disabled", "targettargettarget" }, "1" },
-  { { "disabled", "updatenotify" }, "1" },        -- asks other players' clients
-  { { "disabled", "whisperproxy" }, "1" },        -- forwards whispers
-  { { "disabled", "socialmod" }, "1" },           -- friends and guild list tweaks
-  { { "disabled", "chatcopy" }, "1" },            -- copy chat lines
   -- Re-enable if an older !Solo left bags off for Bagshui.
   { { "disabled", "bags" }, "0" },
-  -- HUD seats (LEFT = Y from the horizontal mid-line). Tuned for 1600×960
-  -- + Adapta sizes so tops match the old TOPLEFT layout: player | pet |
-  -- target on one row (20px gaps), ToT under pet, chat/vertical bar share a
-  -- column, pet bar centred under the cluster. xpos/ypos/scale must be
-  -- numbers: LoadMovable does SetPoint(anchor, x, y), and a string "610" is
-  -- read as a region name. SavedVariables rewrite them as strings on logout;
-  -- CoercePositions turns them back each login.
-  { { "position", "pfPlayer", "anchor" }, "LEFT" },
-  { { "position", "pfPlayer", "xpos" }, 490 },
-  { { "position", "pfPlayer", "ypos" }, -191 },
+  -- HUD seat *defaults* (grid cells). Applied only when that frame has no
+  -- xpos yet — never overwrite a saved / loaded profile seat. xpos/ypos must
+  -- be numbers: LoadMovable SetPoint + GridToPixel; SavedVariables stringify
+  -- on logout; CoercePositions turns them back each login.
+  { { "position", "pfPlayer", "anchor" }, "CENTER" },
+  { { "position", "pfPlayer", "xpos" }, -16 },
+  { { "position", "pfPlayer", "ypos" }, -15 },
   { { "position", "pfPlayer", "parent" }, "UIParent" },
-  { { "position", "pfTarget", "anchor" }, "LEFT" },
-  { { "position", "pfTarget", "xpos" }, 832 },
-  { { "position", "pfTarget", "ypos" }, -191 },
+  { { "position", "pfTarget", "anchor" }, "CENTER" },
+  { { "position", "pfTarget", "xpos" }, 16 },
+  { { "position", "pfTarget", "ypos" }, -15 },
   { { "position", "pfTarget", "parent" }, "UIParent" },
-  { { "position", "pfPet", "anchor" }, "LEFT" },
-  { { "position", "pfPet", "xpos" }, 712 },
-  { { "position", "pfPet", "ypos" }, -181 },
+  { { "position", "pfPet", "anchor" }, "CENTER" },
+  { { "position", "pfPet", "xpos" }, 0 },
+  { { "position", "pfPet", "ypos" }, -14 },
   { { "position", "pfPet", "parent" }, "UIParent" },
-  { { "position", "pfTargetTarget", "anchor" }, "LEFT" },
-  { { "position", "pfTargetTarget", "xpos" }, 712 },
-  { { "position", "pfTargetTarget", "ypos" }, -212 },
+  { { "position", "pfTargetTarget", "anchor" }, "CENTER" },
+  { { "position", "pfTargetTarget", "xpos" }, 0 },
+  { { "position", "pfTargetTarget", "ypos" }, -17 },
   { { "position", "pfTargetTarget", "parent" }, "UIParent" },
-  { { "position", "pfChatInputBox", "anchor" }, "LEFT" },
-  { { "position", "pfChatInputBox", "xpos" }, 610 },
-  { { "position", "pfChatInputBox", "ypos" }, -151 },
-  { { "position", "pfChatInputBox", "parent" }, "UIParent" },
-  { { "position", "pfTotems", "anchor" }, "LEFT" },
-  { { "position", "pfTotems", "xpos" }, 700 },
-  { { "position", "pfTotems", "ypos" }, -236 },
+  -- pfChatInputBox is not a free seat. chat.lua docks its bottom edge to
+  -- the top action bar; a saved CENTER/-12 xpos was winning over that dock.
+  { { "position", "pfTotems", "anchor" }, "CENTER" },
+  { { "position", "pfTotems", "xpos" }, 0 },
+  { { "position", "pfTotems", "ypos" }, -19 },
   { { "position", "pfTotems", "parent" }, "UIParent" },
-  { { "position", "pfActionBarVertical", "anchor" }, "LEFT" },
-  { { "position", "pfActionBarVertical", "xpos" }, 610 },
-  { { "position", "pfActionBarVertical", "ypos" }, -362 },
+  { { "position", "pfActionBarVertical", "anchor" }, "CENTER" },
+  { { "position", "pfActionBarVertical", "xpos" }, -16 },
+  { { "position", "pfActionBarVertical", "ypos" }, -29 },
   { { "position", "pfActionBarVertical", "parent" }, "UIParent" },
-  { { "position", "pfActionBarPet", "anchor" }, "LEFT" },
-  { { "position", "pfActionBarPet", "xpos" }, 660 },
-  { { "position", "pfActionBarPet", "ypos" }, -303 },
+  { { "position", "pfActionBarPet", "anchor" }, "CENTER" },
+  { { "position", "pfActionBarPet", "xpos" }, 0 },
+  { { "position", "pfActionBarPet", "ypos" }, -24 },
   { { "position", "pfActionBarPet", "parent" }, "UIParent" },
+  -- ~101px from the left at 1600-wide → 8 cells.
   { { "position", "pfDurability", "anchor" }, "TOPLEFT" },
-  { { "position", "pfDurability", "xpos" }, 1260 },
-  { { "position", "pfDurability", "ypos" }, -180 },
+  { { "position", "pfDurability", "xpos" }, 8 },
+  { { "position", "pfDurability", "ypos" }, -14 },
   { { "position", "pfDurability", "parent" }, "UIParent" },
+  -- Compact message log: width/height come from MessageLog.lua (32×7 cells).
+  { { "position", "pfSoloMessageLog", "anchor" }, "BOTTOMLEFT" },
+  { { "position", "pfSoloMessageLog", "xpos" }, 0 },
+  { { "position", "pfSoloMessageLog", "ypos" }, 0 },
+  { { "position", "pfSoloMessageLog", "parent" }, "UIParent" },
   -- alpha is required: pfUI's map module SetAlphas it at PLAYER_ENTERING_WORLD
   -- and aborts the windowed skin (size, backdrop, BlackoutWorld:Hide) on nil.
+  -- size ≈ 0.7 scale at typical map width (~1002px) / (1600/128); map-only zoom.
   { { "position", "WorldMapFrame", "anchor" }, "TOPLEFT" },
-  { { "position", "WorldMapFrame", "xpos" }, 310 },
-  { { "position", "WorldMapFrame", "ypos" }, -70 },
-  { { "position", "WorldMapFrame", "scale" }, 0.7 },
+  { { "position", "WorldMapFrame", "xpos" }, 25 },
+  { { "position", "WorldMapFrame", "ypos" }, -6 },
+  { { "position", "WorldMapFrame", "size" }, 56 },
   { { "position", "WorldMapFrame", "alpha" }, 1 },
 }
 
@@ -203,9 +198,180 @@ local function CoercePositions()
       if cfg.xpos ~= nil then cfg.xpos = tonumber(cfg.xpos) or cfg.xpos end
       if cfg.ypos ~= nil then cfg.ypos = tonumber(cfg.ypos) or cfg.ypos end
       if cfg.scale ~= nil then cfg.scale = tonumber(cfg.scale) or cfg.scale end
+      if cfg.size ~= nil then cfg.size = tonumber(cfg.size) or cfg.size end
+      if cfg.width ~= nil then cfg.width = tonumber(cfg.width) or cfg.width end
+      if cfg.height ~= nil then cfg.height = tonumber(cfg.height) or cfg.height end
       if cfg.alpha ~= nil then cfg.alpha = tonumber(cfg.alpha) or cfg.alpha end
+      -- Whole cells only for seats. Do not divide |n| > 64: the screen is
+      -- 128 cells wide, so a corner anchor past the midline is a normal seat.
+      -- Doing that divide on every reload (the step also changes when the
+      -- window is resized) pulled those frames back to the default cluster.
+      local x, y = tonumber(cfg.xpos), tonumber(cfg.ypos)
+      if x then cfg.xpos = math.floor(x + 0.5) end
+      if y then cfg.ypos = math.floor(y + 0.5) end
+      local sz = tonumber(cfg.size)
+      if sz then cfg.size = math.floor(sz + 0.5) end
     end
   end
+  -- Unlock sizes with width/height cells + SetWidth; drop leftover scale/size
+  -- (WorldMap keeps size for map zoom).
+  for name, cfg in pairs(pos) do
+    if type(cfg) == "table" and name ~= "WorldMapFrame" then
+      cfg.size = nil
+      cfg.scale = nil
+    end
+  end
+end
+
+-- One-shot: pixel layout → grid cells (screen width / 128). Authored profiles
+-- and Solo seats are already in cells; this upgrades older SavedVariables.
+local LAYOUT_LEAF = {
+  width = true, height = true, pwidth = true, pheight = true,
+  portraitwidth = true, portraitheight = true,
+  combowidth = true, comboheight = true, druidmanaheight = true,
+  xp_width = true, xp_height = true, rep_width = true, rep_height = true,
+  input_width = true, heighthealth = true, heightcast = true,
+}
+
+local function GridStepNow()
+  if pfUI and pfUI.api and pfUI.api.GridStep then return pfUI.api.GridStep() end
+  local w = GetScreenWidth and GetScreenWidth()
+  if not w or w <= 0 then return 12.5 end
+  return w / 128
+end
+
+local function PxToCells(v)
+  local n = tonumber(v)
+  if not n or n == -1 or n == 0 then return v end
+  local step = GridStepNow()
+  if step <= 0 then return v end
+  local cells = n / step
+  -- keep two decimals
+  cells = math.floor(cells * 100 + 0.5) / 100
+  if type(v) == "string" then return tostring(cells) end
+  return cells
+end
+
+-- Leave numbers that already fit on the 128-cell screen. Only convert a
+-- value that is wider than the screen (pixels) or the old pixel*128 blow-up.
+local function MaybePxToCells(v)
+  local n = tonumber(v)
+  if not n or n == -1 or math.abs(n) <= 128 then return v end
+  if math.abs(n) > 256 then
+    n = n / 128
+    v = type(v) == "string" and tostring(n) or n
+    if math.abs(n) <= 128 then return v end
+  end
+  return PxToCells(v)
+end
+
+local function MigrateLayoutNode(node, path_tail)
+  if type(node) ~= "table" then return end
+  for k, v in pairs(node) do
+    if type(v) == "table" then
+      MigrateLayoutNode(v, k)
+    elseif LAYOUT_LEAF[k] then
+      node[k] = MaybePxToCells(v)
+    elseif k == "size" and path_tail == "minimap" then
+      node[k] = MaybePxToCells(v)
+    end
+  end
+end
+
+-- A cell count cannot be wider than the screen (128). Larger numbers are
+-- still pixels, or the old "pixel * 128" blow-up. A corner seat at cell 80
+-- is not one of those.
+local function LayoutLooksLikePixels()
+  local uf = pfUI_config.unitframes and pfUI_config.unitframes.player
+  local w = uf and tonumber(uf.width)
+  if w and w > 128 then return true end
+  local chat = pfUI_config.chat
+  if chat then
+    local left = chat.left and tonumber(chat.left.width)
+    if left and left > 128 then return true end
+    local right = chat.right and tonumber(chat.right.width)
+    if right and right > 128 then return true end
+  end
+  local xp = pfUI_config.panel and pfUI_config.panel.xp
+  if xp then
+    local xw = tonumber(xp.xp_width)
+    if xw and xw > 128 then return true end
+    local rw = tonumber(xp.rep_width)
+    if rw and rw > 128 then return true end
+  end
+  local pos = pfUI_config.position and pfUI_config.position.pfPlayer
+  local x = pos and tonumber(pos.xpos)
+  if x and math.abs(x) > 256 then return true end
+  return false
+end
+
+-- pfUI modules already SetWidth(ConfigSize(...)) before ADDON_LOADED. A
+-- leftover pixel width (e.g. 280) becomes ~2× screen wide. After migration
+-- + invariants, resize and hide the dual-chat chrome MessageLog replaces.
+function Solo_SuppressPfUIChatFrames()
+  if not pfUI then return end
+  local C = pfUI_config
+  local ConfigSize = pfUI.api and pfUI.api.ConfigSize
+  local function size(frame, w, h)
+    if not frame or not ConfigSize then return end
+    if w ~= nil then frame:SetWidth(ConfigSize(w)) end
+    if h ~= nil then frame:SetHeight(ConfigSize(h)) end
+  end
+  if pfUI.chat then
+    if pfUI.chat.left and C.chat and C.chat.left then
+      size(pfUI.chat.left, C.chat.left.width, C.chat.left.height)
+      pfUI.chat.left:Hide()
+    end
+    if pfUI.chat.right and C.chat and C.chat.right then
+      size(pfUI.chat.right, C.chat.right.width, C.chat.right.height)
+      pfUI.chat.right:Hide()
+    end
+  end
+  if pfUI.panel then
+    -- Panels match chat width (panel.lua uses width - 4 when chat exists).
+    if pfUI.panel.left and C.chat and C.chat.left and ConfigSize then
+      pfUI.panel.left:SetWidth(ConfigSize(C.chat.left.width) - 4)
+      pfUI.panel.left:Hide()
+    elseif pfUI.panel.left then
+      pfUI.panel.left:Hide()
+    end
+    if pfUI.panel.right and C.chat and C.chat.right and ConfigSize then
+      pfUI.panel.right:SetWidth(ConfigSize(C.chat.right.width) - 4)
+      pfUI.panel.right:Hide()
+    elseif pfUI.panel.right then
+      pfUI.panel.right:Hide()
+    end
+  end
+end
+
+local function MigrateGridLayout()
+  if type(pfUI_config) ~= "table" then return end
+  if type(pfUI_config.global) ~= "table" then pfUI_config.global = {} end
+  local ver = tonumber(pfUI_config.global.grid_layout) or 0
+  -- Already on cells. Do not convert again: the divisor is the current
+  -- window width, so a resize + reload would rewrite a good layout.
+  if ver >= 2 and not LayoutLooksLikePixels() then return end
+  if ver >= 2 then
+    -- Only the absurd leftovers (wider than the screen). Leave real seats.
+  elseif ver >= 1 and not LayoutLooksLikePixels() then
+    pfUI_config.global.grid_layout = "2"
+    return
+  end
+
+  MigrateLayoutNode(pfUI_config, nil)
+
+  local pos = pfUI_config.position
+  if type(pos) == "table" then
+    for _, cfg in pairs(pos) do
+      if type(cfg) == "table" then
+        if cfg.xpos ~= nil then cfg.xpos = MaybePxToCells(cfg.xpos) end
+        if cfg.ypos ~= nil then cfg.ypos = MaybePxToCells(cfg.ypos) end
+        -- leave legacy scale; LoadMovable promotes to size when the frame has a width
+      end
+    end
+  end
+
+  pfUI_config.global.grid_layout = "2"
 end
 
 function Solo_PreferredPfuiStyle()
@@ -219,8 +385,17 @@ function Solo_PreferredPfuiStyle()
   return DEFAULT_STYLE
 end
 
+-- True when this frame already has a saved unlock seat (profile or drag).
+local function HasSeat(name)
+  local pos = pfUI_config.position and pfUI_config.position[name]
+  return type(pos) == "table" and pos.xpos ~= nil
+end
+
 -- Overlay solo constraints onto the current pfUI_config. Used every login and
 -- after PfuiStyle copies a new profile.
+-- Product keys (disabled modules, micro bar, …) always apply. HUD seats are
+-- defaults only: if the frame already has xpos (user drag or loaded profile),
+-- leave it alone — otherwise Save/Load profile is pointless.
 function Solo_ApplyPfUIInvariant()
   if type(pfUI_config) ~= "table" then pfUI_config = {} end
   if type(pfUI_init) ~= "table" then pfUI_init = {} end
@@ -228,8 +403,26 @@ function Solo_ApplyPfUIInvariant()
     pfUI_init[PFUI_WIZARD[i]] = true
   end
   for i = 1, table.getn(PFUI_INVARIANT) do
-    Set(pfUI_config, PFUI_INVARIANT[i][1], PFUI_INVARIANT[i][2])
+    local path = PFUI_INVARIANT[i][1]
+    local value = PFUI_INVARIANT[i][2]
+    if path[1] == "position" then
+      local name = path[2]
+      local leaf = path[3]
+      if HasSeat(name) then
+        -- Keep user/profile seat; map module still needs alpha if missing.
+        if name == "WorldMapFrame" and leaf == "alpha" then
+          local pos = pfUI_config.position[name]
+          if pos.alpha == nil then Set(pfUI_config, path, value) end
+        end
+      else
+        Set(pfUI_config, path, value)
+      end
+    else
+      Set(pfUI_config, path, value)
+    end
   end
+  if type(pfUI_config.global) ~= "table" then pfUI_config.global = {} end
+  pfUI_config.global.grid_layout = "2"
   CoercePositions()
 end
 
@@ -252,9 +445,16 @@ local function PreparePfUI()
       if type(Solo_State) ~= "table" then Solo_State = {} end
       Solo_State.uiStyle = style
       if type(SetCVar) == "function" then SetCVar("solorothUiStyle", style) end
+      -- Fresh copy from cell-based profiles; skip pixel migration.
+      if type(pfUI_config.global) ~= "table" then pfUI_config.global = {} end
+      pfUI_config.global.grid_layout = "2"
     end
   end
+  -- Upgrade older pixel SavedVariables before overlaying Solo seats.
+  MigrateGridLayout()
   Solo_ApplyPfUIInvariant()
+  -- Modules already built chat/panel from pre-migration widths; fix live frames.
+  Solo_SuppressPfUIChatFrames()
 end
 
 -- -------------------------------------------------------------------- chat --

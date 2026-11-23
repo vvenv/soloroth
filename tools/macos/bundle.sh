@@ -25,6 +25,34 @@ export_client_env() {
     export WGPU_BACKEND="${WGPU_BACKEND:-metal}"
 }
 
+# Data/patch-S.MPQ for the pfUI-style glue screens. The launcher often starts
+# the client via start-client.sh while the server is already up — rebuild here
+# too so a glue-skin edit is not stuck behind a full play.sh.
+# WOW_STOCK_UI=1 removes the patch; WOW_SHOW_LOGIN_UI / login.env pick show/hide.
+rebuild_glue_patch() {
+    local login="$root/benilla-config/login.env" key value show="" arg
+    if [ "${WOW_STOCK_UI:-}" = 1 ]; then
+        python3 "$root/tools/glue-skin/build-patch.py" "$root/Data" --remove
+        return
+    fi
+    if [ -f "$login" ]; then
+        while IFS='=' read -r key value; do
+            case "$key" in WOW_SHOW_LOGIN_UI) show="$value" ;; esac
+        done < "$login"
+    fi
+    show="${WOW_SHOW_LOGIN_UI:-$show}"
+    case "$show" in
+        1|true|yes) arg=--show-login-ui ;;
+        0|false|no) arg=--hide-login-ui ;;
+        *)
+            if [ ! -f "$login" ]; then arg=--show-login-ui
+            else arg=--hide-login-ui
+            fi
+            ;;
+    esac
+    python3 "$root/tools/glue-skin/build-patch.py" "$root/Data" "$arg"
+}
+
 # stage_client <bundle.app> <benilla binary>
 # Prints the executable to run: the copy inside the bundle, or the raw
 # binary when the bundle is missing.

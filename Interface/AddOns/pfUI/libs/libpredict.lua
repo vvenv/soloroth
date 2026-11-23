@@ -9,15 +9,12 @@ setfenv(1, pfUI:GetEnvironment())
 --   UnitGetIncomingHeals(unit)
 --   UnitHasIncomingResurrection(unit)
 --
--- The library is able to receive and send compatible messages to HealComm (vanilla)
--- and HealComm (tbc) including the ressurections of both versions. It has an option
--- to disable the sending of those messages in case one of the mentioned libraries
--- is already active.
+-- Incoming heals are the player's own casts. A solo realm has no HealComm
+-- or CTRA traffic, so those addon messages are not sent or read.
 
 -- return instantly when another libpredict is already active
 if pfUI.api.libpredict then return end
 
-local senttarget
 local heals, ress, events, hots = {}, {}, {}, {}
 
 local PRAYER_OF_HEALING
@@ -82,12 +79,9 @@ end
 
 local libpredict = CreateFrame("Frame")
 libpredict:RegisterEvent("UNIT_HEALTH")
-libpredict:RegisterEvent("CHAT_MSG_ADDON")
 libpredict:RegisterEvent("PLAYER_TARGET_CHANGED")
 libpredict:SetScript("OnEvent", function()
-  if event == "CHAT_MSG_ADDON" and (arg1 == "HealComm" or arg1 == "CTRA") then
-    this:ParseChatMessage(arg4, arg2, arg1)
-  elseif event == "UNIT_HEALTH" then
+  if event == "UNIT_HEALTH" then
     local name = UnitName(arg1)
     if ress[name] and not UnitIsDeadOrGhost(arg1) then
       ress[UnitName(arg1)] = nil
@@ -103,107 +97,6 @@ libpredict:SetScript("OnUpdate", function()
     end
   end
 end)
-
-function libpredict:ParseComm(sender, msg)
-  local msgtype, target, heal, time
-
-  if msg == "Healstop" or msg == "GrpHealstop" then
-    msgtype = "Stop"
-  elseif msg == "Resurrection/stop/" then
-    msgtype = "RessStop"
-  elseif msg then
-    local msgobj = {strsplit("/", msg)}
-
-    if msgobj and msgobj[1] and msgobj[2] then
-      -- legacy healcomm object
-      if msgobj[1] == "GrpHealdelay" or msgobj[1] == "Healdelay" then
-        msgtype, time = "Delay", msgobj[2]
-      end
-
-      if msgobj[1] and msgobj[1] == "Resurrection" and msgobj[2] then
-        msgtype, target = "Ress", msgobj[2]
-      end
-
-      if msgobj[1] == "Heal" and msgobj[2] then
-        msgtype, target, heal, time = "Heal", msgobj[2], msgobj[3], msgobj[4]
-      end
-
-      if msgobj[1] == "GrpHeal" and msgobj[2] then
-        msgtype, target, heal, time = "Heal", {}, msgobj[2], msgobj[3]
-        for i=4,8 do
-          if msgobj[i] then table.insert(target, msgobj[i]) end
-        end
-      end
-
-      if msgobj[1] == "Reju" or msgobj[1] == "Renew" or msgobj[1] == "Regr" then --hots
-        msgtype, target, heal, time = "Hot", msgobj[2], msgobj[1], msgobj[3]
-      end
-    elseif select and UnitCastingInfo then
-      -- latest healcomm
-      msgtype = tonumber(string.sub(msg, 1, 3))
-      if not msgtype then return end
-
-      if msgtype == 0 then
-        msgtype = "Heal"
-        heal = tonumber(string.sub(msg, 4, 8))
-        target = string.sub(msg,9, -1)
-
-        local starttime = select(5, UnitCastingInfo(sender))
-        local endtime = select(6, UnitCastingInfo(sender))
-        if not starttime or not endtime then return end
-        time = endtime - starttime
-      elseif msgtype == 1 then
-        msgtype = "Stop"
-      elseif msgtype == 2 then
-        msgtype = "Heal"
-        heal = tonumber(string.sub(msg,4, 8))
-        target = {strsplit(":", string.sub(msg,9, -1))}
-        local starttime = select(5, UnitCastingInfo(sender))
-        local endtime = select(6, UnitCastingInfo(sender))
-        if not starttime or not endtime then return end
-        time = endtime - starttime
-      end
-    end
-  end
-
-  return msgtype, target, heal, time
-end
-
-function libpredict:ParseChatMessage(sender, msg, comm)
-  local msgtype, target, heal, time
-
-  if comm == "HealComm" then
-    msgtype, target, heal, time = libpredict:ParseComm(sender, msg)
-  elseif comm == "CTRA" then
-    local _, _, cmd, ctratarget = string.find(msg, "(%a+)%s?([^#]*)")
-    if cmd and ctratarget and cmd == "RES" and ctratarget ~= "" and ctratarget ~= UNKNOWN then
-      msgtype = "Ress"
-      target = ctratarget
-    end
-  end
-
-  if msgtype == "Stop" and sender then
-    libpredict:HealStop(sender)
-    return
-  elseif ( msg == "RessStop" or msg == "RESNO" ) and sender then
-    libpredict:RessStop(sender)
-    return
-  elseif msgtype == "Delay" and time then
-    libpredict:HealDelay(sender, time)
-  elseif msgtype == "Heal" and target and heal and time then
-    if type(target) == "table" then
-      for _, name in pairs(target) do
-        libpredict:Heal(sender, name, heal, time)
-      end
-    else
-      libpredict:Heal(sender, target, heal, time)
-    end
-  elseif msgtype == "Ress" then
-    libpredict:Ress(sender, target)
-  elseif msgtype == "Hot" then
-    libpredict:Hot(sender, target, heal, time)
-  end
-end
 
 function libpredict:AddEvent(time, target)
   events[time] = events[time] or {}
@@ -431,14 +324,6 @@ end)
 
 libpredict.sender = CreateFrame("Frame", "pfPredictionSender", UIParent)
 libpredict.sender.enabled = true
-libpredict.sender.SendHealCommMsg = function(self, msg)
-  SendAddonMessage("HealComm", msg, "RAID")
-  SendAddonMessage("HealComm", msg, "BATTLEGROUND")
-end
-libpredict.sender.SendResCommMsg = function(self, msg)
-  SendAddonMessage("CTRA", msg, "RAID")
-  SendAddonMessage("CTRA", msg, "BATTLEGROUND")
-end
 
 libpredict.sender:SetScript("OnUpdate", function()
   -- trigger delayed regrowth timers
@@ -447,34 +332,22 @@ libpredict.sender:SetScript("OnUpdate", function()
     local duration = 21
 
     libpredict:Hot(player, target, "Regr", duration)
-    libpredict.sender:SendHealCommMsg("Regr/"..target.."/"..duration.."/")
     this.regrowth_target = this.regrowth_target_next
     this.regrowth_timer = nil
   end
 end)
 
--- tbc
-libpredict.sender:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-libpredict.sender:RegisterEvent("UNIT_SPELLCAST_START")
-libpredict.sender:RegisterEvent("UNIT_SPELLCAST_STOP")
-libpredict.sender:RegisterEvent("UNIT_SPELLCAST_FAILED")
-libpredict.sender:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
-libpredict.sender:RegisterEvent("UNIT_SPELLCAST_SENT")
-
--- vanilla
 libpredict.sender:RegisterEvent("CHAT_MSG_SPELL_SELF_BUFF")
 libpredict.sender:RegisterEvent("SPELLCAST_START")
 libpredict.sender:RegisterEvent("SPELLCAST_STOP")
 libpredict.sender:RegisterEvent("SPELLCAST_FAILED")
 libpredict.sender:RegisterEvent("SPELLCAST_INTERRUPTED")
 libpredict.sender:RegisterEvent("SPELLCAST_DELAYED")
-
--- force cache updates
 libpredict.sender:RegisterEvent("UNIT_INVENTORY_CHANGED")
 libpredict.sender:RegisterEvent("SKILL_LINES_CHANGED")
 
 libpredict.sender:SetScript("OnEvent", function()
-  if event == "CHAT_MSG_SPELL_SELF_BUFF" then -- vanilla
+  if event == "CHAT_MSG_SPELL_SELF_BUFF" then
     local spell, _, heal = cmatch(arg1, HEALEDSELFOTHER) -- "Your %s heals %s for %d."
     if spell and heal then
       if spell == spell_queue[1] then UpdateCache(spell_queue[2], heal) end
@@ -498,27 +371,11 @@ libpredict.sender:SetScript("OnEvent", function()
       if spell == spell_queue[1] then UpdateCache(spell_queue[2], heal, true) end
       return
     end
-  elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and arg2 == "SPELL_HEAL" and arg4 == player then -- tbc
-    local spell, heal, crit = arg10, arg12, arg13
-    if spell and heal and crit then
-      if spell == spell_queue[1] then UpdateCache(spell_queue[2], heal, true) end
-    elseif spell and heal then
-      if spell == spell_queue[1] then UpdateCache(spell_queue[2], heal) end
-    end
-  elseif event == "UNIT_SPELLCAST_SENT" and arg4 then -- fix tbc mouseover macros
-      senttarget = arg4
-  elseif strfind(event, "SPELLCAST_START", 1) then
+  elseif event == "SPELLCAST_START" then
     local spell, time = arg1, arg2
 
-    if strfind(event, "UNIT_", 1) then -- tbc
-      if arg1 ~= "player" then return end
-      local spellname, _, _, _, starttime, endtime = UnitCastingInfo("player")
-      spell, time = spellname, endtime - starttime
-    end
-
     if spell_queue[1] == spell and cache[spell_queue[2]] then
-      local sender = player
-      local target = senttarget or spell_queue[3]
+      local target = spell_queue[3]
       local amount = cache[spell_queue[2]][1]
       local casttime = time
 
@@ -531,51 +388,29 @@ libpredict.sender:SetScript("OnEvent", function()
       end
 
       if spell == PRAYER_OF_HEALING then
-        target = sender
+        target = player
 
         for i=1,4 do
           if CheckInteractDistance("party"..i, 4) then
             libpredict:Heal(player, UnitName("party"..i), amount, casttime)
-            if pfUI.client < 20000 then -- vanilla
-              libpredict.sender:SendHealCommMsg("Heal/" .. UnitName("party"..i) .. "/" .. amount .. "/" .. casttime .. "/")
-            else -- tbc
-              libpredict.sender:SendHealCommMsg(string.format("002%05d%s", math.min(amount, 99999), UnitName("party"..i)))
-            end
             libpredict.sender.healing = true
           end
         end
       end
 
       libpredict:Heal(player, target, amount, casttime)
-      if pfUI.client < 20000 then -- vanilla
-        libpredict.sender:SendHealCommMsg("Heal/" .. target .. "/" .. amount .. "/" .. casttime .. "/")
-      else -- tbc
-        libpredict.sender:SendHealCommMsg(string.format("002%05d%s", math.min(amount, 99999), target))
-      end
       libpredict.sender.healing = true
 
     elseif spell_queue[1] == spell and L["resurrections"][spell] then
-      local target = senttarget or spell_queue[3]
-      libpredict:Ress(player, target)
-      libpredict.sender:SendHealCommMsg("Resurrection/" .. target .. "/start/")
-      libpredict.sender:SendResCommMsg("RES " .. target)
+      libpredict:Ress(player, spell_queue[3])
       libpredict.sender.resurrecting = true
     end
-  elseif strfind(event, "SPELLCAST_FAILED", 1) or strfind(event, "SPELLCAST_INTERRUPTED", 1) then
-    if strfind(event, "UNIT_", 1) and arg1 ~= "player" then return end
+  elseif event == "SPELLCAST_FAILED" or event == "SPELLCAST_INTERRUPTED" then
     if libpredict.sender.healing then
       libpredict:HealStop(player)
-      if pfUI.client < 20000 then -- vanilla
-        libpredict.sender:SendHealCommMsg("HealStop")
-      else -- tbc
-        libpredict.sender:SendHealCommMsg("001F")
-      end
       libpredict.sender.healing = nil
     elseif libpredict.sender.resurrecting then
-      local target = senttarget or spell_queue[3]
       libpredict:RessStop(player)
-      libpredict.sender:SendHealCommMsg("Resurrection/stop/")
-      libpredict.sender:SendResCommMsg("RESNO " .. target)
       libpredict.sender.resurrecting = nil
     end
     if spell_queue[1] == REGROWTH then
@@ -584,23 +419,15 @@ libpredict.sender:SetScript("OnEvent", function()
   elseif event == "SPELLCAST_DELAYED" then
     if libpredict.sender.healing then
       libpredict:HealDelay(player, arg1)
-      libpredict.sender:SendHealCommMsg("Healdelay/" .. arg1 .. "/")
     end
-  elseif strfind(event, "SPELLCAST_STOP", 1) then
-    if strfind(event, "UNIT_", 1) and arg1 ~= "player" then return end
+  elseif event == "SPELLCAST_STOP" then
     libpredict:HealStop(player)
-    if pfUI.client < 20000 then -- vanilla
-      if spell_queue[1] == REJUVENATION then
-        libpredict:Hot(player, spell_queue[3], "Reju", rejuvDuration)
-        libpredict.sender:SendHealCommMsg("Reju/"..spell_queue[3].."/"..rejuvDuration.."/")
-      elseif spell_queue[1] == RENEW then
-        libpredict:Hot(player, spell_queue[3], "Renew", renewDuration)
-        libpredict.sender:SendHealCommMsg("Renew/"..spell_queue[3].."/"..renewDuration.."/")
-      elseif spell_queue[1] == REGROWTH then
-        this.regrowth_timer = GetTime() + 0.1
-      end
-    else -- tbc
-      --todo
+    if spell_queue[1] == REJUVENATION then
+      libpredict:Hot(player, spell_queue[3], "Reju", rejuvDuration)
+    elseif spell_queue[1] == RENEW then
+      libpredict:Hot(player, spell_queue[3], "Renew", renewDuration)
+    elseif spell_queue[1] == REGROWTH then
+      this.regrowth_timer = GetTime() + 0.1
     end
   end
 end)
