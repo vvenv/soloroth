@@ -166,7 +166,8 @@ pfUI:RegisterModule("unlock", "vanilla:tbc", function ()
       local chromeW = (frame:GetWidth() or 0) - ConfigSize(cfgW)
       if chromeW < 0 then chromeW = 0 end
       local newCfgW = FineCells(pxW - chromeW)
-      if newCfgW < 0.5 then newCfgW = 0.5 end
+      -- 0.5 cells (~6px) is too narrow for name/HP text (party targets).
+      if newCfgW < 4 then newCfgW = 4 end
 
       -- Match pfUI.uf:UpdateFrameSize: real = hp + spacing + power + 2*border,
       -- unless negative pspace collapses to hp-only.

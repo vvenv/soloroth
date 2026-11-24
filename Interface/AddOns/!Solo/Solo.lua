@@ -450,6 +450,13 @@ function Solo_ApplyPfUIInvariant()
   if type(pfUI_config.global) ~= "table" then pfUI_config.global = {} end
   pfUI_config.global.grid_layout = "2"
   CoercePositions()
+  -- Unlock once allowed 0.5-cell unitframes (~6px); party targets became
+  -- unreadable slivers. Clamp absurd leftovers back to the stock default.
+  local gt = pfUI_config.unitframes and pfUI_config.unitframes.grouptarget
+  if type(gt) == "table" then
+    local w = tonumber(gt.width)
+    if w and w > 0 and w < 4 then gt.width = "9.6" end
+  end
 end
 
 local function PreparePfUI()
