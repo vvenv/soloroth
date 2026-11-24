@@ -450,12 +450,18 @@ function Solo_ApplyPfUIInvariant()
   if type(pfUI_config.global) ~= "table" then pfUI_config.global = {} end
   pfUI_config.global.grid_layout = "2"
   CoercePositions()
-  -- Unlock once allowed 0.5-cell unitframes (~6px); party targets became
-  -- unreadable slivers. Clamp absurd leftovers back to the stock default.
-  local gt = pfUI_config.unitframes and pfUI_config.unitframes.grouptarget
-  if type(gt) == "table" then
-    local w = tonumber(gt.width)
-    if w and w > 0 and w < 4 then gt.width = "9.6" end
+  -- Unlock once allowed sub-4-cell unitframes; party target/pet became
+  -- unreadable slivers. Clamp absurd leftovers back to stock defaults.
+  local uf = pfUI_config.unitframes
+  if type(uf) == "table" then
+    local clamp = { grouptarget = "9.6", grouppet = "8" }
+    for key, def in pairs(clamp) do
+      local cfg = uf[key]
+      if type(cfg) == "table" then
+        local w = tonumber(cfg.width)
+        if w and w > 0 and w < 4 then cfg.width = def end
+      end
+    end
   end
 end
 
