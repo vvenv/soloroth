@@ -1,4 +1,5 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Include file="..\skins\blizzard\skillrows.xml"/>
   <Include file="..\skins\blizzard\character.lua"/>
   <Include file="..\skins\blizzard\spellbook.lua"/>
   <Include file="..\skins\blizzard\talents.lua"/>

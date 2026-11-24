@@ -270,43 +270,18 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
 
     SkillFrameCancelButton:Hide()
 
-    -- Drop the detail pane. Rows live on SkillFrame (not the scroll child), so
-    -- grow the trough and add compact row slots (same 12+6 pitch as before) to
-    -- use the freed height — do not stretch the stock 12.
-    local LIST_H = 335 -- stock list 220 + gap 8 + detail 107
+    -- Drop the detail pane and show more rows in that space. skillrows.xml adds
+    -- slots 13-18. This skin runs in pfUI's environment, so a bare assignment
+    -- does not reach the globals SkillFrame.lua reads — write them on _G.
     local ROW_H = 12
     local GAP = 6
     local PITCH = ROW_H + GAP
-    local STOCK = 12
-    local ROWS = 18 -- 18*18 = 324, fits LIST_H
-    SKILLFRAME_SKILL_HEIGHT = PITCH
+    local ROWS = 18
+    _G.SKILLFRAME_SKILL_HEIGHT = PITCH
+    _G.SKILLS_TO_DISPLAY = ROWS
     SkillDetailScrollFrame:Hide()
     SkillDetailStatusBar:Hide()
-    SkillListScrollFrame:SetHeight(LIST_H)
-
-    for i = STOCK + 1, ROWS do
-      if not _G["SkillTypeLabel"..i] then
-        local header = CreateFrame("Button", "SkillTypeLabel"..i, SkillFrame, "SkillLabelTemplate")
-        header:SetPoint("LEFT", _G["SkillTypeLabel"..(i - 1)], "LEFT", 0, -PITCH)
-      end
-      if not _G["SkillRankFrame"..i] then
-        local bar = CreateFrame("StatusBar", "SkillRankFrame"..i, SkillFrame, "SkillStatusBarTemplate")
-        bar:SetID(i)
-        bar:SetPoint("TOPLEFT", _G["SkillRankFrame"..(i - 1)], "BOTTOMLEFT", 0, -GAP)
-      end
-      _G["SkillTypeLabel"..i]:Hide()
-      _G["SkillRankFrame"..i]:Hide()
-    end
-    for i = ROWS + 1, 30 do
-      local header = _G["SkillTypeLabel"..i]
-      if not header then break end
-      if header.icon then header.icon:Hide() end
-      header:Hide()
-      header:EnableMouse(nil)
-      local bar = _G["SkillRankFrame"..i]
-      if bar then bar:Hide() end
-    end
-    SKILLS_TO_DISPLAY = ROWS
+    SkillListScrollFrame:SetHeight(ROWS * PITCH + 12)
 
     StripTextures(SkillFrameCollapseAllButton)
     SkinCollapseButton(SkillFrameCollapseAllButton, true)
@@ -316,12 +291,13 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
       SkillFrameCollapseAllButton.icon:EnableMouse(nil)
     end
 
-    for i = 1, SKILLS_TO_DISPLAY do
+    for i = 1, ROWS do
       local header = _G["SkillTypeLabel"..i]
       StripTextures(header)
       SkinCollapseButton(header)
       header:SetNormalTexture(nil)
       if header.icon then header.icon:EnableMouse(nil) end
+      header:Hide()
       if i > 1 then
         header:ClearAllPoints()
         header:SetPoint("LEFT", _G["SkillTypeLabel"..(i - 1)], "LEFT", 0, -PITCH)
@@ -333,6 +309,7 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
       local lastframe = _G["SkillRankFrame" .. i-1]
       StripTextures(frame)
       CreateBackdrop(frame)
+      frame:Hide()
 
       if lastframe then
         frame:ClearAllPoints()
@@ -342,13 +319,9 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
       frame:SetHeight(ROW_H)
     end
 
-    -- Detail update still Show()s the status bar; keep the whole pane gone.
-    -- Unused row labels must drop their collapse icon or it paints empty squares.
     if not SkillFrame.soloSkillListHooked then
       hooksecurefunc("SkillFrame_UpdateSkills", function()
-        SkillDetailScrollFrame:Hide()
-        SkillDetailStatusBar:Hide()
-        for i = 1, SKILLS_TO_DISPLAY do
+        for i = 1, ROWS do
           local h = _G["SkillTypeLabel"..i]
           if h then
             if h:IsShown() then
@@ -360,8 +333,13 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
             end
           end
         end
+        SkillDetailScrollFrame:Hide()
+        SkillDetailStatusBar:Hide()
       end)
       SkillFrame.soloSkillListHooked = true
+    end
+    if SkillFrame:IsShown() and SkillFrame_UpdateSkills then
+      SkillFrame_UpdateSkills()
     end
 
     StripTextures(SkillListScrollFrame)

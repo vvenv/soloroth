@@ -730,6 +730,7 @@ ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:RegisterEvent("PLAYER_LOGIN")
 ev:RegisterEvent("VARIABLES_LOADED")
 ev:RegisterEvent("CHAT_MSG_SYSTEM")
+ev:RegisterEvent("CHAT_MSG_ADDON")
 ev:RegisterEvent("CHAT_MSG_COMBAT_HOSTILE_DEATH")
 ev:RegisterEvent("CHAT_MSG_COMBAT_XP_GAIN")
 ev:RegisterEvent("CHAT_MSG_LOOT")
@@ -745,6 +746,9 @@ ev:SetScript("OnEvent", function()
     -- H was the honor tab; Solo remaps it to paperdoll (same as C), so take it.
     if type(Solo_State) ~= "table" then Solo_State = {} end
     if Solo_EnsureDefaultKey then Solo_EnsureDefaultKey("SOLOFARM_TOGGLE", "H", Solo_State) end
+  elseif event == "CHAT_MSG_ADDON" and arg1 == "SoloFarm" and arg2 and arg2 ~= "" then
+    -- Server picked the pull. The client portrait is local; select that name.
+    TargetByName(arg2, true)
   elseif event == "PLAYER_ENTERING_WORLD" then
     XpBaseline()
     -- A /reload keeps the server's farming going: ask what it is doing.
