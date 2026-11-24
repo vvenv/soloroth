@@ -21,7 +21,7 @@
 - **默认移速 2 倍**（跑步）。GMBox 工具页的 1x / 2x / 4x / 7x 会改这个倍率。
 - **专业不限**：9 个主专业都能学；急救、烹饪、钓鱼照旧不占名额。
 - **新角色自带 1 金和 4 只 8 格包**（棕色小皮包）。
-- **界面风格 / 怪物模型**：游戏里一键切换，见下文「客户端外观」。
+- **界面风格**：游戏里一键切换，见下文「客户端外观」。高清模型随安装自动启用。
 
 目前只支持 **Apple Silicon 的 Mac**，从源码安装。
 
@@ -98,24 +98,12 @@
 | 管理界面（账号 / 角色 / SQL） | 启动器 ··· →「打开管理界面」，或 `./do.sh admin`（`http://127.0.0.1:8765`，仅本机；可切中英文 / 深浅色） |
 | 拉代码后更新 | `./do.sh build`，再 `./do.sh setup`；插件用 `./do.sh addons` 后**完全重启**客户端 |
 | 改了服务端设置 | 改 `config/mangosd.overrides.conf`，然后 `./do.sh config`，重启服务器 |
-| 原版 / HD 模型 | 选项 → 图形 →「怪物模型」，或 `./do.sh visual`；重启生效 |
 
 从 Soloroth.app 进游戏时启动器保持打开；退出游戏后可再点「开始游戏」。服务器继续运行。服务器日志在 `server/logs/mangosd.out`，启动器日志在 `server/logs/launcher.log`。改了启动器代码后需重跑 `./do.sh app`（或 `tools/macos/make-app.sh`）。
 
-### 客户端外观（界面风格 / 怪物模型）
+### 客户端外观（界面风格）
 
 **界面风格**（pfUI）：选项 → 图形 →「界面风格」，或 `/style` / `/fengge`。内置官方 Modern / Nostalgia / Legacy / Slim / Adapta / Light，以及两套社区配置（清爽、紧凑）。选好后会**重新加载界面**；命令条、紧凑消息面板和 Solo 的默认座位仍由单人设置管，细节可在 ESC →「界面」(`/pfui`) 再调。
-
-**怪物模型**：默认是 **原版** 1.12。想用更精细的怪物，下载社区补丁后在游戏里切换：
-
-```sh
-tools/macos/fetch-visual-patches.sh        # 下载 Reforged 生物包（约 2 GB，可中断续传）
-tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套
-```
-
-- **游戏里切换**：选项 → 图形 →「怪物模型」，或 `/visual` / `/waiguan`。选好后**完全退出再开**才会换模型。
-- 方案：「原版」「高清怪物」「高清合集」（需 `--hd`）、「Improved Models」（需自己放 MPQ，见 `../wow-data/visual-patches/improved-models/` 的说明）。
-- 文件不完整时，怪物会隐形或变成方块；下载器会按校验值核对。
 
 ---
 
@@ -255,7 +243,7 @@ tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等整套
 </details>
 
 <details>
-<summary><b>更新代码 / 改配置 / 换外观数据要怎么做？</b></summary>
+<summary><b>更新代码 / 改配置要怎么做？</b></summary>
 
 见上面「日常使用」表格。更细的脚本说明和目录结构见 [DEVELOP.md](DEVELOP.md)。
 </details>

@@ -15,8 +15,7 @@
 #   ./do.sh admin                   # 打开本地 Web 管理台（账号 / 角色 / SQL）
 #   ./do.sh app [目标目录]          # 生成 Soloroth.app（默认 /Applications）
 #   ./do.sh addons                  # 安装 / 更新插件
-#   ./do.sh visual                  # 外观：下载补丁或切换方案
-#   ./do.sh visual fetch|--hd|list|vanilla|hd|reforged-creatures|...
+#   ./do.sh visual                  # 下载 HD 外观补丁（每次启动自动挂载）
 #   ./do.sh config                  # 应用 config/mangosd.overrides.conf
 #
 # 菜单里 Esc / ← 返回上一级；主菜单 Esc 退出。
@@ -414,51 +413,18 @@ cmd_addons() {
 }
 
 cmd_visual() {
-  local action="${1:-}"
-  if [ -n "$action" ]; then
-    shift
-  fi
-
-  if [ -z "$action" ] && [ -t 0 ]; then
-    action="$(prompt_menu "外观" --default=1 \
-      "fetch:下载高清怪物（Patch-C，约 2 GB）" \
-      "hd:再加环境 / 物品整套（--hd）" \
-      "list:看已装方案" \
-      "vanilla:切回原版模型" \
-      "reforged:高清怪物" \
-      "full:高清合集")"
-    if is_back "$action"; then
-      return 0
-    fi
-  fi
-  action="${action:-list}"
-
-  case "$action" in
-    fetch)
-      log_info "下载 Reforged 生物包"
+  case "${1:-}" in
+    ""|fetch|hd|--hd)
+      log_info "下载 HD 外观补丁（生物 / 环境 / 物品；可中断续传）"
       run_macos fetch-visual-patches.sh
+      run_macos apply-visual.sh
+      log_success "HD 已就绪；下次启动会自动挂载"
       ;;
-    hd|--hd)
-      log_info "下载 Reforged 全套（含环境 / 物品）"
-      run_macos fetch-visual-patches.sh --hd
-      ;;
-    list|--list)
-      run_macos apply-visual.sh --list
-      ;;
-    vanilla)
-      run_macos apply-visual.sh vanilla
-      log_success "已切原版；完全退出客户端再开才生效"
-      ;;
-    reforged|reforged-creatures)
-      run_macos apply-visual.sh reforged-creatures
-      log_success "已切高清怪物；完全退出客户端再开才生效"
-      ;;
-    full|hd-pack)
-      run_macos apply-visual.sh hd
-      log_success "已切高清合集；完全退出客户端再开才生效"
+    status|--status|list|--list)
+      run_macos apply-visual.sh --status
       ;;
     *)
-      run_macos apply-visual.sh "$action" "$@"
+      log_die "visual 只负责下载 HD：./do.sh visual 或 ./do.sh visual status"
       ;;
   esac
 }
@@ -506,7 +472,7 @@ run_main_menu() {
       "admin:管理界面（Web）" \
       "app:生成 App" \
       "addons:更新插件" \
-      "visual:外观补丁" \
+      "visual:补下 / 校验 HD 外观" \
       "config:应用服务端配置" \
       "status:为什么要编译？（对照表）" \
       "quit:退出")"

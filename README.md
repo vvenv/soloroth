@@ -88,7 +88,6 @@ cd soloroth
 | 管理界面 | ··· →「打开管理界面」，或 `./do.sh admin`（`http://127.0.0.1:8765`） |
 | 拉代码后更新 | `./do.sh build` → `./do.sh setup`；插件 `./do.sh addons` 后**完全重启**客户端 |
 | 改服务端设置 | 改 `config/mangosd.overrides.conf` → `./do.sh config`，重启服务器 |
-| 原版 / HD 模型 | 选项 → 图形 →「怪物模型」，或 `./do.sh visual` |
 
 日志在 `server/logs/`。脚本与目录细节见 [DEVELOP.md](DEVELOP.md)。
 
@@ -103,7 +102,7 @@ cd soloroth
 | 传送 / 物品 / 宠物 / GM | **J** `/gt` · **I** `/gi` · **P** `/cw` · **G** `/gm` |
 | 挂机 | **H** · `/dg` 打怪 · `/dy` 钓鱼 · `/cj` 采集 · `/gj` 全能 · `/bzd` 半自动 |
 | 成就 | **Y** · `/ach` |
-| 界面风格 / 怪物模型 | 选项 → 图形，或 `/style` · `/visual` |
+| 界面风格 | 选项 → 图形，或 `/style` |
 
 进五人副本约 3 秒后自动补满队伍；活着离开会解散 bot。经验、掉落、挂机规则等见 [GUIDE.md](GUIDE.md)。
 

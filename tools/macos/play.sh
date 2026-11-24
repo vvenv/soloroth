@@ -80,7 +80,7 @@ first_login() {
 }
 
 [ -f "$login" ] || first_login
-# Optional HD / model overlays from benilla-config/visual.env
+# HD creature / world overlays (always on when the pack is downloaded).
 bash "$root/tools/macos/apply-visual.sh"
 # shellcheck source=bundle.sh
 source "$root/tools/macos/bundle.sh"

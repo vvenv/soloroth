@@ -94,13 +94,16 @@ tools/macos/make-app.sh                              # 生成 /Applications/Solo
 
 ## 客户端外观补丁
 
+始终挂载 HD（Project Reforged 全套：生物 / 环境 / 物品），没有玩家切换入口，也不能切回原版。`setup-classic.sh` 在包缺失时会自动下载；`play.sh` 每次启动再挂载一次。
+
 ```sh
-tools/macos/fetch-visual-patches.sh        # Reforged 生物包 Patch-C
-tools/macos/fetch-visual-patches.sh --hd   # 再加环境 / 物品等（B、D、E、G、H）
-tools/macos/apply-visual.sh hd|vanilla|--list
+tools/macos/fetch-visual-patches.sh   # 下载 B/C/D/E/G/H → visual-patches/hd/（可中断续传）
+tools/macos/apply-visual.sh           # 链接进 Data/
+tools/macos/apply-visual.sh --status
+./do.sh visual                        # 同上：下载并挂载
 ```
 
-选择写在 `benilla-config/config.toml` 的 `solorothVisual`，每次启动前按它把补丁链接进 `Data/`。挂上含 Reforged `patch-C` 的方案时，`apply-visual.sh` 还会用 `tools/macos/build-hd-overrides.py` 写出 `Data/patch-V.MPQ`：把 `CreatureModelData` 里 `ModelScale=0` 的行（含加摩拉用的 `AncientSeaTurtle`）补成 `1`，否则 benilla 会画黑块。原版 Windows 客户端要的 VanillaHelpers / DXVK，benilla 用不上。
+`apply-visual.sh` 挂上含 Reforged `patch-C` 时，还会用 `tools/macos/build-hd-overrides.py` 写出 `Data/patch-V.MPQ`：把 `CreatureModelData` 里 `ModelScale=0` 的行（含加摩拉用的 `AncientSeaTurtle`）补成 `1`，否则 benilla 会画黑块。原版 Windows 客户端要的 VanillaHelpers / DXVK，benilla 用不上。
 
 ## 目录
 

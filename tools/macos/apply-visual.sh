@@ -1,18 +1,14 @@
 #!/bin/bash
-# Apply (or clear) optional client visual patch MPQs on top of stock Data/.
+# Mount the HD visual pack (Project Reforged) on top of stock Data/.
+# Always HD — no profile switch. Missing pack → stock models + a warning.
 #
-#   tools/macos/apply-visual.sh                 # config.toml solorothVisual, else visual.env
-#   tools/macos/apply-visual.sh vanilla         # stock models; saves the choice
-#   tools/macos/apply-visual.sh reforged-creatures
-#   tools/macos/apply-visual.sh --list          # profiles on disk
+#   tools/macos/apply-visual.sh          # mount HD (or warn if not downloaded)
+#   tools/macos/apply-visual.sh --status # whether HD is on disk / mounted
 #
-# In-game: Options → Graphics (or /visual). That writes the solorothVisual CVar;
-# quit fully and relaunch so this script remounts the MPQs.
+# Download once: tools/macos/fetch-visual-patches.sh (or ./do.sh visual)
 #
-# Put patch MPQs in:
-#   $WOW_DATA_ROOT/visual-patches/<profile>/patch-C.MPQ
-# (any single-character patch-?.MPQ; do not reuse letters already used by the
-# stock client, e.g. patch.MPQ / patch-2.MPQ / zhCN patch-A.MPQ).
+# Pack lives at:
+#   $WOW_DATA_ROOT/visual-patches/hd/patch-?.MPQ
 #
 # Env (same as setup-classic.sh):
 #   WOW_DATA_ROOT  default ../wow-data
@@ -23,9 +19,10 @@ wow_data="${WOW_DATA_ROOT:-$root/../wow-data}"
 locale="${CLIENT_LOCALE:-zhCN}"
 home="${BENILLA_HOME:-$root/benilla-config}"
 env_file="$home/visual.env"
-toml="$home/config.toml"
 patches_root="$wow_data/visual-patches"
+hd_dir="$patches_root/hd"
 managed="$root/Data/.soloroth-visual-managed"
+PROFILE=hd
 die() { echo "error: $*" >&2; exit 1; }
 
 case "$locale" in
@@ -72,134 +69,56 @@ clear_managed() {
     rm -f "$managed"
 }
 
-read_cvar_profile() {
-    [ -f "$toml" ] || return 0
-    python3 - "$toml" <<'PY'
-import re, sys
-text = open(sys.argv[1], encoding="utf-8").read()
-m = re.search(r'^solorothVisual\s*=\s*"([^"]*)"', text, re.M)
-if m and m.group(1).strip():
-    print(m.group(1).strip())
-PY
-}
-
-read_env_profile() {
-    local p=""
-    if [ -f "$env_file" ]; then
-        p="$(sed -n 's/^[[:space:]]*VISUAL_PROFILE=//p' "$env_file" | head -1 | tr -d '\r' | tr -d '"' | tr -d "'")"
-    fi
-    printf '%s' "$p"
-}
-
-read_profile() {
-    local p
-    p="$(read_cvar_profile)"
-    [ -n "$p" ] || p="$(read_env_profile)"
-    [ -n "$p" ] || p="vanilla"
-    printf '%s' "$p"
-}
-
-save_profile() {
-    local profile="$1"
+# Keep visual.env in sync for older setups that still read it; not a switch.
+write_env() {
     mkdir -p "$home"
     local example="$root/config/visual.env.example"
     if [ -f "$example" ]; then
-        sed "s/^VISUAL_PROFILE=.*/VISUAL_PROFILE=$profile/" "$example" > "$env_file"
+        cp "$example" "$env_file"
     else
-        printf 'VISUAL_PROFILE=%s\n' "$profile" > "$env_file"
+        printf 'VISUAL_PROFILE=%s\n' "$PROFILE" > "$env_file"
     fi
-    set_cvar solorothVisual "$profile"
 }
 
-# set_cvar <name> <value>: writes into config.toml's [cvars], which the client
-# reads at launch (the !Solo addon registers these CVars).
-set_cvar() {
-    mkdir -p "$home"
-    python3 - "$toml" "$1" "$2" <<'PY'
-import os, re, sys
-path, name, value = sys.argv[1:4]
-text = open(path, encoding="utf-8").read() if os.path.exists(path) else ""
-line = '%s = "%s"' % (name, value)
-pat = r'^%s\s*=.*$' % re.escape(name)
-if re.search(pat, text, re.M):
-    text = re.sub(pat, line, text, count=1, flags=re.M)
-elif "[cvars]\n" in text:
-    text = text.replace("[cvars]\n", "[cvars]\n" + line + "\n", 1)
-else:
-    text = "[cvars]\n" + line + "\n" + text
-open(path, "w", encoding="utf-8").write(text)
-PY
-}
-
-# Profiles with at least one patch-?.MPQ on disk, space-separated, vanilla first.
-ready_profiles() {
-    local out="vanilla" d f
-    [ -d "$patches_root" ] || { printf '%s' "$out"; return; }
-    for d in "$patches_root"/*/; do
-        [ -d "$d" ] || continue
-        [ "$(basename "$d")" = "_cache" ] && continue
-        for f in "$d"*; do
-            [ -e "$f" ] || continue
-            if is_patch_glob "$f"; then
-                out="$out $(basename "$d")"
-                break
-            fi
-        done
+hd_ready() {
+    local f
+    [ -d "$hd_dir" ] || return 1
+    for f in "$hd_dir"/*; do
+        [ -e "$f" ] || continue
+        is_patch_glob "$f" && return 0
     done
-    printf '%s' "$out"
+    return 1
 }
 
-# What the options page shows: which profiles can be picked, and which one is
-# actually mounted this launch (a missing pick falls back to vanilla).
-publish_state() {
-    set_cvar solorothVisualReady "$(ready_profiles)"
-    set_cvar solorothVisualActive "$1"
-}
-
-list_profiles() {
-    echo "VISUAL_PROFILE choices:"
-    echo "  vanilla"
-    if [ -d "$patches_root" ]; then
-        local d
-        for d in "$patches_root"/*/; do
-            [ -d "$d" ] || continue
-            case "$(basename "$d")" in
-                _cache) continue ;;
-            esac
-            echo "  $(basename "$d")"
-        done
+status() {
+    if hd_ready; then
+        echo "HD pack: ready ($hd_dir)"
     else
-        echo "(no folders yet under $patches_root)"
+        echo "HD pack: missing — run tools/macos/fetch-visual-patches.sh"
     fi
-    echo "current: $(read_profile)"
+    if [ -f "$managed" ]; then
+        echo "mounted: HD ($(tr '\n' ' ' < "$managed" | sed 's/ $//'))"
+    else
+        echo "mounted: stock (no HD overlays)"
+    fi
 }
 
-apply_profile() {
-    local mounted
-    mounted="$(mount_profile "$1" | tee /dev/stderr | sed -n 's/^visual profile: \([^ ]*\).*/\1/p')"
-    publish_state "${mounted:-vanilla}"
-}
-
-mount_profile() {
-    local profile="$1" dir f name target dest any
+mount_hd() {
+    local f name target dest any
     ensure_base_data
     clear_managed
+    write_env
 
-    if [ "$profile" = "vanilla" ]; then
-        echo "visual profile: vanilla (stock models)"
-        return 0
-    fi
-
-    dir="$patches_root/$profile"
-    if [ ! -d "$dir" ]; then
-        echo "warning: no profile folder $dir — staying on stock models" >&2
-        echo "visual profile: vanilla (missing $profile)"
+    if ! hd_ready; then
+        echo "warning: no HD pack in $hd_dir — stock models until you run:" >&2
+        echo "  tools/macos/fetch-visual-patches.sh" >&2
+        echo "visual: stock (HD missing)"
         return 0
     fi
 
     any=0
     : > "$managed.tmp"
-    for f in "$dir"/*; do
+    for f in "$hd_dir"/*; do
         [ -e "$f" ] || continue
         name="$(basename "$f")"
         case "$name" in
@@ -211,7 +130,7 @@ mount_profile() {
         if [ -L "$target" ]; then
             dest="$(readlink "$target")"
             case "$dest" in
-                "$patches_root"/*|"$dir"/*) rm -f "$target" ;;
+                "$patches_root"/*|"$hd_dir"/*) rm -f "$target" ;;
                 *)
                     die "Data/$name already links to the stock client ($dest); use a free letter (C, G, I, …)"
                     ;;
@@ -220,14 +139,14 @@ mount_profile() {
             die "Data/$name already exists; use a free letter (C, G, I, …)"
         fi
         ln -s "$(cd "$(dirname "$f")" && pwd)/$(basename "$f")" "$target"
-        echo "link Data/$name -> $profile/$name"
+        echo "link Data/$name -> hd/$name"
         printf '%s\n' "$name" >> "$managed.tmp"
         any=1
     done
     if [ "$any" -ne 1 ]; then
         rm -f "$managed.tmp"
-        echo "warning: no patch-?.MPQ in $dir — staying on stock models" >&2
-        echo "visual profile: vanilla (empty $profile)"
+        echo "warning: no patch-?.MPQ in $hd_dir — stock models" >&2
+        echo "visual: stock (HD empty)"
         return 0
     fi
     # Reforged/HD patch-C ships some CreatureModelData rows (AncientSeaTurtle for
@@ -245,25 +164,24 @@ mount_profile() {
     fi
 
     mv "$managed.tmp" "$managed"
-    echo "visual profile: $profile"
+    echo "visual: HD"
 }
 
 # --- args ---
 arg="${1:-}"
 case "$arg" in
-    --list|-l)
-        list_profiles
+    --status|-s|--list|-l)
+        status
         exit 0
         ;;
     --help|-h)
-        sed -n '2,18p' "$0" | sed 's/^# \?//'
+        sed -n '2,16p' "$0" | sed 's/^# \?//'
         exit 0
         ;;
-    "")
-        apply_profile "$(read_profile)"
+    ""|hd|apply)
+        mount_hd
         ;;
     *)
-        save_profile "$arg"
-        apply_profile "$arg"
+        die "HD is always on; unknown arg '$arg' (try --status or fetch-visual-patches.sh)"
         ;;
 esac

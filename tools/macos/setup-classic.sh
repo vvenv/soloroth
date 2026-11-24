@@ -16,9 +16,8 @@
 #                  extractors (default: $WOW_DATA_ROOT/vmangos-deploy/
 #                  storage/mangosd/extracted-data)
 #
-# Optional HD / model overlays: benilla-config/visual.env (VISUAL_PROFILE)
-# and folders under $WOW_DATA_ROOT/visual-patches/<profile>/ — see
-# tools/macos/apply-visual.sh and config/visual.env.example.
+# HD model pack: $WOW_DATA_ROOT/visual-patches/hd/ (fetch-visual-patches.sh);
+# apply-visual.sh mounts it on every launch.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 wow_data="${WOW_DATA_ROOT:-$root/../wow-data}"
@@ -135,9 +134,13 @@ home="$root/benilla-config"
 mkdir -p "$home"
 if [ ! -f "$home/visual.env" ]; then
     cp "$root/config/visual.env.example" "$home/visual.env"
-    echo "benilla-config/visual.env (VISUAL_PROFILE=vanilla)"
+    echo "benilla-config/visual.env (HD)"
 fi
-# Stock MPQs plus optional VISUAL_PROFILE overlays (HD creatures, etc.).
+# Full Reforged HD pack (creatures / environment / items); resume-safe.
+if ! bash "$root/tools/macos/apply-visual.sh" --status 2>/dev/null | grep -q '^HD pack: ready'; then
+    step "HD visual pack"
+    bash "$root/tools/macos/fetch-visual-patches.sh"
+fi
 bash "$root/tools/macos/apply-visual.sh"
 toml="$home/config.toml"
 [ -f "$toml" ] || printf '[cvars]\n' > "$toml"
