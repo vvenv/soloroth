@@ -270,19 +270,34 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
 
     SkillFrameCancelButton:Hide()
 
-    -- Drop the stock detail pane. Rows sit on SkillFrame (not in the scroll
-    -- child), so only SetHeight on the faux scroll leaves a blank band — spread
-    -- the stock 12 rows through the old list+detail height instead.
+    -- Drop the detail pane. Rows live on SkillFrame (not the scroll child), so
+    -- grow the trough and add compact row slots (same 12+6 pitch as before) to
+    -- use the freed height — do not stretch the stock 12.
     local LIST_H = 335 -- stock list 220 + gap 8 + detail 107
     local ROW_H = 12
-    local pitch = LIST_H / SKILLS_TO_DISPLAY
-    local gap = pitch - ROW_H
-    SKILLFRAME_SKILL_HEIGHT = pitch
+    local GAP = 6
+    local PITCH = ROW_H + GAP
+    local STOCK = 12
+    local ROWS = 18 -- 18*18 = 324, fits LIST_H
+    SKILLFRAME_SKILL_HEIGHT = PITCH
     SkillDetailScrollFrame:Hide()
+    SkillDetailStatusBar:Hide()
     SkillListScrollFrame:SetHeight(LIST_H)
 
-    -- Hide leftover row frames from an earlier taller-list attempt.
-    for i = SKILLS_TO_DISPLAY + 1, 30 do
+    for i = STOCK + 1, ROWS do
+      if not _G["SkillTypeLabel"..i] then
+        local header = CreateFrame("Button", "SkillTypeLabel"..i, SkillFrame, "SkillLabelTemplate")
+        header:SetPoint("LEFT", _G["SkillTypeLabel"..(i - 1)], "LEFT", 0, -PITCH)
+      end
+      if not _G["SkillRankFrame"..i] then
+        local bar = CreateFrame("StatusBar", "SkillRankFrame"..i, SkillFrame, "SkillStatusBarTemplate")
+        bar:SetID(i)
+        bar:SetPoint("TOPLEFT", _G["SkillRankFrame"..(i - 1)], "BOTTOMLEFT", 0, -GAP)
+      end
+      _G["SkillTypeLabel"..i]:Hide()
+      _G["SkillRankFrame"..i]:Hide()
+    end
+    for i = ROWS + 1, 30 do
       local header = _G["SkillTypeLabel"..i]
       if not header then break end
       if header.icon then header.icon:Hide() end
@@ -291,6 +306,7 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
       local bar = _G["SkillRankFrame"..i]
       if bar then bar:Hide() end
     end
+    SKILLS_TO_DISPLAY = ROWS
 
     StripTextures(SkillFrameCollapseAllButton)
     SkinCollapseButton(SkillFrameCollapseAllButton, true)
@@ -304,11 +320,11 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
       local header = _G["SkillTypeLabel"..i]
       StripTextures(header)
       SkinCollapseButton(header)
-      -- Icon Button sits on the header and would eat fold clicks.
+      header:SetNormalTexture(nil)
       if header.icon then header.icon:EnableMouse(nil) end
       if i > 1 then
         header:ClearAllPoints()
-        header:SetPoint("LEFT", _G["SkillTypeLabel"..(i - 1)], "LEFT", 0, -pitch)
+        header:SetPoint("LEFT", _G["SkillTypeLabel"..(i - 1)], "LEFT", 0, -PITCH)
       end
 
       StripTextures(_G["SkillRankFrame"..i.."Border"])
@@ -320,10 +336,32 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
 
       if lastframe then
         frame:ClearAllPoints()
-        frame:SetPoint("TOPLEFT", lastframe, "BOTTOMLEFT", 0, -gap)
+        frame:SetPoint("TOPLEFT", lastframe, "BOTTOMLEFT", 0, -GAP)
       end
       frame:SetStatusBarTexture(pfUI.media["img:bar"])
       frame:SetHeight(ROW_H)
+    end
+
+    -- Detail update still Show()s the status bar; keep the whole pane gone.
+    -- Unused row labels must drop their collapse icon or it paints empty squares.
+    if not SkillFrame.soloSkillListHooked then
+      hooksecurefunc("SkillFrame_UpdateSkills", function()
+        SkillDetailScrollFrame:Hide()
+        SkillDetailStatusBar:Hide()
+        for i = 1, SKILLS_TO_DISPLAY do
+          local h = _G["SkillTypeLabel"..i]
+          if h then
+            if h:IsShown() then
+              h:EnableMouse(1)
+              if h.icon then h.icon:EnableMouse(nil) end
+            else
+              h:EnableMouse(nil)
+              if h.icon then h.icon:Hide() end
+            end
+          end
+        end
+      end)
+      SkillFrame.soloSkillListHooked = true
     end
 
     StripTextures(SkillListScrollFrame)
