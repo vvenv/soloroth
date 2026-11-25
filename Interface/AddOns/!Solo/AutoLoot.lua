@@ -6,7 +6,8 @@ Loot on kill for Soloroth, and a loot effect that shows what was picked up.
     choice is a RegisterCVar (solorothAutoLoot), sent to the server as
     `.solo autoloot on|off` at each login and on each change; the server's
     `[solo] autoloot=N` answer never reaches the chat window. What does not
-    fit (bags full) stays on the corpse, which keeps its sparkle.
+    fit (bags full, or Unique/MaxCount already held) stays on the corpse,
+    which keeps its sparkle; Unique-at-cap does not spam chat.
   * "Loot effect" (solorothLootFx): each looted item pops up over the
     character with its icon in its quality's colour, flies to the bags, and
     a line "+ [item] x2" floats up beside it; money gets a coin line.
