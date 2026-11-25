@@ -7,7 +7,7 @@ pfUI:RegisterSkin("Character", "vanilla:tbc", function ()
     -- Character Tab
     SkinDropDown(PlayerTitleDropDown)
     PlayerTitleDropDown:SetPoint("TOP", CharacterLevelText, "BOTTOM", 0, -2)
-    PlayerTitleDropDownText:SetPoint("LEFT", PlayerTitleDropDown.backdrop, "LEFT", 6, 2)
+    PlayerTitleDropDownText:SetPoint("LEFT", PlayerTitleDropDown.backdrop, "LEFT", 6, 0)
     SkinDropDown(PlayerStatFrameLeftDropDown)
     SkinDropDown(PlayerStatFrameRightDropDown)
 

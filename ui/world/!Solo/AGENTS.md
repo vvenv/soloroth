@@ -47,6 +47,9 @@ pfUI backdrop). Menus use `Solo_PlaceStripMenu`. Do not present the two rows as
 - pfUI's vanilla `hooksecurefunc` keys hooks by the hook function: hooking several functions
   needs a distinct closure each (`function() Dock() end`), not one shared function.
 - `SkinCheckbox` insets its backdrop 4px: pass a size around 22, not 14.
+- `SkinDropDown` paints a 20px chrome (stock frame stays taller) so filter rows
+  match tabs, edit boxes, and profession rank bars. Re-anchor label text to the
+  backdrop after skinning; do not leave the stock ±2 Y offsets.
 - Windows drawn on spellbook/trainer art (384×512) keep that size; re-point the backdrop to
   the page (`TOPLEFT 10/12,-10/12`, `BOTTOMRIGHT -32,72..76`) as pfUI's trainer skin does,
   and move title, close and bottom buttons onto it.

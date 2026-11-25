@@ -914,8 +914,13 @@ function pfUI.api.SkinDropDown(frame, cr, cg, cb, useSmall)
   if not frame then return end
   StripTextures(frame)
   CreateBackdrop(frame)
-  frame.backdrop:SetPoint("TOPLEFT", 15, -1)
-  frame.backdrop:SetPoint("BOTTOMRIGHT", -15, 6)
+  -- Stock UIDropDownMenu frames stay ~32 tall; paint a 20px chrome so filter
+  -- rows match SkinTab / CreateDropDownButton / EditBox / profession rank bars.
+  local H = 20
+  frame.backdrop:ClearAllPoints()
+  frame.backdrop:SetHeight(H)
+  frame.backdrop:SetPoint("LEFT", frame, "LEFT", 15, 0)
+  frame.backdrop:SetPoint("RIGHT", frame, "RIGHT", -15, 0)
 
   local button = _G[frame:GetName() .. "Button"]
   button:SetNormalTexture(nil)
@@ -929,7 +934,14 @@ function pfUI.api.SkinDropDown(frame, cr, cg, cb, useSmall)
   button.backdrop:ClearAllPoints()
   button.backdrop:SetWidth(18)
   button.backdrop:SetHeight(18)
-  button.backdrop:SetPoint("RIGHT", frame.backdrop, "RIGHT", -2, 0)
+  button.backdrop:SetPoint("RIGHT", frame.backdrop, "RIGHT", -1, 0)
+
+  local text = _G[frame:GetName() .. "Text"]
+  if text then
+    text:ClearAllPoints()
+    text:SetPoint("LEFT", frame.backdrop, "LEFT", 6, 0)
+    text:SetPoint("RIGHT", button.backdrop, "LEFT", -4, 0)
+  end
 
   if not button.icon then
     button.icon = button:CreateTexture(nil, "OVERLAY")

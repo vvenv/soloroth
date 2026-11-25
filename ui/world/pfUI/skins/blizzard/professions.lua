@@ -104,8 +104,10 @@ pfUI:RegisterSkin("Profession", "vanilla:tbc", function ()
         StripTextures(_G[name.."RankFrameBorder"])
         CreateBackdrop(rankbar, nil, true)
         rankbar:SetStatusBarTexture(pfUI.media["img:bar"])
+        -- Same 20px as SkinDropDown chrome so the filter row and rank bar share a baseline.
         rankbar:ClearAllPoints()
-        rankbar:SetPoint("TOPLEFT", detailscroll.backdrop, "TOPLEFT", 0, 25)
+        rankbar:SetHeight(20)
+        rankbar:SetPoint("BOTTOMLEFT", detailscroll.backdrop, "TOPLEFT", 0, 6)
         rankbar:SetPoint("BOTTOMRIGHT", detailscroll.backdrop, "TOPRIGHT", 0, 6)
 
         -- Craft has no stock count / Create All; ContinuousEnchant adds SoloCraft*.
