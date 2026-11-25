@@ -1,7 +1,4 @@
 pfUI:RegisterSkin("Profession", "vanilla:tbc", function ()
-  local rawborder, border = GetBorderSize()
-  local bpad = rawborder > 1 and border - GetPerfectPixel() or GetPerfectPixel()
-
   local frames = {
     ["TradeSkill"] = { "Blizzard_TradeSkillUI", "TRADE_SKILLS_DISPLAYED", "TradeSkillSkill", "MAX_TRADE_SKILL_REAGENTS" },
     ["Craft"] = { "Blizzard_CraftUI", "CRAFTS_DISPLAYED", "Craft", "MAX_CRAFT_REAGENTS" },
@@ -111,9 +108,15 @@ pfUI:RegisterSkin("Profession", "vanilla:tbc", function ()
         rankbar:SetPoint("TOPLEFT", detailscroll.backdrop, "TOPLEFT", 0, 25)
         rankbar:SetPoint("BOTTOMRIGHT", detailscroll.backdrop, "TOPRIGHT", 0, 6)
 
+        -- Craft has no stock count / Create All; ContinuousEnchant adds SoloCraft*.
+        if not decrease then decrease = _G["SoloCraftDecrementButton"] end
+        if not increase then increase = _G["SoloCraftIncrementButton"] end
+        if not inputbox then inputbox = _G["SoloCraftInputBox"] end
+        if not createall then createall = _G["SoloCraftCreateAllButton"] end
+
         if decrease and increase then
-          SkinArrowButton(decrease, "left", 18)
-          SkinArrowButton(increase, "right", 18)
+          SkinArrowButton(decrease, "left", 22)
+          SkinArrowButton(increase, "right", 22)
         end
 
         if inputbox then
@@ -121,24 +124,23 @@ pfUI:RegisterSkin("Profession", "vanilla:tbc", function ()
           CreateBackdrop(inputbox)
           SetAllPointsOffset(inputbox.backdrop, inputbox, .2)
           inputbox:SetJustifyH("CENTER")
-          inputbox:SetWidth(36)
         end
 
         SkinButton(cancel)
-        cancel:ClearAllPoints()
-        cancel:SetPoint("TOPRIGHT", detailscroll.backdrop, "BOTTOMRIGHT", 0, -5)
-
         SkinButton(create)
-        create:ClearAllPoints()
-        create:SetPoint("RIGHT", cancel, "LEFT", -2*bpad, 0)
+        if createall then SkinButton(createall) end
 
-        SkinButton(createall)
         StripTextures(_G[name.."ExpandButtonFrame"])
 
         detailscroll:ClearAllPoints()
         detailscroll:SetPoint("TOPLEFT", 346, -65)
         detailscroll:SetWidth(299)
         detailscroll:SetHeight(338)
+
+        -- Shared with ContinuousEnchant: left Create All, right-packed rest.
+        if SoloSkin and SoloSkin.ProfessionActions then
+          SoloSkin.ProfessionActions(detailscroll.backdrop, createall, decrease, inputbox, increase, create, cancel)
+        end
 
         -- skin buttons
         for i = 1, _G[maxreagents] do

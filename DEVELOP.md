@@ -49,7 +49,7 @@ tools/macos/make-app.sh                              # 生成 /Applications/Solo
 3. **`create-account.sh`**：需要服务器在运行。加 `gm` 的账号才能用 GMBox 的传送、物品和工具按钮；机器人组队不需要 GM。建的第一个账号会存进 `benilla-config/login.env`，以后自动用它登录。
 4. **`make-app.sh`**：生成 `Soloroth.app`，默认放进 `/Applications`，也可以指定目录：`make-app.sh ~/Desktop`。启动台、Spotlight、程序坞和「强制退出」里的名字都是 Soloroth，图标是 `tools/macos/AppIcon.png`。它直接运行这个仓库里的脚本，客户端重新编译之后，下次启动会自动换上新的。仓库换了位置、换了图标，或者改了启动器的代码（`Launcher.swift`），才要再运行一次。
 
-菜单会根据源码和二进制的新旧提示该不该编译；不确定时看 `./do.sh status`。cargo / cmake 本身是增量的，提示说要编时再跑即可。
+主菜单只留日常项；开服务器、setup、建账号、App、HD、对照表在「更多…」。菜单会根据源码和二进制的新旧提示该不该编译；不确定时看 `./do.sh status`（或菜单「更多 → 对照表」）。cargo / cmake 本身是增量的，提示说要编时再跑即可。
 
 ## 启动器窗口
 
@@ -120,7 +120,7 @@ tools/macos/apply-visual.sh --status
 | `tools/enchant-scrolls/` | 永久附魔改为制造卷轴：生成 world 迁移与 `Data/patch-T.MPQ`（Spell.dbc） |
 | `tools/glue-skin/` | 登录和角色界面的 pfUI 样式，和把它打包成 `Data/patch-S.MPQ` 的脚本 |
 | `tools/lib/` | `do.sh` 用的交互菜单和日志库 |
-| `do.sh` | 根目录交互入口（第一次安装、开玩、编译、外观等） |
+| `do.sh` | 根目录交互入口（主菜单日常项 +「更多」；子命令直达） |
 | `benilla-config/` | 客户端设置、插件（`AddOns/`）、插件存档（`saved/`）和本地的启动器配置，不进 git |
 | `Data/` | 指向客户端 MPQ 和登录条款 HTML 的链接，不进 git |
 | `server/run`、`server/data`、`server/logs` | 服务端运行目录、地图数据、日志，不进 git |

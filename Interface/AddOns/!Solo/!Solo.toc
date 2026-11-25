@@ -20,6 +20,7 @@ PfuiStylesData.lua
 PfuiStyle.lua
 AutoLoot.lua
 ContinuousEnchant.lua
+ProfessionMutex.lua
 Farm.lua
 BagFilters.lua
 SkinAtlas.lua

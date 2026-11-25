@@ -90,13 +90,24 @@ local function StartBatch(count)
   DoCraft(idx)
 end
 
+local function LayoutActions()
+  local detail = CraftDetailScrollFrame
+  local bd = detail and detail.backdrop
+  if not (SoloSkin and SoloSkin.ProfessionActions and bd) then return end
+  SoloSkin.ProfessionActions(bd, createAll, minus, input, plus, CraftCreateButton, CraftCancelButton)
+  if CraftFramePointsText and createAll then
+    CraftFramePointsText:ClearAllPoints()
+    CraftFramePointsText:SetPoint("LEFT", createAll, "RIGHT", 8, 0)
+  end
+end
+
 local function SkinCountUi()
   if skinReady or not createAll then return end
   if not (pfUI and pfUI.api and SoloSkin) then return end
   local A = pfUI.api
   SoloSkin.Button(createAll)
-  if minus then A.SkinArrowButton(minus, "left", 18) end
-  if plus then A.SkinArrowButton(plus, "right", 18) end
+  if minus then A.SkinArrowButton(minus, "left", 22) end
+  if plus then A.SkinArrowButton(plus, "right", 22) end
   if input and not input.soloSkinned then
     input.soloSkinned = true
     input:DisableDrawLayer("BACKGROUND")
@@ -107,6 +118,7 @@ local function SkinCountUi()
     input:SetJustifyH("CENTER")
   end
   skinReady = true
+  LayoutActions()
 end
 
 local function InstallCraftUi()
@@ -115,37 +127,22 @@ local function InstallCraftUi()
 
   RelabelCreate()
 
+  -- Widgets only; SoloSkin.ProfessionActions matches TradeSkill justify/height.
   local create = CraftCreateButton
-  createAll = CreateFrame("Button", "SoloCraftCreateAllButton", CraftFrame, "UIPanelButtonTemplate")
-  createAll:SetWidth(80)
-  createAll:SetHeight(22)
-  createAll:SetFrameLevel((create:GetFrameLevel() or 1) + 2)
-  createAll:SetText(CREATE_ALL or L("Create All", "全部制造"))
-  createAll:SetPoint("RIGHT", create, "LEFT", -5, 0)
-  createAll:SetScript("OnClick", function()
-    local n = Available()
-    if n < 1 then n = ClampCount(input and input:GetNumber() or 1, nil) end
-    StartBatch(n)
-  end)
+  local level = (create:GetFrameLevel() or 1) + 2
 
   plus = CreateFrame("Button", "SoloCraftIncrementButton", CraftFrame)
-  plus:SetWidth(18)
-  plus:SetHeight(18)
-  plus:SetFrameLevel((create:GetFrameLevel() or 1) + 2)
-  plus:SetPoint("RIGHT", createAll, "LEFT", -5, 0)
+  plus:SetFrameLevel(level)
   plus:SetScript("OnClick", function()
     local avail = Available()
     input:SetNumber(ClampCount(input:GetNumber() + 1, avail > 0 and avail or nil))
   end)
 
   input = CreateFrame("EditBox", "SoloCraftInputBox", CraftFrame, "InputBoxTemplate")
-  input:SetWidth(36)
-  input:SetHeight(20)
   input:SetNumeric(true)
   input:SetMaxLetters(3)
   input:SetAutoFocus(false)
   input:SetNumber(1)
-  input:SetPoint("RIGHT", plus, "LEFT", -2, 0)
   input:SetScript("OnEnterPressed", function()
     this:ClearFocus()
     SyncInput()
@@ -153,12 +150,19 @@ local function InstallCraftUi()
   input:SetScript("OnEditFocusLost", SyncInput)
 
   minus = CreateFrame("Button", "SoloCraftDecrementButton", CraftFrame)
-  minus:SetWidth(18)
-  minus:SetHeight(18)
-  minus:SetFrameLevel((create:GetFrameLevel() or 1) + 2)
-  minus:SetPoint("RIGHT", input, "LEFT", -2, 0)
+  minus:SetFrameLevel(level)
   minus:SetScript("OnClick", function()
     input:SetNumber(ClampCount(input:GetNumber() - 1, Available()))
+  end)
+
+  createAll = CreateFrame("Button", "SoloCraftCreateAllButton", CraftFrame, "UIPanelButtonTemplate")
+  createAll:SetWidth(80)
+  createAll:SetFrameLevel(level)
+  createAll:SetText(CREATE_ALL or L("Create All", "全部制造"))
+  createAll:SetScript("OnClick", function()
+    local n = Available()
+    if n < 1 then n = ClampCount(input and input:GetNumber() or 1, nil) end
+    StartBatch(n)
   end)
 
   create:SetScript("OnClick", function()
@@ -176,6 +180,7 @@ local function InstallCraftUi()
   end
 
   SkinCountUi()
+  LayoutActions()
   SyncInput()
 end
 
@@ -215,6 +220,7 @@ f:SetScript("OnEvent", function()
     InstallCraftUi()
     RelabelCreate()
     SkinCountUi()
+    LayoutActions()
     SyncInput()
   elseif event == "CRAFT_CLOSE" then
     ClearBatch()

@@ -32,7 +32,7 @@ The login, realm, character select and character create screens in pfUI's look.
   `Interface\Glues\Solo\Rotate{Left,Right}.tga` (drawn in `build-patch.py`).
   On character select, Enter / Back / Delete / Create faces are retuned to a
   shared ~36px face (clamped to the button) and recentered; labels sit on the
-  face (`LabelOnFace`, -1 so glue fonts don't read high).
+  face (`LabelOnFace` at face center).
 - The skin runs once on `FRAMES_LOADED` (wrapping `GlueParent_OnEvent`), which fires after
   benilla's own glue file, so its Realmlist button is there too.
 - Backdrops go on a child one level below the owner, inset to where the stock art drew.

@@ -139,6 +139,48 @@ function SoloSkin.Button(button)
   Normalize(button)
 end
 
+-- TradeSkill and Craft share one action row under the detail pane:
+-- Create All flush left, Cancel flush right, count + Create packed to Cancel.
+-- Height is one size so Mining and Enchanting read as the same chrome.
+function SoloSkin.ProfessionActions(backdrop, createAll, decrease, input, increase, create, cancel)
+  if not backdrop then return end
+  local H, gap = 22, 4
+
+  if createAll then createAll:SetHeight(H) end
+  if create then create:SetHeight(H) end
+  if cancel then cancel:SetHeight(H) end
+  if decrease then decrease:SetWidth(H) decrease:SetHeight(H) end
+  if increase then increase:SetWidth(H) increase:SetHeight(H) end
+  if input then
+    input:SetHeight(H)
+    input:SetWidth(36)
+  end
+
+  if cancel then
+    cancel:ClearAllPoints()
+    cancel:SetPoint("TOPRIGHT", backdrop, "BOTTOMRIGHT", 0, -5)
+  end
+  if create and cancel then
+    create:ClearAllPoints()
+    create:SetPoint("RIGHT", cancel, "LEFT", -gap, 0)
+  end
+
+  local pack = create or cancel
+  if increase and decrease and input and pack then
+    increase:ClearAllPoints()
+    increase:SetPoint("RIGHT", pack, "LEFT", -gap, 0)
+    input:ClearAllPoints()
+    input:SetPoint("RIGHT", increase, "LEFT", -2, 0)
+    decrease:ClearAllPoints()
+    decrease:SetPoint("RIGHT", input, "LEFT", -2, 0)
+  end
+
+  if createAll then
+    createAll:ClearAllPoints()
+    createAll:SetPoint("TOPLEFT", backdrop, "BOTTOMLEFT", 0, -5)
+  end
+end
+
 -- UIPanelButtonTemplate2 draws its face with three region textures instead
 -- of a normal texture, and swaps their files on press, enable and show.
 local function PanelFace(button)

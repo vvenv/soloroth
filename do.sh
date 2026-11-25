@@ -18,6 +18,8 @@
 #   ./do.sh visual                  # 下载 HD 外观补丁（每次启动自动挂载）
 #   ./do.sh config                  # 应用 config/mangosd.overrides.conf
 #
+# 主菜单：开始玩 / 关服务器 / 编译 / 更新插件 / 应用配置 / 第一次安装 / 管理 / 更多 / 退出。
+# 「更多」里：开服务器、配置、建账号、生成 App、HD、对照表。子命令仍可直接 ./do.sh …
 # 菜单里 Esc / ← 返回上一级；主菜单 Esc 退出。
 # cargo / cmake 本身是增量的：提示说该编时再跑 build 即可，不必每次全编。
 set -euo pipefail
@@ -161,31 +163,31 @@ refresh_hints() {
 
   if [ "$need_first" -eq 1 ]; then
     HINT_LINES+=("还没有编过 → 选「第一次安装」，或 ./do.sh first")
-    HINT_MENU_DEFAULT=4  # first
+    HINT_MENU_DEFAULT=6  # first
     return
   fi
 
   if [ "$need_client" -eq 1 ] && [ "$need_server" -eq 1 ]; then
     HINT_LINES+=("服务端和客户端源码都比二进制新 → ./do.sh build（cargo/cmake 增量）")
     HINT_BUILD_PART=all
-    HINT_MENU_DEFAULT=5  # build
+    HINT_MENU_DEFAULT=3  # build
   elif [ "$need_client" -eq 1 ]; then
     HINT_LINES+=("客户端（client/）有改动 → ./do.sh build client（cargo 增量）")
     HINT_BUILD_PART=client
-    HINT_MENU_DEFAULT=5
+    HINT_MENU_DEFAULT=3
   elif [ "$need_server" -eq 1 ]; then
     HINT_LINES+=("服务端（server/core）有改动 → ./do.sh build server，再重启服务器")
     HINT_BUILD_PART=server
-    HINT_MENU_DEFAULT=5
+    HINT_MENU_DEFAULT=3
   fi
 
   if [ "$need_addons" -eq 1 ]; then
     HINT_LINES+=("插件有改动 → ./do.sh addons，然后完全重启客户端（/reload 不够）")
-    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=9  # addons
+    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=4  # addons
   fi
   if [ "$need_config" -eq 1 ]; then
     HINT_LINES+=("服务端 overrides 有改动 → ./do.sh config，再重启服务器")
-    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=11  # config
+    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=5  # config
   fi
   if [ "$need_glue" -eq 1 ]; then
     HINT_LINES+=("登录界面 glue-skin 有改动 → 再开一次客户端即可（play 会重打 patch-S）")
@@ -457,35 +459,60 @@ cmd_first() {
 
 # ---------- 菜单 / 入口 ----------
 
+run_cmd_from_menu() {
+  local choice="$1"
+  "cmd_$choice" || log_error "执行失败（${choice}）"
+  # status 只是看一眼，不必再按回车
+  if [ "$choice" != "status" ]; then
+    pause_menu
+  fi
+}
+
+run_more_menu() {
+  local choice
+  choice="$(prompt_menu "更多" --default=1 \
+    "server:开服务器" \
+    "setup:配置（库 / 数据 / 插件）" \
+    "account:建账号" \
+    "app:生成 App" \
+    "visual:补下 / 校验 HD 外观" \
+    "status:为什么要编译？（对照表）")"
+  if is_back "$choice"; then
+    return 0
+  fi
+  case "$choice" in
+    server|setup|account|app|visual|status)
+      run_cmd_from_menu "$choice"
+      ;;
+    *)
+      log_die "未知命令: $choice"
+      ;;
+  esac
+}
+
 run_main_menu() {
   while true; do
     print_hints
     local choice
     choice="$(prompt_menu "Soloroth" --default="$HINT_MENU_DEFAULT" \
       "play:开始玩" \
-      "server:开服务器" \
       "stop:关服务器" \
-      "first:第一次安装" \
       "build:编译（增量）" \
-      "setup:配置（库 / 数据 / 插件）" \
-      "account:建账号" \
-      "admin:管理界面（Web）" \
-      "app:生成 App" \
       "addons:更新插件" \
-      "visual:补下 / 校验 HD 外观" \
       "config:应用服务端配置" \
-      "status:为什么要编译？（对照表）" \
+      "first:第一次安装" \
+      "admin:管理界面（Web）" \
+      "more:更多…" \
       "quit:退出")"
     case "$choice" in
       __back__|quit)
         exit 0
         ;;
-      play|server|stop|first|build|setup|account|admin|app|addons|visual|config|status)
-        "cmd_$choice" || log_error "执行失败（${choice}）"
-        # status 只是看一眼，不必再按回车
-        if [ "$choice" != "status" ]; then
-          pause_menu
-        fi
+      more)
+        run_more_menu
+        ;;
+      play|stop|build|addons|config|first|admin)
+        run_cmd_from_menu "$choice"
         ;;
       *)
         log_die "未知命令: $choice"

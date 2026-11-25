@@ -79,8 +79,7 @@ local function LabelOnFace(button, face)
   for _, r in ipairs({ button:GetRegions() }) do
     if r:GetObjectType() == "FontString" then
       r:ClearAllPoints()
-      -- -1: glue fonts sit a hair high inside the flat face.
-      r:SetPoint("CENTER", face, "CENTER", 0, -1)
+      r:SetPoint("CENTER", face, "CENTER", 0, 0)
     end
   end
 end
