@@ -4,6 +4,7 @@
 ## Author: local
 ## Version: 1.0.0
 ## SavedVariables: Solo_State
+Tokens.lua
 Solo.lua
 UnlockSnap.lua
 MessageLog.lua

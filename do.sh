@@ -137,7 +137,8 @@ _config_stale() {
 _glue_stale() {
   local patch="$ROOT/Data/patch-S.MPQ"
   [ -f "$patch" ] || return 1
-  _tree_newer_than "$ROOT/ui/glue" "$patch" __pycache__
+  _tree_newer_than "$ROOT/ui/glue" "$patch" __pycache__ && return 0
+  _tree_newer_than "$ROOT/ui/shared" "$patch"
 }
 
 # 刷新 HINT_*。stdout 给人看的提示行；菜单默认项写进全局。
@@ -413,7 +414,7 @@ cmd_app() {
 
 cmd_ui() {
   log_info "安装产品界面（ui/world → AddOns，ui/glue → patch-S）"
-  bash "$ROOT/ui/install.sh"
+  bash "$ROOT/ui/install.sh" "$@"
   log_success "界面已装；ui/world 新文件需要完全重启客户端（/reload 不够）"
 }
 

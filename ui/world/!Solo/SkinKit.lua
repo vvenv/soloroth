@@ -27,8 +27,9 @@ end
 
 function SoloSkin.Backdrop(frame, alpha)
   local A = pfUI.api
+  local fill = alpha or (SoloUI and SoloUI.PANEL_ALPHA) or .75
   if frame.SetBackdrop then frame:SetBackdrop(nil) end
-  A.CreateBackdrop(frame, nil, nil, alpha or .75)
+  A.CreateBackdrop(frame, nil, nil, fill)
   A.CreateBackdropShadow(frame)
 end
 

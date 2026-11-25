@@ -4,10 +4,11 @@ The login, realm, character select and character create screens in pfUI's look.
 Part of the product UI package (`ui/`); install via `ui/install.sh`.
 
 - The glue VM has no pfUI and no addons, and reads GlueXML only from the MPQ patch chain.
-  So `SoloGlueSkin.lua` uses the bare 1.12 glue API (`WHITE8X8` backdrops, 1px border
-  `.2,.2,.2`, black `.75`), and `build-patch.py` ships it in `Data/patch-S.MPQ` next to a
-  copy of the stock `GlueXML.toc` with the file appended. The toc is read from the player's
-  chain at build time; nothing from the install is committed.
+  So `SoloGlueSkin.lua` uses the bare 1.12 glue API and `SoloUI` from
+  `ui/shared/Tokens.lua` (packed as `SoloUITokens.lua` ahead of the skin).
+  `build-patch.py` ships both in `Data/patch-S.MPQ` next to a copy of the stock
+  `GlueXML.toc`. The toc is read from the player's chain at build time; nothing
+  from the install is committed.
 - `ui/install.sh` (from `play.sh` / `start-client.sh` each client launch) rebuilds the
   patch; `WOW_STOCK_UI=1` removes it. Soloroth.app's「开始游戏」only runs
   `start-client.sh` when the server is already up — that path must install too, or a

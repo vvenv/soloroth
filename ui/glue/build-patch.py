@@ -20,8 +20,11 @@ import sys
 import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(os.path.dirname(HERE))
+UI = os.path.dirname(HERE)
+ROOT = os.path.dirname(UI)
 SKIN = "SoloGlueSkin.lua"
+TOKENS = "SoloUITokens.lua"
+TOKENS_SRC = os.path.join(UI, "shared", "Tokens.lua")
 PATCH = "patch-S.MPQ"
 TOC = "Interface\\GlueXML\\GlueXML.toc"
 
@@ -280,8 +283,17 @@ def main():
     if toc is None:
         sys.exit("no %s in %s" % (TOC, data_dir))
     lines = toc.replace(b"\r", b"").split(b"\n")
+    extras = []
+    if TOKENS.encode() not in lines:
+        extras.append(TOKENS.encode())
     if SKIN.encode() not in lines:
-        toc = toc.rstrip(b"\r\n") + b"\r\n" + SKIN.encode() + b"\r\n"
+        extras.append(SKIN.encode())
+    if extras:
+        toc = toc.rstrip(b"\r\n") + b"\r\n" + b"\r\n".join(extras) + b"\r\n"
+    if not os.path.isfile(TOKENS_SRC):
+        sys.exit("missing %s" % TOKENS_SRC)
+    with open(TOKENS_SRC, "rb") as f:
+        tokens = f.read()
     with open(os.path.join(HERE, SKIN), "rb") as f:
         skin = f.read()
     # Glue Lua cannot read the process env; bake the choice in at patch time.
@@ -289,12 +301,13 @@ def main():
     left = rotate_arrow_tga(False)
     right = rotate_arrow_tga(True)
     listfile = (
-        "%s\r\nInterface\\GlueXML\\%s\r\n"
+        "%s\r\nInterface\\GlueXML\\%s\r\nInterface\\GlueXML\\%s\r\n"
         "Interface\\Glues\\Solo\\RotateLeft.tga\r\n"
         "Interface\\Glues\\Solo\\RotateRight.tga\r\n"
-    ) % (TOC, SKIN)
+    ) % (TOC, TOKENS, SKIN)
     files = [
         (TOC, toc),
+        ("Interface\\GlueXML\\" + TOKENS, tokens),
         ("Interface\\GlueXML\\" + SKIN, skin),
         ("Interface\\Glues\\Solo\\RotateLeft.tga", left),
         ("Interface\\Glues\\Solo\\RotateRight.tga", right),

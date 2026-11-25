@@ -10,9 +10,15 @@ if [ ! -f "$root/client/.probe-identity" ]; then
 fi
 # Unattended runs otherwise use a temp benilla-config, which hides repo AddOns textures.
 export BENILLA_HOME="${BENILLA_HOME:-$root/benilla-config}"
+bash "$root/ui/install.sh" --world-only
 for name in GMBox Bots '!Solo'; do
   [ -d "$root/ui/world/$name" ] && rsync -a --delete "$root/ui/world/$name/" "$BENILLA_HOME/AddOns/$name/"
 done
+# install injects shared Tokens into !Solo; re-copy after the narrow rsync above.
+if [ -f "$root/ui/shared/Tokens.lua" ]; then
+  mkdir -p "$BENILLA_HOME/AddOns/!Solo"
+  cp -f "$root/ui/shared/Tokens.lua" "$BENILLA_HOME/AddOns/!Solo/Tokens.lua"
+fi
 export WOW_DATA="${WOW_DATA:-$root/Data}"
 export WOW_HOST="${WOW_HOST:-127.0.0.1}"
 export WOW_USER="${WOW_USER:-PLAYER}"

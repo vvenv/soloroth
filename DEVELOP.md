@@ -88,7 +88,7 @@ tools/macos/make-app.sh                              # 生成 /Applications/Solo
 
 ## 产品界面与单人设置
 
-- `ui/install.sh`（或 `./do.sh ui`；`addons` 是别名）装 world + glue。`ui/world` 新文件需要**完全重启**客户端，`/reload` 不够；glue 再开客户端即可。
+- `ui/install.sh`（或 `./do.sh ui`；`addons` 是别名）装 world + glue；无改动时跳过（`--force` 强制）。`ui/shared/Tokens.lua` 注入已装的 `!Solo/Tokens.lua`，并打进 `patch-S`。`ui/world` 新文件需要**完全重启**客户端，`/reload` 不够；glue 再开客户端即可。
 - pfUI、Atlas、AtlasLoot 是收进来的单人代码，可以直接改（去掉社交、PvP、拍卖、邮件、交易、战场，以及别的客户端或资料片用不到的部分）。默认值和外观仍写在 `ui/world/!Solo`（见其 `AGENTS.md`）。背包整理在 pfUI 里，没有单独的 SortBags。
 - 想改某一项单人设置，改 `!Solo` 里对应的表，再跑 `./do.sh ui`（或直接再开客户端，play 会装）。
 

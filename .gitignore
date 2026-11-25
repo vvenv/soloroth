@@ -22,6 +22,7 @@
 /ui/*
 !/ui/AGENTS.md
 !/ui/install.sh
+!/ui/shared/
 !/ui/world/
 !/ui/glue/
 

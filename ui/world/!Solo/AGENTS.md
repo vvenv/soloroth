@@ -2,9 +2,11 @@
 
 Loads first (`!` sorts before every other folder) and applies the single-player defaults
 (`Solo.lua`, including HUD frame seats under `position`) and every look change to other
-addons. pfUI, Atlas, and AtlasLoot are solo code: gutting (delete modules, BG maps, PvP
-loot, etc.) happens in those trees. Bag sorting is pfUI's, not a separate addon. `!Solo`
-still owns defaults, skins, and shutting stock Blizzard frames the client might still raise.
+addons. `Tokens.lua` is injected from `ui/shared/Tokens.lua` by `ui/install.sh` (not
+edited here). pfUI, Atlas, and AtlasLoot are solo code: gutting (delete modules, BG maps,
+PvP loot, etc.) happens in those trees — new product features go in first-party modules,
+not inside pfUI. Bag sorting is pfUI's, not a separate addon. `!Solo` still owns defaults,
+skins, and shutting stock Blizzard frames the client might still raise.
 
 Player-facing copy treats Soloroth windows as one product (command strip under the
 minimap, ESC「界面」for settings). Interface style lives in Options → Graphics

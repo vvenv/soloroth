@@ -18,10 +18,10 @@ Docs (Chinese unless noted):
   from the MPQ patch chain, never loose files. Soloroth-only UI goes in `ui/` (world Lua or
   glue → `Data/patch-S.MPQ`), not in the client.
 - `server/core` — submodule soloroth-server (vmangos plus bots and achievements).
-- `ui/` — product UI. `ui/world/` is the in-world set (pfUI, Atlas, AtlasLoot trimmed in
-  place: no social/PvP/AH/mail/trade/BG; bag sorting in pfUI; defaults/skins via `!Solo`).
-  `ui/glue/` is login/character screens. `ui/install.sh` (or `./do.sh ui`) installs both.
-  See `ui/AGENTS.md`.
+- `ui/` — product UI. `ui/shared/` look tokens; `ui/world/` in-world set (first-party
+  modules + trimmed pfUI/Atlas/AtlasLoot); `ui/glue/` login/character screens.
+  `ui/install.sh` (or `./do.sh ui`) installs both, incrementally. New features go in
+  first-party modules, not inside pfUI/Atlas/AtlasLoot. See `ui/AGENTS.md`.
 - `tools/macos/` — build, install, run scripts. `tools/macos/launcher/` — Soloroth.app's
   launcher window (AppKit, built by `make-app.sh`): the art with no text over it but the
   logo, the slogan, the bottom bar and the promo slot. Heroes (picked at random, each

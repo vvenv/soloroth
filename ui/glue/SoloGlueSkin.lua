@@ -5,27 +5,29 @@ and buttons. The glue has no pfUI, so this draws the same thing with the 1.12
 glue API alone.
 
 GlueXML runs off the patch chain, never loose files, so this file reaches the
-client in a generated patch-S.MPQ beside a copy of the stock GlueXML.toc with
-this file appended (tools/glue-skin/build-patch.py).
+client in a generated patch-S.MPQ beside SoloUITokens.lua (ui/shared/Tokens.lua)
+and a copy of the stock GlueXML.toc (ui/glue/build-patch.py).
 
 build-patch.py may prepend `SoloShowLoginUI = true|false`. Default false: the
 AccountLogin page is removed for the run (model, overlay, the lot) while
 Soloroth logs in from login.env — a black blank until character select.
 play.sh passes --show-login-ui when there is no login.env, or when
 WOW_SHOW_LOGIN_UI=1.
+
+Colors come from SoloUI (loaded first as SoloUITokens.lua).
 ----------------------------------------------------------------------------]]
 
 -- Prepended by build-patch.py; nil means hide (same as false).
 if SoloShowLoginUI == nil then SoloShowLoginUI = false end
 
-local WHITE = "Interface\\Buttons\\WHITE8X8"
+local WHITE = (SoloUI and SoloUI.WHITE) or "Interface\\Buttons\\WHITE8X8"
 local BACKDROP = {
   bgFile = WHITE, edgeFile = WHITE, tile = false, edgeSize = 1,
   insets = { left = 1, right = 1, top = 1, bottom = 1 },
 }
--- pfUI's default appearance.border colors.
-local BORDER = { .2, .2, .2, 1 }
-local HOVER = { 1, .82, 0, 1 }
+local BORDER = (SoloUI and SoloUI.BORDER) or { .2, .2, .2, 1 }
+local HOVER = (SoloUI and SoloUI.HOVER) or { 1, .82, 0, 1 }
+local PANEL_ALPHA = (SoloUI and SoloUI.PANEL_ALPHA) or .75
 
 local function Texture(region)
   local path = region and region.GetTexture and region:GetTexture()
@@ -41,7 +43,7 @@ local function Flat(frame, left, top, right, bottom, alpha)
   bd:SetPoint("TOPLEFT", frame, "TOPLEFT", left or 0, -(top or 0))
   bd:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -(right or 0), bottom or 0)
   bd:SetBackdrop(BACKDROP)
-  bd:SetBackdropColor(0, 0, 0, alpha or .75)
+  bd:SetBackdropColor(0, 0, 0, alpha or PANEL_ALPHA)
   bd:SetBackdropBorderColor(BORDER[1], BORDER[2], BORDER[3], BORDER[4])
   frame.soloBackdrop = bd
   return bd
@@ -62,7 +64,7 @@ local function Own(frame, alpha)
   if not frame or frame.soloSkinned then return end
   frame.soloSkinned = true
   frame:SetBackdrop(BACKDROP)
-  frame:SetBackdropColor(0, 0, 0, alpha or .75)
+  frame:SetBackdropColor(0, 0, 0, alpha or PANEL_ALPHA)
   frame:SetBackdropBorderColor(BORDER[1], BORDER[2], BORDER[3], BORDER[4])
 end
 
@@ -101,7 +103,7 @@ local function Button(button)
   bd:SetHeight(bh)
   bd:SetPoint("CENTER", button, "CENTER", -1, 3)
   bd:SetBackdrop(BACKDROP)
-  bd:SetBackdropColor(0, 0, 0, .75)
+  bd:SetBackdropColor(0, 0, 0, PANEL_ALPHA)
   bd:SetBackdropBorderColor(BORDER[1], BORDER[2], BORDER[3], BORDER[4])
   button.soloBackdrop = bd
   LabelOnFace(button, bd)
@@ -151,7 +153,7 @@ local function RotateButton(button, side)
   bd:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
   bd:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0)
   bd:SetBackdrop(BACKDROP)
-  bd:SetBackdropColor(0, 0, 0, .75)
+  bd:SetBackdropColor(0, 0, 0, PANEL_ALPHA)
   bd:SetBackdropBorderColor(BORDER[1], BORDER[2], BORDER[3], BORDER[4])
   button.soloBackdrop = bd
 
@@ -521,7 +523,7 @@ local function SkinCharacterCreate()
     column:SetPoint("TOPLEFT", CharacterCreateOuterBorder1, "TOPLEFT", 6, 0)
     column:SetPoint("BOTTOMRIGHT", CharacterCreateOuterBorder3, "BOTTOMRIGHT", -6, 6)
     column:SetBackdrop(BACKDROP)
-    column:SetBackdropColor(0, 0, 0, .75)
+    column:SetBackdropColor(0, 0, 0, PANEL_ALPHA)
     column:SetBackdropBorderColor(BORDER[1], BORDER[2], BORDER[3], BORDER[4])
   end
 
