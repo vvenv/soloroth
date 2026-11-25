@@ -62,8 +62,11 @@ and dock W/H sync those module keys (action bars save `position.*.width/height`
 as the outer box; `BarFitToSize` / `BarSquarePads` keep square icons and put
 leftover space into axis padding so the button grid reaches both edges — dock
 W/H stick to what you set). Unitframes scale `width`/`height`/`pheight`
-together to the unlock box (power bar no longer floors how small the frame
-can go). Action-bar `GetWidth`/`GetHeight` include the panel border (backdrop
+together to the unlock box via `SyncUnitframeUnlockSize` (power bar no
+longer floors how small the frame can go; portrait chrome comes from
+config, not `GetWidth`, so corner-drag cannot freeze bars at the old
+width). `LoadMovable` re-runs that fill when `position.*.width/height`
+exist. Action-bar `GetWidth`/`GetHeight` include the panel border (backdrop
 flush on the frame, not outside), so unlock grid snap matches the visible
 outer edge. Icon/font/spacing sizes stay pixels.
 

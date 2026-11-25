@@ -146,61 +146,11 @@ pfUI:RegisterModule("unlock", "vanilla:tbc", function ()
       frame:SetWidth(pxW)
       frame:SetHeight(pxH)
     elseif frame.config and frame.UpdateConfig and frame.config.width then
-      -- Unitframes: outer box is unlock W/H. Scale HP + power together so a
-      -- tall pheight (e.g. Adapta player = 2) does not floor the whole frame.
-      local step = GridStep()
-      local function FineCells(px)
-        if step <= 0 then return 1 end
-        local n = px / step
-        return math.floor(n * 100 + 0.5) / 100
-      end
-
-      local rawb, uf_border = GetBorderSize("unitframes")
-      uf_border = uf_border or rawb or 3
-      local pspace = tonumber(frame.config.pspace) or 0
-      local spacing = pspace * GetPerfectPixel()
-      local cfgW = tonumber(frame.config.width) or 1
-      local cfgH = tonumber(frame.config.height) or 1
-      local cfgP = tonumber(frame.config.pheight) or 0
-
-      local chromeW = (frame:GetWidth() or 0) - ConfigSize(cfgW)
-      if chromeW < 0 then chromeW = 0 end
-      local newCfgW = FineCells(pxW - chromeW)
-      -- 0.5 cells (~6px) is too narrow for name/HP text (party targets).
-      if newCfgW < 4 then newCfgW = 4 end
-
-      -- Match pfUI.uf:UpdateFrameSize: real = hp + spacing + power + 2*border,
-      -- unless negative pspace collapses to hp-only.
-      local newCfgH, newCfgP = cfgH, cfgP
-      local psize = ConfigSize(frame.config.pheight)
-      if spacing ~= math.abs(spacing) and math.abs(spacing) > math.abs(psize) then
-        newCfgH = FineCells(pxH)
-      else
-        local budget = pxH - spacing - 2 * uf_border
-        if budget < step * 0.5 then budget = step * 0.5 end
-        if cfgP < 0 then
-          newCfgH = FineCells(budget)
-        else
-          local sum = cfgH + math.max(cfgP, 0)
-          if sum < 0.01 then sum = 0.01 end
-          local total = FineCells(budget)
-          if total < 0.5 then total = 0.5 end
-          newCfgH = math.floor(total * (cfgH / sum) * 100 + 0.5) / 100
-          newCfgP = math.floor(total * (math.max(cfgP, 0) / sum) * 100 + 0.5) / 100
-          if newCfgH < 0.25 then newCfgH = 0.25 end
-          if cfgP > 0 and newCfgP < 0.25 then newCfgP = 0.25 end
-          frame.config.pheight = tostring(newCfgP)
-        end
-      end
-      if newCfgH < 0.25 then newCfgH = 0.25 end
-
-      frame.config.width = tostring(newCfgW)
-      frame.config.height = tostring(newCfgH)
-      frame:UpdateConfig()
-      -- Keep the unlock box exact (same idea as action bars).
+      -- Unitframes: outer box is unlock W/H. SyncUnitframeUnlockSize scales
+      -- HP + power to fill it (portrait chrome from config, not GetWidth —
+      -- corner-drag already resized the frame before we run).
+      SyncUnitframeUnlockSize(frame, wCells, hCells)
       SaveUnlockSize(frame, wCells, hCells)
-      frame:SetWidth(pxW)
-      frame:SetHeight(pxH)
     elseif name == "pfChatLeft" then
       C.chat.left.width = tostring(wCells)
       C.chat.left.height = tostring(hCells)

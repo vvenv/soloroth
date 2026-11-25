@@ -684,6 +684,92 @@ function pfUI.api.ApplyFrameSize(frame, size)
   return scale
 end
 
+-- [ SyncUnitframeUnlockSize ]
+-- Fill a unitframe's HP/power config to an unlock outer box (cells).
+-- Portrait chrome is derived from config, never from frame:GetWidth() —
+-- corner-drag already SetWidth's the outer box, so GetWidth − content
+-- would treat the drag delta as chrome and freeze the bars at the old size.
+-- Returns true when applied.
+function pfUI.api.SyncUnitframeUnlockSize(frame, wCells, hCells)
+  if not (frame and frame.config and frame.UpdateConfig and frame.config.width) then
+    return nil
+  end
+  wCells = tonumber(wCells)
+  hCells = tonumber(hCells)
+  if not wCells or not hCells then return nil end
+  if wCells < 1 then wCells = 1 end
+  if hCells < 1 then hCells = 1 end
+
+  local pxW, pxH = GridToPixel(wCells), GridToPixel(hCells)
+  local step = GridStep()
+  local function FineCells(px)
+    if step <= 0 then return 1 end
+    return math.floor((px / step) * 100 + 0.5) / 100
+  end
+
+  local rawb, uf_border = GetBorderSize("unitframes")
+  uf_border = uf_border or rawb or 3
+  local pspace = tonumber(frame.config.pspace) or 0
+  local spacing = pspace * GetPerfectPixel()
+  local cfgH = tonumber(frame.config.height) or 1
+  local cfgP = tonumber(frame.config.pheight) or 0
+
+  -- Height first: auto-sized side portraits use real_height as chrome.
+  local newCfgH, newCfgP = cfgH, cfgP
+  local psize = ConfigSize(frame.config.pheight)
+  if spacing ~= math.abs(spacing) and math.abs(spacing) > math.abs(psize) then
+    newCfgH = FineCells(pxH)
+  else
+    local budget = pxH - spacing - 2 * uf_border
+    if budget < step * 0.5 then budget = step * 0.5 end
+    if cfgP < 0 then
+      newCfgH = FineCells(budget)
+    else
+      local sum = cfgH + math.max(cfgP, 0)
+      if sum < 0.01 then sum = 0.01 end
+      local total = FineCells(budget)
+      if total < 0.5 then total = 0.5 end
+      newCfgH = math.floor(total * (cfgH / sum) * 100 + 0.5) / 100
+      newCfgP = math.floor(total * (math.max(cfgP, 0) / sum) * 100 + 0.5) / 100
+      if newCfgH < 0.25 then newCfgH = 0.25 end
+      if cfgP > 0 and newCfgP < 0.25 then newCfgP = 0.25 end
+    end
+  end
+  if newCfgH < 0.25 then newCfgH = 0.25 end
+
+  local chromeW = 0
+  local portrait = frame.config.portrait
+  if portrait == "left" or portrait == "right" then
+    local ptwidth = frame.config.portraitwidth
+    local ptheight = frame.config.portraitheight
+    if ptwidth == "-1" and ptheight == "-1" then
+      local ph = ConfigSize(newCfgP)
+      local real_h = ConfigSize(newCfgH) + spacing + ph + 2 * uf_border
+      if spacing ~= math.abs(spacing) and math.abs(spacing) > math.abs(ph) then
+        real_h = ConfigSize(newCfgH)
+      end
+      chromeW = real_h + spacing + 2 * uf_border
+    else
+      chromeW = ConfigSize(ptwidth) + spacing + 2 * uf_border
+    end
+  end
+  if chromeW < 0 then chromeW = 0 end
+
+  local newCfgW = FineCells(pxW - chromeW)
+  -- 0.5 cells (~6px) is too narrow for name/HP text (party targets).
+  if newCfgW < 4 then newCfgW = 4 end
+
+  frame.config.width = tostring(newCfgW)
+  frame.config.height = tostring(newCfgH)
+  if cfgP >= 0 then
+    frame.config.pheight = tostring(newCfgP)
+  end
+  frame:UpdateConfig()
+  frame:SetWidth(pxW)
+  frame:SetHeight(pxH)
+  return true
+end
+
 -- [ Load Movable ]
 -- Loads the positions of a Frame.
 -- xpos/ypos are grid cells (screen width / 128). Unlock size uses
@@ -754,11 +840,18 @@ function pfUI.api.LoadMovable(frame, init)
     end
 
     -- Unlock width/height (cells). Action bars keep these as the outer box;
-    -- icon_size/formfactor only fill the interior.
+    -- icon_size/formfactor only fill the interior. Unitframes fill HP/power to
+    -- that outer box (heals a corner-drag that left bars at the old width).
     if name ~= "WorldMapFrame" then
       local w, h = tonumber(cfg.width), tonumber(cfg.height)
-      if w and w > 0 then frame:SetWidth(GridToPixel(w)) end
-      if h and h > 0 then frame:SetHeight(GridToPixel(h)) end
+      if w and w > 0 and h and h > 0
+        and frame.config and frame.UpdateConfig and frame.config.width
+        and pfUI.api.SyncUnitframeUnlockSize(frame, w, h) then
+        -- synced
+      else
+        if w and w > 0 then frame:SetWidth(GridToPixel(w)) end
+        if h and h > 0 then frame:SetHeight(GridToPixel(h)) end
+      end
     end
   elseif frame.posdata and frame.posdata.pos[1] then
     frame:ClearAllPoints()

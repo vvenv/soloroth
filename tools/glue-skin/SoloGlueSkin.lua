@@ -79,8 +79,8 @@ local function LabelOnFace(button, face)
   for _, r in ipairs({ button:GetRegions() }) do
     if r:GetObjectType() == "FontString" then
       r:ClearAllPoints()
-      -- y=-2: glyph ink sits above the baseline; geometric center reads high.
-      r:SetPoint("CENTER", face, "CENTER", 0, -2)
+      -- -1: glue fonts sit a hair high inside the flat face.
+      r:SetPoint("CENTER", face, "CENTER", 0, -1)
     end
   end
 end
@@ -277,6 +277,7 @@ local CHAR_SELECT_HIDE = {
   "CharacterSelectAddonsButton", "CharacterSelectAddonsButtonGlow",
   "CharSelectChangeRealmButton", "CharSelectRealmName",
   "GameRoomBillingFrame", "BillingWarningFrame", "CharacterSelectLogo",
+  "CharacterSelectRotateLeft", "CharacterSelectRotateRight",
 }
 
 local function HideCharSelectChrome()
@@ -392,19 +393,26 @@ local function LayoutCharSelect()
     create:SetWidth(ROW_W)
     create:ClearAllPoints()
     create:SetPoint("BOTTOM", rail, "BOTTOM", 0, 14)
+    -- Same fuller face as the bottom row: stock 55%/+3 left the label high.
     if create.soloBackdrop then
       local bw = math.floor(ROW_W * .86 + .5)
-      local bh = math.floor(create:GetHeight() * .55 + .5)
+      local ch = create:GetHeight()
+      local bh = 36
+      if ch and ch > 0 and bh > ch - 2 then bh = ch - 2 end
       create.soloBackdrop:SetWidth(bw)
       create.soloBackdrop:SetHeight(bh)
       create.soloBackdrop:ClearAllPoints()
-      create.soloBackdrop:SetPoint("CENTER", create, "CENTER", 0, 3)
+      create.soloBackdrop:SetPoint("CENTER", create, "CENTER", 0, 0)
+      LabelOnFace(create, create.soloBackdrop)
     end
   end
 
-  -- One bottom row: Back | Enter (+ rotates) | Delete. Same baseline; outer
-  -- edges share `margin` so left and right mirror. Enter is taller and grows up.
+  -- One bottom row: Back | Enter | Delete. Same baseline; outer edges share
+  -- `margin` so left and right mirror. Enter is taller and grows up.
   if CharSelectEnterWorldButton then
+    CharSelectEnterWorldButton:SetText("进入")
+    -- Stock ENTER_WORLD is long; two glyphs need only a small face width.
+    CharSelectEnterWorldButton:SetWidth(120)
     CharSelectEnterWorldButton:ClearAllPoints()
     CharSelectEnterWorldButton:SetPoint("BOTTOM", ui, "BOTTOM", 0, baseline)
   end
@@ -412,39 +420,33 @@ local function LayoutCharSelect()
     CharSelectCharacterName:ClearAllPoints()
     CharSelectCharacterName:SetPoint("BOTTOM", CharSelectEnterWorldButton, "TOP", 0, 18)
   end
-  -- Enter face + rotates share one row height, centered on the button (stock
-  -- Button() face sits 3px high and only ~55% tall, so the label and the
-  -- rotate squares read on different baselines).
-  local enter = CharSelectEnterWorldButton
-  local face = enter and enter.soloBackdrop
+  -- Enter / Back / Delete share one face height, centered on each button
+  -- (stock Button() face sits 3px high and only ~55% tall — on the
+  -- SmallTemplate Back/Delete that left a ~21px face with the label sunk).
   local rowH = 36
-  if enter and face then
-    local faceW = math.floor(enter:GetWidth() * .86 + .5)
-    face:SetWidth(faceW)
-    face:SetHeight(rowH)
-    face:ClearAllPoints()
-    face:SetPoint("CENTER", enter, "CENTER", 0, 0)
-    LabelOnFace(enter, face)
+  local function FaceOnRow(btn)
+    if not btn or not btn.soloBackdrop then return end
+    local f = btn.soloBackdrop
+    local faceW = math.floor(btn:GetWidth() * .86 + .5)
+    local faceH = rowH
+    local bh = btn:GetHeight()
+    if bh and bh > 0 and faceH > bh - 2 then faceH = bh - 2 end
+    f:SetWidth(faceW)
+    f:SetHeight(faceH)
+    f:ClearAllPoints()
+    f:SetPoint("CENTER", btn, "CENTER", 0, 0)
+    LabelOnFace(btn, f)
   end
-  if enter and CharacterSelectRotateLeft and CharacterSelectRotateRight then
-    local gap = 6
-    local anchor = face or enter
-    for _, btn in ipairs({ CharacterSelectRotateLeft, CharacterSelectRotateRight }) do
-      btn:SetWidth(rowH)
-      btn:SetHeight(rowH)
-    end
-    CharacterSelectRotateLeft:ClearAllPoints()
-    CharacterSelectRotateLeft:SetPoint("RIGHT", anchor, "LEFT", -gap, 0)
-    CharacterSelectRotateRight:ClearAllPoints()
-    CharacterSelectRotateRight:SetPoint("LEFT", anchor, "RIGHT", gap, 0)
-  end
+  FaceOnRow(CharSelectEnterWorldButton)
   if CharacterSelectBackButton then
     CharacterSelectBackButton:ClearAllPoints()
     CharacterSelectBackButton:SetPoint("BOTTOMLEFT", ui, "BOTTOMLEFT", margin, baseline)
+    FaceOnRow(CharacterSelectBackButton)
   end
   if CharacterSelectDeleteButton then
     CharacterSelectDeleteButton:ClearAllPoints()
     CharacterSelectDeleteButton:SetPoint("BOTTOMRIGHT", ui, "BOTTOMRIGHT", -margin, baseline)
+    FaceOnRow(CharacterSelectDeleteButton)
   end
 end
 
@@ -482,8 +484,6 @@ local function SkinCharacterSelect()
     HideCharSelectChrome()
   end
   LayoutCharSelect()
-  RotateButton(CharacterSelectRotateLeft, "left")
-  RotateButton(CharacterSelectRotateRight, "right")
 
   -- Own: a child one level down of a model-scene panel can slip under the 3D.
   Own(CharacterSelectCharacterFrame, .6)
