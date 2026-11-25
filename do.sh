@@ -14,11 +14,12 @@
 #   ./do.sh account [账号 密码 [gm]]
 #   ./do.sh admin                   # 打开本地 Web 管理台（账号 / 角色 / SQL）
 #   ./do.sh app [目标目录]          # 生成 Soloroth.app（默认 /Applications）
-#   ./do.sh addons                  # 安装 / 更新插件
+#   ./do.sh ui                      # 安装 / 更新产品界面（world + glue）
+#   ./do.sh addons                  # ui 的别名
 #   ./do.sh visual                  # 下载 HD 外观补丁（每次启动自动挂载）
 #   ./do.sh config                  # 应用 config/mangosd.overrides.conf
 #
-# 主菜单：开始玩 / 关服务器 / 编译 / 更新插件 / 应用配置 / 第一次安装 / 管理 / 更多 / 退出。
+# 主菜单：开始玩 / 关服务器 / 编译 / 更新界面 / 应用配置 / 第一次安装 / 管理 / 更多 / 退出。
 # 「更多」里：开服务器、配置、建账号、生成 App、HD、对照表。子命令仍可直接 ./do.sh …
 # 菜单里 Esc / ← 返回上一级；主菜单 Esc 退出。
 # cargo / cmake 本身是增量的：提示说该编时再跑 build 即可，不必每次全编。
@@ -103,8 +104,8 @@ _tree_newer_than() {
   [ -n "$(find "$root" "${args[@]}" -type f ! -name '.DS_Store' -newer "$ref" -print -quit 2>/dev/null)" ]
 }
 
-_addons_stale() {
-  local src="$ROOT/Interface/AddOns"
+_ui_world_stale() {
+  local src="$ROOT/ui/world"
   local dst="${BENILLA_HOME:-$ROOT/benilla-config}/AddOns"
   [ -d "$src" ] || return 1
   if [ ! -d "$dst" ]; then
@@ -136,7 +137,7 @@ _config_stale() {
 _glue_stale() {
   local patch="$ROOT/Data/patch-S.MPQ"
   [ -f "$patch" ] || return 1
-  _tree_newer_than "$ROOT/tools/glue-skin" "$patch" __pycache__
+  _tree_newer_than "$ROOT/ui/glue" "$patch" __pycache__
 }
 
 # 刷新 HINT_*。stdout 给人看的提示行；菜单默认项写进全局。
@@ -144,7 +145,7 @@ refresh_hints() {
   HINT_LINES=()
   HINT_MENU_DEFAULT=1
   HINT_BUILD_PART=all
-  local need_client=0 need_server=0 need_addons=0 need_config=0 need_glue=0
+  local need_client=0 need_server=0 need_ui=0 need_config=0 need_glue=0
   local need_first=0
 
   if [ ! -x "$CLIENT_BIN" ] && [ ! -x "$SERVER_BIN" ]; then
@@ -157,7 +158,7 @@ refresh_hints() {
       need_server=1
     fi
   fi
-  _addons_stale && need_addons=1
+  _ui_world_stale && need_ui=1
   _config_stale && need_config=1
   _glue_stale && need_glue=1
 
@@ -181,20 +182,23 @@ refresh_hints() {
     HINT_MENU_DEFAULT=3
   fi
 
-  if [ "$need_addons" -eq 1 ]; then
-    HINT_LINES+=("插件有改动 → ./do.sh addons，然后完全重启客户端（/reload 不够）")
-    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=4  # addons
+  if [ "$need_ui" -eq 1 ] || [ "$need_glue" -eq 1 ]; then
+    if [ "$need_ui" -eq 1 ] && [ "$need_glue" -eq 1 ]; then
+      HINT_LINES+=("产品界面（ui/world + ui/glue）有改动 → ./do.sh ui，或再开客户端（play 会装）；world 改动需完全重启")
+    elif [ "$need_ui" -eq 1 ]; then
+      HINT_LINES+=("ui/world 有改动 → ./do.sh ui，然后完全重启客户端（/reload 不够）")
+    else
+      HINT_LINES+=("ui/glue 有改动 → ./do.sh ui，或再开一次客户端（play 会重打 patch-S）")
+    fi
+    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=4  # ui
   fi
   if [ "$need_config" -eq 1 ]; then
     HINT_LINES+=("服务端 overrides 有改动 → ./do.sh config，再重启服务器")
     [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=5  # config
   fi
-  if [ "$need_glue" -eq 1 ]; then
-    HINT_LINES+=("登录界面 glue-skin 有改动 → 再开一次客户端即可（play 会重打 patch-S）")
-  fi
 
   if [ "${#HINT_LINES[@]}" -eq 0 ]; then
-    HINT_LINES+=("源码和当前二进制一致，开玩就行（改插件 / 配置 / 客户端 / 服务端才会提示）")
+    HINT_LINES+=("源码和当前二进制一致，开玩就行（改界面 / 配置 / 客户端 / 服务端才会提示）")
   fi
 }
 
@@ -215,11 +219,10 @@ cmd_status() {
   print_hints
   echo "" >&2
   echo "对照：" >&2
-  echo "  改 Interface/AddOns 或 !Solo     → addons + 重启客户端（不用编译）" >&2
+  echo "  改 ui/world 或 ui/glue           → ui（或再开客户端）；world 需完全重启" >&2
   echo "  改 client/（Rust）               → build client（增量）" >&2
   echo "  改 server/core（C++）            → build server（增量）+ 重启服务器" >&2
   echo "  改 config/*.overrides.conf       → config + 重启服务器" >&2
-  echo "  改 tools/glue-skin               → 直接再开客户端" >&2
 }
 
 # ---------- 子命令 ----------
@@ -408,10 +411,14 @@ cmd_app() {
   log_success "App 已生成"
 }
 
+cmd_ui() {
+  log_info "安装产品界面（ui/world → AddOns，ui/glue → patch-S）"
+  bash "$ROOT/ui/install.sh"
+  log_success "界面已装；ui/world 新文件需要完全重启客户端（/reload 不够）"
+}
+
 cmd_addons() {
-  log_info "安装插件到 benilla-config"
-  run_macos install-addons.sh
-  log_success "插件已装；新插件文件需要完全重启客户端（/reload 不够）"
+  cmd_ui
 }
 
 cmd_visual() {
@@ -472,7 +479,7 @@ run_more_menu() {
   local choice
   choice="$(prompt_menu "更多" --default=1 \
     "server:开服务器" \
-    "setup:配置（库 / 数据 / 插件）" \
+    "setup:配置（库 / 数据 / 界面）" \
     "account:建账号" \
     "app:生成 App" \
     "visual:补下 / 校验 HD 外观" \
@@ -498,7 +505,7 @@ run_main_menu() {
       "play:开始玩" \
       "stop:关服务器" \
       "build:编译（增量）" \
-      "addons:更新插件" \
+      "ui:更新界面" \
       "config:应用服务端配置" \
       "first:第一次安装" \
       "admin:管理界面（Web）" \
@@ -511,7 +518,7 @@ run_main_menu() {
       more)
         run_more_menu
         ;;
-      play|stop|build|addons|config|first|admin)
+      play|stop|build|ui|config|first|admin)
         run_cmd_from_menu "$choice"
         ;;
       *)
@@ -525,9 +532,10 @@ CMD=""
 if [ $# -gt 0 ]; then
   case "$1" in
     -h|--help|help) usage 0 ;;
-    play|server|stop|first|build|setup|account|admin|app|addons|visual|config|status|hint|doctor)
+    play|server|stop|first|build|setup|account|admin|app|ui|addons|visual|config|status|hint|doctor)
       CMD="$1"
       [ "$CMD" = "hint" ] || [ "$CMD" = "doctor" ] && CMD=status
+      [ "$CMD" = "addons" ] && CMD=ui
       shift
       ;;
     -*)

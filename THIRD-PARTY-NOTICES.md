@@ -15,7 +15,7 @@ It is not affiliated with or endorsed by Blizzard Entertainment and ships no gam
 
 ## Third-party addons
 
-`Interface/AddOns` carries the 1.12 addons the game is set up with. pfUI, Atlas, and AtlasLoot are trimmed for this solo client (social, PvP, auction, mail, trade, battlegrounds, and other-client code are not shipped). SortBags' sorter lives in `Interface/AddOns/pfUI/modules/bagsort.lua`. The Chinese that `tools/macos/localize-addons.py` adds goes onto the installed copies only. They are not covered by this project's GPL: each keeps its own licence and belongs to its authors. Those marked "none shipped" come without a licence file; they are included as the vanilla community has long passed them around, and an author who wants one removed can open an issue.
+`ui/world` carries the 1.12 addons the game is set up with (installed into the client's AddOns folder by `ui/install.sh`). pfUI, Atlas, and AtlasLoot are trimmed for this solo client (social, PvP, auction, mail, trade, battlegrounds, and other-client code are not shipped). SortBags' sorter lives in `ui/world/pfUI/modules/bagsort.lua`. The Chinese that `tools/macos/localize-addons.py` adds goes onto the installed copies only. They are not covered by this project's GPL: each keeps its own licence and belongs to its authors. Those marked "none shipped" come without a licence file; they are included as the vanilla community has long passed them around, and an author who wants one removed can open an issue.
 
 | Addon | Version | Author | Licence | Source |
 | --- | --- | --- | --- | --- |
@@ -26,7 +26,7 @@ It is not affiliated with or endorsed by Blizzard Entertainment and ships no gam
 
 Teleport, Items, GMBox, Dungeon, Bots, Achievements and !Solo in the same folder are this project's own, under its GPL-3.0.
 
-Bundled pfUI style tables under `Interface/AddOns/!Solo/PfuiStylesData.lua` are decoded community `/share` exports (not the authors' full addons), kept for one-click switching in Soloroth:
+Bundled pfUI style tables under `ui/world/!Solo/PfuiStylesData.lua` are decoded community `/share` exports (not the authors' full addons), kept for one-click switching in Soloroth:
 
 | Style id | Author | Source |
 | --- | --- | --- |

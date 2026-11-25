@@ -86,7 +86,7 @@ cd soloroth
 | 开始玩 | 双击 Soloroth.app，或 `./do.sh play` |
 | 开 / 关服务器 | `./do.sh server` / `./do.sh stop` |
 | 管理界面 | ··· →「打开管理界面」，或 `./do.sh admin`（`http://127.0.0.1:8765`） |
-| 拉代码后更新 | `./do.sh build` → `./do.sh setup`；插件 `./do.sh addons` 后**完全重启**客户端 |
+| 拉代码后更新 | `./do.sh build` → `./do.sh setup`；界面 `./do.sh ui`（或再开客户端）；world 改动需**完全重启**客户端 |
 | 改服务端设置 | 改 `config/mangosd.overrides.conf` → `./do.sh config`，重启服务器 |
 
 日志在 `server/logs/`。脚本与目录细节见 [DEVELOP.md](DEVELOP.md)。

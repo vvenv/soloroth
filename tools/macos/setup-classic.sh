@@ -167,7 +167,7 @@ echo "benilla-config/config.toml: realm Azeroth, scriptMemory 0, showGameTips 0"
 
 # ---------------------------------------------------------------- addons ---
 step "addons"
-bash "$root/tools/macos/install-addons.sh" | grep -v '^addon ' || true
+bash "$root/ui/install.sh" | grep -v '^addon ' || true
 
 echo
 echo "Done. Create an account once with"

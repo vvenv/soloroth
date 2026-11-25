@@ -16,11 +16,14 @@
 !/do.sh
 !/AGENTS.md
 
-# The addon set: this project's own (GMBox, !Solo, Achievements) and the vetted third-party
-# ones, which tools/macos/install-addons.sh copies into benilla-config/AddOns.
-!/Interface/
-/Interface/*
-!/Interface/AddOns/
+# Product UI (world addons + glue skin); ui/install.sh syncs into benilla-config/AddOns
+# and Data/patch-S.MPQ.
+!/ui/
+/ui/*
+!/ui/AGENTS.md
+!/ui/install.sh
+!/ui/world/
+!/ui/glue/
 
 # Server configuration, the macOS scripts and the achievement generator.
 !/config/
@@ -29,7 +32,6 @@
 !/tools/macos/
 !/tools/achievements/
 !/tools/enchant-scrolls/
-!/tools/glue-skin/
 !/tools/lib/
 
 # Under /server only the VMaNGOS fork (a submodule) is tracked; the build,

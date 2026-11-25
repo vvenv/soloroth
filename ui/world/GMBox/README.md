@@ -1,6 +1,6 @@
 # GM Box — 给本地 VMaNGOS realm 用的 GM 工具
 
-装在 1.12.1 客户端里（`Interface/AddOns/GMBox`）。所有按钮做的事都一样：
+源码在 `ui/world/GMBox`；`ui/install.sh` 装进客户端 AddOns。所有按钮做的事都一样：
 把一条 `.` 开头的 GM 命令通过聊天发给服务端。需要 GM 账号（本 realm 的 `admin`
 是 gmlevel 6），没权限的话服务端只会拒绝，不会有别的后果。
 

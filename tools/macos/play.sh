@@ -84,9 +84,9 @@ first_login() {
 bash "$root/tools/macos/apply-visual.sh"
 # shellcheck source=bundle.sh
 source "$root/tools/macos/bundle.sh"
-# pfUI-style glue screens (Data/patch-S.MPQ) and enchant-scroll Spell.dbc
-# (Data/patch-T.MPQ); same rebuild as start-client.sh.
-rebuild_glue_patch
+# Product UI (ui/world → AddOns, ui/glue → patch-S) and enchant-scroll Spell.dbc
+# (Data/patch-T.MPQ); same install as start-client.sh.
+install_product_ui
 rebuild_enchant_scrolls_patch
 export_client_env
 # Soloroth.app's launcher window starts the server and the account itself,

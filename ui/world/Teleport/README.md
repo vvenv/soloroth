@@ -1,6 +1,6 @@
 # 传送 — 本地 VMaNGOS 的传送点
 
-装在 1.12.1 客户端里（`Interface/AddOns/Teleport`）。点一下就把 `.tele` 或 `.go xyz`
+源码在 `ui/world/Teleport`；`ui/install.sh` 装进客户端 AddOns。点一下就把 `.tele` 或 `.go xyz`
 发给服务端。需要 GM 账号；没权限的话服务端只会拒绝。
 
 以前这是 GMBox 的「传送」页。物品在 **Items**（`/gi`），GM 工具在 **GMBox**（`/gm`）。

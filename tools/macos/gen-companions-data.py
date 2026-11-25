@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write Interface/AddOns/Companions/Data_Companions.lua from classic_world.
+"""Write ui/world/Companions/Data_Companions.lua from classic_world.
 
 Detects vanity-pet (SUMMON_CRITTER) and mount (SPELL_AURA_MOUNTED) spells
 tied to on-use item_template rows — same rules as Player::CompanionUnlockSpell.
@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "Interface" / "AddOns" / "Companions" / "Data_Companions.lua"
+OUT = ROOT / "ui" / "world" / "Companions" / "Data_Companions.lua"
 WOW_DATA = Path(os.environ.get("WOW_DATA_ROOT", ROOT.parent / "wow-data"))
 DBC = Path(
     os.environ.get(

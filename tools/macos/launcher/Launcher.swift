@@ -658,7 +658,7 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let menu = NSMenu()
         menu.addItem(withTitle: "打开管理界面", action: #selector(openAdmin), keyEquivalent: "").target = self
         menu.addItem(withTitle: "打开日志文件夹", action: #selector(openLogs), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "打开插件文件夹", action: #selector(openAddOns), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "打开界面文件夹", action: #selector(openAddOns), keyEquivalent: "").target = self
         menu.addItem(withTitle: "编辑启动器设置", action: #selector(editConfig), keyEquivalent: "").target = self
         menu.addItem(.separator())
         let stop = menu.addItem(withTitle: "关闭服务器", action: #selector(stopServer), keyEquivalent: "")

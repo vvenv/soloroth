@@ -82,15 +82,15 @@ tools/macos/make-app.sh                              # 生成 /Applications/Solo
 - 没有该文件、或设了 `WOW_SHOW_LOGIN_UI=1` 时保留原版登录页。也可 `WOW_SHOW_LOGIN_UI=1 ./do.sh play`。
 - 用 `WOW_STOCK_UI=1 ./do.sh play` 启动会恢复原版 Glue 界面（不用 pfUI 皮肤的登录/角色页）。
 
-登录、角色选择和角色创建界面不归插件管。它们的 pfUI 样式由 `tools/glue-skin/SoloGlueSkin.lua` 实现：`play.sh` 和 `start-client.sh` 每次开客户端时从 MPQ 读出原版 `GlueXML.toc`，加上这个文件，打包成 `Data/patch-S.MPQ`（`rebuild_glue_patch`）。客户端只从 MPQ 读 GlueXML，不读松散文件。同一路径还会打 `Data/patch-T.MPQ`（`rebuild_enchant_scrolls_patch`）：把永久附魔的 Spell.dbc 改成制造卷轴，并加上卷轴使用法术。服务器已在跑时启动器只走 `start-client.sh`，所以那条路径也必须重打补丁。有 `login.env` 时补丁默认加 `--hide-login-ui`；没有该文件或设了 `WOW_SHOW_LOGIN_UI=1` 时用 `--show-login-ui`。角色选择由 `LayoutCharSelect` 重排（右侧名单栏、居中进入世界、底栏返回/删除），并隐藏「插件」「切换服务器」、服务器名和剩余游戏时间等；插件由 `install-addons.sh` 管理。
+产品界面都在 `ui/`：`ui/world` 是进世界后的界面，`ui/glue` 是登录/选角/创角。`play.sh` 和 `start-client.sh` 每次开客户端都会跑 `ui/install.sh`：同步 `ui/world` → `$BENILLA_HOME/AddOns`，并把 `ui/glue/SoloGlueSkin.lua` 打进 `Data/patch-S.MPQ`（客户端只从 MPQ 读 GlueXML）。同一路径还会打 `Data/patch-T.MPQ`（`rebuild_enchant_scrolls_patch`）：把永久附魔的 Spell.dbc 改成制造卷轴。服务器已在跑时启动器只走 `start-client.sh`，所以那条路径也必须跑 install。有 `login.env` 时 glue 默认 `--hide-login-ui`；没有该文件或设了 `WOW_SHOW_LOGIN_UI=1` 时用 `--show-login-ui`。角色选择由 `LayoutCharSelect` 重排，并隐藏「插件」「切换服务器」等；世界界面由 `ui/install.sh` 管理。
 
-附魔卷轴数据：改 `tools/enchant-scrolls/gen-enchant-scrolls.py` 后运行它写出迁移和 `map.json`，再 `build-classic.sh server`；客户端侧 `build-patch.py` / 启动时的 `rebuild_enchant_scrolls_patch` 会按 `map.json` 重打 Spell.dbc。
+附魔卷轴数据：改 `tools/enchant-scrolls/gen-enchant-scrolls.py` 后运行它写出迁移和 `map.json`，再 `build-classic.sh server`；客户端侧 `tools/enchant-scrolls` 的 `build-patch.py` / 启动时的 `rebuild_enchant_scrolls_patch` 会按 `map.json` 重打 Spell.dbc。
 
-## 插件与单人设置
+## 产品界面与单人设置
 
-- `tools/macos/install-addons.sh`（或 `./do.sh addons`）把 `Interface/AddOns` 拷进 `$BENILLA_HOME/AddOns`（默认 `benilla-config/`）。新插件文件需要**完全重启**客户端，`/reload` 不够。
-- pfUI、Atlas、AtlasLoot 是收进来的单人代码，可以直接改（去掉社交、PvP、拍卖、邮件、交易、战场，以及别的客户端或资料片用不到的部分）。默认值和外观仍写在 `Interface/AddOns/!Solo`（见其 `AGENTS.md`）。背包整理在 pfUI 里，没有单独的 SortBags。
-- 想改某一项单人设置，改 `!Solo` 里对应的表，再跑 `install-addons.sh`。
+- `ui/install.sh`（或 `./do.sh ui`；`addons` 是别名）装 world + glue。`ui/world` 新文件需要**完全重启**客户端，`/reload` 不够；glue 再开客户端即可。
+- pfUI、Atlas、AtlasLoot 是收进来的单人代码，可以直接改（去掉社交、PvP、拍卖、邮件、交易、战场，以及别的客户端或资料片用不到的部分）。默认值和外观仍写在 `ui/world/!Solo`（见其 `AGENTS.md`）。背包整理在 pfUI 里，没有单独的 SortBags。
+- 想改某一项单人设置，改 `!Solo` 里对应的表，再跑 `./do.sh ui`（或直接再开客户端，play 会装）。
 
 ## 客户端外观补丁
 
@@ -111,17 +111,16 @@ tools/macos/apply-visual.sh --status
 |---|---|
 | `server/core` | 服务端（子模块 [soloroth-server](https://github.com/vvenv/soloroth-server)）：原版 vmangos 加上 macOS 修复、副本机器人 `src/game/PlayerBots/DungeonBotMgr.*`、成就 `src/game/AchievementMgr.*` 和副本进度 `src/game/DungeonProgress.*` |
 | `client` | 客户端（子模块 [soloroth-client](https://github.com/vvenv/soloroth-client)）：[benilla](https://github.com/samwhosung/benilla)，用 Rust 从零写的 1.12 客户端，加上少量修复 |
-| `Interface/AddOns` | 整套插件：GMBox、副本中心 `Dungeon`（列表传送 / 逐张重置；`MapLoot.lua` 内嵌 Atlas 图；`Progress.lua` + `MinimapPins.lua` 首领进度数据与小地图序号；副本内默认开地图）、组队 `Bots`、宠物与坐骑 `Companions`（`/cw`；数据由 `tools/macos/gen-companions-data.py` 生成）、成就窗口 `Achievements`、单人设置插件 `!Solo`（名字以 `!` 开头，保证比其他插件先加载），以及收进来的 pfUI（含背包整理）、Atlas、AtlasLoot |
+| `ui/` | 产品界面：`world/`（GMBox、Dungeon、Bots、Companions、Achievements、`!Solo`、pfUI、Atlas、AtlasLoot…）、`glue/`（登录/选角皮 → `patch-S`）、`install.sh` 一条安装 |
 | `config/` | 服务端配置改动（`*.overrides.conf`，含 `Instance.AutoReset = 0`：副本只认手动重置）和 MariaDB 配置 |
 | `tools/macos/` | 构建、安装、启动脚本（含 `start-client.sh`、`start-admin.sh`） |
 | `tools/macos/launcher/` | Soloroth.app 的启动器窗口和它的内容配置 |
 | `tools/macos/admin/` | 本机 Web 管理台（`server.py`，`127.0.0.1:8765`） |
 | `tools/achievements/` | 成就定义的生成脚本 |
 | `tools/enchant-scrolls/` | 永久附魔改为制造卷轴：生成 world 迁移与 `Data/patch-T.MPQ`（Spell.dbc） |
-| `tools/glue-skin/` | 登录和角色界面的 pfUI 样式，和把它打包成 `Data/patch-S.MPQ` 的脚本 |
 | `tools/lib/` | `do.sh` 用的交互菜单和日志库 |
 | `do.sh` | 根目录交互入口（主菜单日常项 +「更多」；子命令直达） |
-| `benilla-config/` | 客户端设置、插件（`AddOns/`）、插件存档（`saved/`）和本地的启动器配置，不进 git |
+| `benilla-config/` | 客户端设置、已装界面（`AddOns/`）、存档（`saved/`）和本地的启动器配置，不进 git |
 | `Data/` | 指向客户端 MPQ 和登录条款 HTML 的链接，不进 git |
 | `server/run`、`server/data`、`server/logs` | 服务端运行目录、地图数据、日志，不进 git |
 | `release/` | 编译产物，不进 git |
@@ -147,6 +146,6 @@ cd ../.. && tools/macos/build-classic.sh server && tools/macos/setup-classic.sh
 ## 客户端探测（给代理 / 自动化）
 
 - `benilla-config/login.env` 是玩家账号：脚本化登录不要用它（会踢掉正在玩的人）。探测账号在 `client/.probe-identity`（SQUADTEST）；`smoke-client.sh` 默认 PLAYER，需用该文件里的 `WOW_USER` / `WOW_PASS` / `WOW_CHAR` 覆盖。
-- 用临时的 `BENILLA_HOME`（例如 `/tmp/soloprobe`，由 `install-addons.sh` 填好），避免动到玩家设置。
+- 用临时的 `BENILLA_HOME`（例如 `/tmp/soloprobe`，由 `ui/install.sh` 填好），避免动到玩家设置。
 - 开发版探测：`WOW_PROBE_LUA`（+`_AT`）进世界后跑 Lua；`WOW_LIVE_SHOT`（+`_AT`）；`WOW_PROBE_EXIT_AT`；`WOW_WIN=1600x960`。Glue 界面：`WOW_PROBE_GLUE_LUA`（+`_AT`）、`WOW_PROBE_GLUE_SHOT`（+`_AFTER`）。游戏内 `Screenshot()` 写到 `$BENILLA_HOME/Screenshots`。
 - 用截图核对 UI 改动，不要只靠推理锚点。Agent 约束见根目录 [AGENTS.md](AGENTS.md)。

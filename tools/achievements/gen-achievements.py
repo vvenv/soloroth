@@ -6,7 +6,7 @@
 Writes
   server/core/sql/migrations/<id>_world.sql     achievement_template and
                                                 achievement_criteria, replaced
-  Interface/AddOns/Achievements/Data.lua         the same, plus the texts and
+  ui/world/Achievements/Data.lua                 the same, plus the texts and
                                                 icons the window shows
 
 The achievements are the WoW 3.x ones that the 1.12 world holds without a
@@ -508,8 +508,8 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         achs = build(tmp)
     write_sql(os.path.join(ROOT, "server/core/sql/migrations/%s_world.sql" % mig), mig, achs)
-    os.makedirs(os.path.join(ROOT, "Interface/AddOns/Achievements"), exist_ok=True)
-    write_lua(os.path.join(ROOT, "Interface/AddOns/Achievements/Data.lua"), achs)
+    os.makedirs(os.path.join(ROOT, "ui/world/Achievements"), exist_ok=True)
+    write_lua(os.path.join(ROOT, "ui/world/Achievements/Data.lua"), achs)
     by_cat = collections.Counter(a.cat for a in achs)
     print("%d achievements, %d criteria; by category %s" % (
         len(achs), sum(len(a.criteria) for a in achs), dict(sorted(by_cat.items()))))

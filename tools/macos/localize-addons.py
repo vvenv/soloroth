@@ -3,8 +3,8 @@
 
   tools/macos/localize-addons.py <AddOns folder>
 
-install-addons.sh runs this after copying the addons, so a reinstall keeps
-it. Every step is idempotent and prints what it changed. The addons' own
+ui/install.sh runs this after copying world UI, so a reinstall keeps it.
+Every step is idempotent and prints what it changed. The addons' own
 folder (../wow-data/addons) is never touched.
 
   AtlasLoot    two bugs of its zhCN files: a `true` value in locale.cn.lua,

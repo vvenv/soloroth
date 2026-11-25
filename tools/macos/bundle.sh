@@ -39,32 +39,16 @@ rebuild_enchant_scrolls_patch() {
     python3 "$root/tools/enchant-scrolls/build-patch.py" "$root/Data"
 }
 
-# Data/patch-S.MPQ for the pfUI-style glue screens. The launcher often starts
-# the client via start-client.sh while the server is already up — rebuild here
-# too so a glue-skin edit is not stuck behind a full play.sh.
-# WOW_STOCK_UI=1 removes the patch; WOW_SHOW_LOGIN_UI / login.env pick show/hide.
+# Product UI (world addons + glue patch-S). Prefer calling this over a bare
+# glue rebuild so world and glue stay in sync. start-client.sh uses it when
+# the launcher opens the client with the server already up.
+install_product_ui() {
+    bash "$root/ui/install.sh" "$@"
+}
+
+# Glue-only alias kept for callers that only need patch-S.
 rebuild_glue_patch() {
-    local login="$root/benilla-config/login.env" key value show="" arg
-    if [ "${WOW_STOCK_UI:-}" = 1 ]; then
-        python3 "$root/tools/glue-skin/build-patch.py" "$root/Data" --remove
-        return
-    fi
-    if [ -f "$login" ]; then
-        while IFS='=' read -r key value; do
-            case "$key" in WOW_SHOW_LOGIN_UI) show="$value" ;; esac
-        done < "$login"
-    fi
-    show="${WOW_SHOW_LOGIN_UI:-$show}"
-    case "$show" in
-        1|true|yes) arg=--show-login-ui ;;
-        0|false|no) arg=--hide-login-ui ;;
-        *)
-            if [ ! -f "$login" ]; then arg=--show-login-ui
-            else arg=--hide-login-ui
-            fi
-            ;;
-    esac
-    python3 "$root/tools/glue-skin/build-patch.py" "$root/Data" "$arg"
+    install_product_ui --glue-only
 }
 
 # stage_client <bundle.app> <benilla binary>

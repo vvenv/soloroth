@@ -1,6 +1,6 @@
 # 物品 — 本地 VMaNGOS 的物品列表
 
-装在 1.12.1 客户端里（`Interface/AddOns/Items`）。点一下就把 `.additem`
+源码在 `ui/world/Items`；`ui/install.sh` 装进客户端 AddOns。点一下就把 `.additem`
 发给服务端。需要 GM 账号；没权限的话服务端只会拒绝。
 
 以前这是 GMBox 的「物品」页。传送在 **Teleport**（`/gt`），GM 工具在

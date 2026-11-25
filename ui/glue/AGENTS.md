@@ -1,21 +1,22 @@
-# glue-skin
+# ui/glue
 
 The login, realm, character select and character create screens in pfUI's look.
+Part of the product UI package (`ui/`); install via `ui/install.sh`.
 
 - The glue VM has no pfUI and no addons, and reads GlueXML only from the MPQ patch chain.
   So `SoloGlueSkin.lua` uses the bare 1.12 glue API (`WHITE8X8` backdrops, 1px border
   `.2,.2,.2`, black `.75`), and `build-patch.py` ships it in `Data/patch-S.MPQ` next to a
   copy of the stock `GlueXML.toc` with the file appended. The toc is read from the player's
   chain at build time; nothing from the install is committed.
-- `play.sh` and `start-client.sh` rebuild the patch each client launch
-  (`rebuild_glue_patch` in `tools/macos/bundle.sh`); `WOW_STOCK_UI=1` removes it.
-  Soloroth.app's「开始游戏」only runs `start-client.sh` when the server is
-  already up — that path must rebuild too, or a glue-skin edit never shows.
+- `ui/install.sh` (from `play.sh` / `start-client.sh` each client launch) rebuilds the
+  patch; `WOW_STOCK_UI=1` removes it. Soloroth.app's「开始游戏」only runs
+  `start-client.sh` when the server is already up — that path must install too, or a
+  glue edit never shows.
 - The AccountLogin page is removed by default (`SoloShowLoginUI = false` prepended by
   `build-patch.py --hide-login-ui`): the ModelFFX is hidden and a black blank covers
   GlueParent until character select. Going back from character select (or a disconnect)
   calls `QuitGame` — there is no login page to return to; Soloroth.app brings the
-  launcher back. `play.sh` passes `--show-login-ui` when there is no `login.env`, or
+  launcher back. `install.sh` passes `--show-login-ui` when there is no `login.env`, or
   when `WOW_SHOW_LOGIN_UI=1`. Glue Lua cannot read the process env, so the choice is
   baked into the MPQ each launch.
 - Character select hides the solo-irrelevant chrome (AddOns button, change-realm /

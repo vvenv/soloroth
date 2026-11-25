@@ -86,7 +86,7 @@ like pixels).
 
 ## Checking
 
-Run `tools/macos/install-addons.sh` into a scratch `BENILLA_HOME`, open each window from
+Run `ui/install.sh` into a scratch `BENILLA_HOME`, open each window from
 `WOW_PROBE_LUA` and screenshot it (see the root `AGENTS.md`). Note in GUIDE.md which
 windows are skinned. A window that is still the stock art after `/reload` is a fact to
 read out of `server/logs/launcher.log` (which file ran, in which order, and any script

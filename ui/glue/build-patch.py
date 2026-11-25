@@ -2,8 +2,9 @@
 """Build Data/patch-S.MPQ: the stock GlueXML.toc with SoloGlueSkin.lua appended,
 and that file, so the glue loads the skin after its own files.
 
-    tools/glue-skin/build-patch.py [DATA_DIR] [--remove]
-    tools/glue-skin/build-patch.py [DATA_DIR] [--show-login-ui|--hide-login-ui]
+    ui/glue/build-patch.py [DATA_DIR] [--remove]
+    ui/glue/build-patch.py [DATA_DIR] [--show-login-ui|--hide-login-ui]
+    # Prefer ui/install.sh, which picks show/hide from login.env.
 
 The toc is read from the highest archive in DATA_DIR that holds it, as the client
 resolves it (patch-?.MPQ by letter, then patch.MPQ, then interface.MPQ), never
