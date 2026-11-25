@@ -4,10 +4,9 @@ or the Dungeon hub (teleport / reset / map / loot). The round button sits
 with the others under the minimap. Left click opens the size menu; right
 click sends the bots home.
 
-`.bots fill` takes 2, 3 or 5. Entering a five-player dungeon still fills to
-five on its own. Raids are 20 (Zul'Gurub, Ruins of Ahn'Qiraj) or 40 (Molten
-Core, Blackwing Lair, Temple of Ahn'Qiraj, Naxxramas); the server does not
-fill a raid, so the menu has no raid row.
+`.bots fill` takes 2 or 3. Entering any dungeon or raid fills a trio on its
+own (instances are trio-scaled). No five-player fill and no real 20/40 raid
+group — a normal party of three clears stock content.
 
 No on-screen command strip: bots stay on the default calm engage and handle
 revive / follow themselves. The menu is only size, dismiss, and your role.
@@ -136,7 +135,7 @@ auto:SetScript("OnClick", function()
 end)
 local autoLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 autoLabel:SetPoint("LEFT", auto, "RIGHT", 0, 0)
-autoLabel:SetText(L("Fill to five in dungeons", "进五人副本时补满五人"))
+autoLabel:SetText(L("Fill a trio in instances", "进副本时补满三人小队"))
 
 local function RefreshPanel()
   for i = 1, table.getn(ROLES) do
@@ -179,7 +178,6 @@ menu:Hide()
 local menuRows = {
   { L("Duo", "两人"), function() Cmd(".bots fill 2") end },
   { L("Trio", "三人"), function() Cmd(".bots fill 3") end },
-  { L("Party of five", "五人"), function() Cmd(".bots fill 5") end },
   { L("Dismiss", "解散"), function() Cmd(".bots dismiss") end },
   { L("Your role", "你的职责"), ShowPanel },
 }
@@ -286,8 +284,8 @@ mm:SetScript("OnLeave", function() GameTooltip:Hide() end)
 -- ----------------------------------------------------------------- slash --
 
 local function Help()
-  Say(L("/zd opens the menu. /zd 2, /zd 3, /zd 5 call that many. /zd x sends them home.",
-        "/zd 打开菜单。/zd 2、/zd 3、/zd 5 按人数叫人。/zd x 解散。"))
+  Say(L("/zd opens the menu. /zd 2 or /zd 3 call that many. /zd x sends them home.",
+        "/zd 打开菜单。/zd 2、/zd 3 按人数叫人。/zd x 解散。"))
 end
 
 SLASH_BOTS1 = "/zd"
@@ -295,7 +293,11 @@ SLASH_BOTS2 = "/bots"
 SlashCmdList["BOTS"] = function(msg)
   msg = string.gsub(msg or "", "^%s+", "")
   while string.sub(msg, -1) == " " do msg = string.sub(msg, 1, -2) end
-  if msg == "2" or msg == "3" or msg == "5" then Cmd(".bots fill " .. msg) return end
+  if msg == "2" or msg == "3" then Cmd(".bots fill " .. msg) return end
+  if msg == "5" then
+    Say(L("Five is gone — instances are a trio. Use /zd 3.", "已没有五人队：副本按三人小队补。用 /zd 3。"))
+    return
+  end
   if msg == "x" or msg == "stop" or msg == "dismiss" then Cmd(".bots dismiss") return end
   if msg == "role" or msg == "panel" then ShowPanel() return end
   if msg == "" then ToggleMenu() return end

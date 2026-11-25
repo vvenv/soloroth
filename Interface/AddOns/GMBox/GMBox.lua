@@ -3,7 +3,7 @@ GMBox -- a small GM console for WoW 1.12.1 / Lua 5.0, aimed at VMaNGOS.
 
 What it does: a page of common GM commands. One click sends the matching
 line. Teleport points live in the Teleport addon (/gt). Items live in the
-Items addon (/gi). Five-player instances live in the Dungeon addon (/gd).
+Items addon (/gi). Instances (including raids) live in the Dungeon addon (/gd).
 
 How the commands get to the server: every button ends up in SendChatMessage()
 with a leading dot (SAY when alive, WHISPER-to-self when dead/ghost — the

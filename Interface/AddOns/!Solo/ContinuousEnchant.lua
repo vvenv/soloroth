@@ -3,11 +3,16 @@ Enchanting uses CraftFrame (no Create All / count), unlike smelting's
 TradeSkill. Permanent enchants now CreateItem scrolls, so batching is just
 repeated DoCraft — no item retarget / REPLACE skip.
 
+CraftCreateButton's stock label is getglobal(GetCraftButtonToken()) → ENSCRIBE
+("Enchant" / 「附魔」). Scroll crafting reads as Create, so remap to CREATE.
+
 Cancel on craft close, cast fail, or count exhausted.
 ----------------------------------------------------------------------------]]
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end
+
+local CREATE_LABEL = CREATE or L("Create", "制造")
 
 local remaining = 0
 local pendingNext = false
@@ -16,6 +21,13 @@ local uiReady = false
 
 local input, createAll, minus, plus
 local skinReady = false
+
+local function RelabelCreate()
+  -- FrameXML looks up ENSCRIBE on show / selection; keep the global and the
+  -- button in sync so a late CraftFrame_SetSelection cannot restore 「附魔」.
+  ENSCRIBE = CREATE_LABEL
+  if CraftCreateButton then CraftCreateButton:SetText(CREATE_LABEL) end
+end
 
 local function ClampCount(n, avail)
   n = tonumber(n) or 1
@@ -101,6 +113,8 @@ local function InstallCraftUi()
   if uiReady or not CraftFrame or not CraftCreateButton then return end
   uiReady = true
 
+  RelabelCreate()
+
   local create = CraftCreateButton
   createAll = CreateFrame("Button", "SoloCraftCreateAllButton", CraftFrame, "UIPanelButtonTemplate")
   createAll:SetWidth(80)
@@ -156,6 +170,7 @@ local function InstallCraftUi()
     local orig = CraftFrame_SetSelection
     CraftFrame_SetSelection = function(id)
       orig(id)
+      RelabelCreate()
       SyncInput()
     end
   end
@@ -198,11 +213,13 @@ f:SetScript("OnEvent", function()
     InstallCraftUi()
   elseif event == "CRAFT_SHOW" then
     InstallCraftUi()
+    RelabelCreate()
     SkinCountUi()
     SyncInput()
   elseif event == "CRAFT_CLOSE" then
     ClearBatch()
   elseif event == "CRAFT_UPDATE" then
+    RelabelCreate()
     SyncInput()
   elseif event == "SPELLCAST_START" then
     if remaining > 0 then expectStop = true end

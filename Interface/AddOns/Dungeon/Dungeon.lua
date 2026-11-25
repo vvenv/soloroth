@@ -1,16 +1,17 @@
 --[[--------------------------------------------------------------------------
-Dungeon -- one hub for five-player instances on this solo realm.
+Dungeon -- hub for every instance on this solo realm (five-mans and raids).
 
+  Instances are trio-scaled; entering still fills a party of three.
   * list: click a name to `.go xyzo` just inside the entrance (GM)
   * reset: one row resets that map only (right-click the minimap button
-    still clears every five-player instance)
+    still clears every bound instance, including raids)
   * map: Atlas layout + AtlasLoot overlay in this window (see MapLoot.lua)
 
 Formerly the GMBox "Dungeons" tab plus the separate Atlas / AtlasLoot
 minimap buttons. `/gd` lands here; inside an instance it opens on the map.
 ----------------------------------------------------------------------------]]
 
-local VERSION = "1.3.2"
+local VERSION = "1.4.0"
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
 local function L(en, zh) if ZH and zh then return zh end return en end
@@ -99,6 +100,15 @@ local DUNGEONS = {
   { "Scholomance",                  "通灵学院",           58, 60, 289,   190.8,   126.3,  137.2, 6.28, "Scholomance" },
   { "Stratholme: Main Gate",        "斯坦索姆：正门",     58, 60, 329,  3392.9, -3395.0,  143.1, 1.57, "Stratholme" },
   { "Stratholme: Service Gate",     "斯坦索姆：后门",     58, 60, 329,  3590.9, -3643.2,  138.5, 5.50, "Stratholme" },
+  -- Raids (trio-scaled). Spot just inside; bots fill to three after 3s.
+  { "Upper Blackrock Spire",        "黑石塔上层",         55, 60, 229,   138.73,  -318.18,   70.96, 4.71, "BlackrockSpireUpper" },
+  { "Zul'Gurub",                    "祖尔格拉布",         60, 60, 309, -11916.90, -1248.36,  92.53, 0.00, "ZulGurub" },
+  { "Ruins of Ahn'Qiraj",           "安其拉废墟",         60, 60, 509,  -8437.74,  1516.91,  31.91, 0.00, "TheRuinsofAhnQiraj" },
+  { "Onyxia's Lair",                "奥妮克希亚的巢穴",   60, 60, 249,    29.16,   -71.34,  -8.18, 0.00, "OnyxiasLair" },
+  { "Molten Core",                  "熔火之心",           60, 60, 409,  1082.04,  -474.60,-107.76, 0.00, "MoltenCore" },
+  { "Blackwing Lair",               "黑翼之巢",           60, 60, 469,  -7664.76, -1100.87, 399.68, 0.00, "BlackwingLair" },
+  { "Temple of Ahn'Qiraj",          "安其拉神殿",         60, 60, 531,  -8213.48,  2016.00, 129.07, 0.00, "TheTempleofAhnQiraj" },
+  { "Naxxramas",                    "纳克萨玛斯",         60, 60, 533,  3021.64, -3402.99, 298.22, 0.00, "Naxxramas" },
 }
 
 local function DungeonColor(d)

@@ -3,7 +3,8 @@ Map pane inside the dungeon hub (/gd).
 
 Uses Atlas map BLPs + AtlasMaps legend text, and AtlasLoot_ShowBossLoot for
 drop tables over the map. Does not open AtlasFrame or AtlasLootDefaultFrame.
-Raids and world bosses appear in the map dropdown only (no teleport).
+World bosses appear in the map dropdown only (no teleport); raids are on
+the list tab with teleport like five-mans.
 ----------------------------------------------------------------------------]]
 
 local ZH = (GetLocale and GetLocale() == "zhCN") and true or false
@@ -51,16 +52,8 @@ local FIVE_ATLAS = {
   "Stratholme",
 }
 
--- Raid / world-boss maps: browse only.
+-- World-boss maps: browse only (raids are on the list tab now).
 local EXTRA = {
-  { "Upper Blackrock Spire", "黑石塔上层", "BlackrockSpireUpper" },
-  { "Zul'Gurub",             "祖尔格拉布", "ZulGurub" },
-  { "Ruins of Ahn'Qiraj",    "安其拉废墟", "TheRuinsofAhnQiraj" },
-  { "Onyxia's Lair",         "奥妮克希亚的巢穴", "OnyxiasLair" },
-  { "Molten Core",           "熔火之心", "MoltenCore" },
-  { "Blackwing Lair",        "黑翼之巢", "BlackwingLair" },
-  { "Temple of Ahn'Qiraj",   "安其拉神殿", "TheTempleofAhnQiraj" },
-  { "Naxxramas",             "纳克萨玛斯", "Naxxramas" },
   { "Azuregos",              "艾索雷葛斯", "Azuregos" },
   { "Lord Kazzak",           "卡扎克", "LordKazzak" },
   { "Dragons of Nightmare",  "梦魇之龙", "FourDragons" },
