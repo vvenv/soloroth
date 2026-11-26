@@ -14,8 +14,13 @@ export_client_env() {
     local login="$BENILLA_HOME/login.env"
     if [ -f "$login" ]; then
         local key value
-        while IFS='=' read -r key value; do
-            case "$key" in WOW_USER|WOW_PASS|WOW_CHAR) export "$key=$value" ;; esac
+        # `|| [ -n "$key" ]`: keep the last line when the file has no trailing
+        # newline (bash `read` otherwise drops it). Strip a trailing CR too.
+        while IFS='=' read -r key value || [ -n "$key" ]; do
+            key="${key%$'\r'}"
+            value="${value%$'\r'}"
+            case "$key" in ''|'#'*) continue ;; esac
+            case "$key" in WOW_USER|WOW_PASS|WOW_CHAR|WOW_SHOW_LOGIN_UI) export "$key=$value" ;; esac
         done < "$login"
         # The client only auto-logs in as the account .probe-identity declares
         # (the agents' test account) unless told the player chose this one.

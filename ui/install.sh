@@ -79,10 +79,21 @@ world_stale() {
 }
 
 glue_login_arg() {
-    local login="$home/login.env" key value show="" 
+    # Show the in-game form when asked, when there is no login.env, or when
+    # the file has no account (empty WOW_USER): hide+empty would black-screen
+    # forever (KillLoginPage, nothing to auto-submit). `|| [ -n "$key" ]`
+    # keeps the last line when the file has no trailing newline — bash `read`
+    # otherwise drops it (so a lone WOW_SHOW_LOGIN_UI=1 never took effect).
+    local login="$home/login.env" key value show="" user=""
     if [ -f "$login" ]; then
-        while IFS='=' read -r key value; do
-            case "$key" in WOW_SHOW_LOGIN_UI) show="$value" ;; esac
+        while IFS='=' read -r key value || [ -n "$key" ]; do
+            key="${key%$'\r'}"
+            value="${value%$'\r'}"
+            case "$key" in ''|'#'*) continue ;; esac
+            case "$key" in
+                WOW_SHOW_LOGIN_UI) show="$value" ;;
+                WOW_USER) user="$value" ;;
+            esac
         done < "$login"
     fi
     show="${WOW_SHOW_LOGIN_UI:-$show}"
@@ -90,7 +101,7 @@ glue_login_arg() {
         1|true|yes) echo --show-login-ui ;;
         0|false|no) echo --hide-login-ui ;;
         *)
-            if [ ! -f "$login" ]; then echo --show-login-ui
+            if [ ! -f "$login" ] || [ -z "$user" ]; then echo --show-login-ui
             else echo --hide-login-ui
             fi
             ;;

@@ -78,8 +78,8 @@ tools/macos/make-app.sh                              # 生成 /Applications/Solo
 
 ## 自动登录与登录界面
 
-- `benilla-config/login.env` 是玩家自己的账号（不进 git）。有这个文件时，默认干掉整个登录页 `AccountLogin`（暗门、按钮、Logo 全不要），黑屏自动登录进角色选择；角色列表点「后退」、或服务器断开，都会退出客户端。
-- 没有该文件、或设了 `WOW_SHOW_LOGIN_UI=1` 时保留原版登录页。也可 `WOW_SHOW_LOGIN_UI=1 ./do.sh play`。
+- `benilla-config/login.env` 是玩家自己的账号（不进 git）。有这个文件且写了账号时，默认干掉整个登录页 `AccountLogin`（暗门、按钮、Logo 全不要），黑屏自动登录进角色选择；角色列表点「后退」、或服务器断开，都会退出客户端。
+- 没有该文件、`WOW_USER` 为空、或设了 `WOW_SHOW_LOGIN_UI=1` 时显示简化登录页（账号/密码与「后退」）。也可 `WOW_SHOW_LOGIN_UI=1 ./do.sh play`。解析 `login.env` 时要能读到无末尾换行的最后一行，否则单独一行的 `WOW_SHOW_LOGIN_UI=1` 会被 bash `read` 丢掉。
 - 用 `WOW_STOCK_UI=1 ./do.sh play` 启动会恢复原版 Glue 界面（不用 pfUI 皮肤的登录/角色页）。
 
 产品界面都在 `ui/`：`ui/world` 是进世界后的界面，`ui/glue` 是登录/选角/创角。`play.sh` 和 `start-client.sh` 每次开客户端都会跑 `ui/install.sh`：同步 `ui/world` → `$BENILLA_HOME/AddOns`，并把 `ui/glue/SoloGlueSkin.lua` 打进 `Data/patch-S.MPQ`（客户端只从 MPQ 读 GlueXML）。同一路径还会打 `Data/patch-T.MPQ`（`rebuild_enchant_scrolls_patch`）：把永久附魔的 Spell.dbc 改成制造卷轴。服务器已在跑时启动器只走 `start-client.sh`，所以那条路径也必须跑 install。有 `login.env` 时 glue 默认 `--hide-login-ui`；没有该文件或设了 `WOW_SHOW_LOGIN_UI=1` 时用 `--show-login-ui`。角色选择由 `LayoutCharSelect` 重排，并隐藏「插件」「切换服务器」等；世界界面由 `ui/install.sh` 管理。

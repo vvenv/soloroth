@@ -217,12 +217,124 @@ local function ReleaseLoginPage()
   if blank then blank:Hide() end
 end
 
+-- Solo login keeps the account/password form and a Back (Quit) control.
+-- Credits / cinematics / community / manage-account / TOS / realmlist / logo /
+-- version / save-name / rating are solo-irrelevant chrome; stock OnShow may
+-- re-Show some, so LayoutLogin runs after it too. Overlay dialogs (TOS,
+-- keypad, survey, connection help) stay available when the stock path opens them.
+local LOGIN_HIDE = {
+  "AccountLoginLogo", "AccountLoginVersion", "WorldOfWarcraftRating",
+  "AccountLoginTOSButton", "AccountLoginRealmName",
+  "AccountLoginCreditsButton", "AccountLoginCinematicsButton",
+  "AccountLoginCommunityButton", "AccountLoginManageAccountButton",
+  "AccountLoginSaveAccountName",
+  "BenillaRealmlistButton", "BenillaRealmlistText",
+}
+
+local function HideLoginChrome()
+  for _, name in ipairs(LOGIN_HIDE) do
+    local f = getglobal(name)
+    if f then f:Hide() end
+  end
+  -- Stock Blizzard logo (unnamed Texture) and disclaimer (unnamed FontString)
+  -- sit on AccountLoginUI; named chrome is in LOGIN_HIDE above.
+  if AccountLoginUI then
+    for _, r in ipairs({ AccountLoginUI:GetRegions() }) do
+      local t = r:GetObjectType()
+      if (t == "FontString" or t == "Texture") and not r:GetName() then
+        r:Hide()
+      end
+    end
+  end
+end
+
+-- Stock GlueButton face retune shared by login Back / Login and dialog OK.
+-- Optional faceW: when set, the flat face uses that width (login column matches
+-- the edit boxes' visible backdrop); otherwise ~86% of the button like stock art.
+local function FaceCentered(btn, faceH, faceW)
+  if not btn or not btn.soloBackdrop then return end
+  local f = btn.soloBackdrop
+  local w = faceW or math.floor(btn:GetWidth() * .86 + .5)
+  local h = faceH or 36
+  local bh = btn:GetHeight()
+  if bh and bh > 0 and h > bh - 2 then h = bh - 2 end
+  f:SetWidth(w)
+  f:SetHeight(h)
+  f:ClearAllPoints()
+  f:SetPoint("CENTER", btn, "CENTER", 0, 0)
+  LabelOnFace(btn, f)
+end
+
+local function LayoutLogin()
+  HideLoginChrome()
+  local ui = AccountLoginUI
+  if not ui then return end
+  local margin, baseline = 36, 44
+  -- One column, one width: stock edits are 160 with Panel insets 8/3 (face
+  -- off-center and narrower than Login's old GlueButton). Stretch each edit's
+  -- face to the box, size Login to the same width, face fills the button —
+  -- left/right edges share a line.
+  local colW = 160
+  for _, box in ipairs({ AccountLoginAccountEdit, AccountLoginPasswordEdit }) do
+    if box then
+      box:SetWidth(colW)
+      if box.soloBackdrop then
+        local bd = box.soloBackdrop
+        bd:ClearAllPoints()
+        bd:SetPoint("TOPLEFT", box, "TOPLEFT", 0, 0)
+        bd:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", 0, 0)
+      end
+    end
+  end
+  if AccountLoginAccountEdit then
+    AccountLoginAccountEdit:ClearAllPoints()
+    AccountLoginAccountEdit:SetPoint("BOTTOM", ui, "BOTTOM", 0, 345)
+  end
+  if AccountLoginPasswordEdit then
+    AccountLoginPasswordEdit:ClearAllPoints()
+    AccountLoginPasswordEdit:SetPoint("BOTTOM", ui, "BOTTOM", 0, 270)
+  end
+  if AccountLoginLoginButton then
+    local login = AccountLoginLoginButton
+    login:SetWidth(colW)
+    login:ClearAllPoints()
+    if AccountLoginPasswordEdit then
+      login:SetPoint("TOP", AccountLoginPasswordEdit, "BOTTOM", 0, -16)
+    else
+      login:SetPoint("BOTTOM", ui, "BOTTOM", 0, 210)
+    end
+    FaceCentered(login, 36, colW)
+  end
+  -- Same bottom-left Back placement as character select; QuitGame via stock
+  -- AccountLogin_Exit so Soloroth.app returns to the launcher.
+  if AccountLoginExitButton then
+    AccountLoginExitButton:SetText("后退")
+    AccountLoginExitButton:ClearAllPoints()
+    AccountLoginExitButton:SetPoint("BOTTOMLEFT", ui, "BOTTOMLEFT", margin, baseline)
+    FaceCentered(AccountLoginExitButton)
+  end
+  -- A semi-transparent GlueDialog over the form makes the account box look like
+  -- a mis-centered dialog control; hide the form while any dialog stands.
+  local dialogUp = GlueDialog and GlueDialog:IsShown()
+  for _, f in ipairs({ AccountLoginAccountEdit, AccountLoginPasswordEdit, AccountLoginLoginButton }) do
+    if f then
+      if dialogUp then f:Hide() else f:Show() end
+    end
+  end
+end
+
 local function SkinLogin()
   if SoloShowLoginUI then
     EditBox(AccountLoginAccountEdit)
     EditBox(AccountLoginPasswordEdit)
     Panel(ServerAlertFrame, 6, 6, 6, 6)
     Panel(VirtualKeypadFrame, 6, 6, 6, 6)
+    local stockOnShow = AccountLogin_OnShow
+    function AccountLogin_OnShow()
+      stockOnShow()
+      LayoutLogin()
+    end
+    LayoutLogin()
     return
   end
 
@@ -553,12 +665,60 @@ local function SkinCharacterCreate()
   RotateButton(CharacterCreateRotateRight, "right")
 end
 
+-- Stock GlueDialog_Show places a lone OK on BOTTOM center; a prior two-button
+-- dialog (or UPDATE_STATUS_DIALOG) can leave Button1 on BOTTOMRIGHT of center
+-- so OK reads left. Re-assert after every show/update. Own the panel (Flat one
+-- level down would slip under the dialog strata) at full opacity so the login
+-- form cannot bleed through and look like a second, off-center control.
+local function LayoutGlueDialog()
+  if not GlueDialogBackground then return end
+  GlueDialogBackground:ClearAllPoints()
+  GlueDialogBackground:SetPoint("CENTER", GlueDialog, "CENTER", 0, 0)
+  if GlueDialogButton2 and GlueDialogButton2:IsShown() then
+    if GlueDialogButton1 then
+      GlueDialogButton1:ClearAllPoints()
+      GlueDialogButton1:SetPoint("BOTTOMRIGHT", GlueDialogBackground, "BOTTOM", -6, 16)
+    end
+    GlueDialogButton2:ClearAllPoints()
+    GlueDialogButton2:SetPoint("LEFT", GlueDialogButton1, "RIGHT", 13, 0)
+  elseif GlueDialogButton1 then
+    GlueDialogButton1:ClearAllPoints()
+    GlueDialogButton1:SetPoint("BOTTOM", GlueDialogBackground, "BOTTOM", 0, 16)
+  end
+  FaceCentered(GlueDialogButton1)
+  FaceCentered(GlueDialogButton2)
+  if SoloShowLoginUI then LayoutLogin() end
+end
+
 local function SkinDialogs()
-  Panel(GlueDialogBackground, 6, 6, 6, 6, .85)
+  Own(GlueDialogBackground, .95)
   if GlueDialogEditBox then
     HideTextures(GlueDialogEditBox)
     Own(GlueDialogEditBox)
     GlueDialogEditBox:SetTextInsets(6, 6, 0, 0)
+  end
+  local stockShow = GlueDialog_Show
+  if stockShow then
+    function GlueDialog_Show(which, text, data)
+      stockShow(which, text, data)
+      LayoutGlueDialog()
+    end
+  end
+  local stockDialogEvent = GlueDialog_OnEvent
+  if stockDialogEvent then
+    function GlueDialog_OnEvent()
+      stockDialogEvent()
+      if event == "UPDATE_STATUS_DIALOG" or event == "OPEN_STATUS_DIALOG" then
+        LayoutGlueDialog()
+      elseif event == "CLOSE_STATUS_DIALOG" and SoloShowLoginUI then
+        LayoutLogin()
+      end
+    end
+  end
+  local stockDialogHide = GlueDialog_OnHide
+  function GlueDialog_OnHide()
+    if stockDialogHide then stockDialogHide() end
+    if SoloShowLoginUI then LayoutLogin() end
   end
   -- benilla's realmlist dialog widens the box and adds a chat-input middle
   -- piece to it at each open.
@@ -585,6 +745,11 @@ local function Skin()
                           BillingWarningFrame }) do
     if root then Buttons(root) end
   end
+  -- Buttons() builds Login's soloBackdrop after SkinLogin's first LayoutLogin;
+  -- AccountLogin may already be shown so OnShow will not re-fire. Lay out again
+  -- so the face fills the column width instead of Button()'s 86% stock fraction.
+  if SoloShowLoginUI then LayoutLogin() end
+  LayoutGlueDialog()
 end
 
 -- FRAMES_LOADED fires once the whole glue and benilla's own glue file have

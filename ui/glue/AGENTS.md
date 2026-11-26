@@ -19,7 +19,17 @@ Part of the product UI package (`ui/`); install via `ui/install.sh`.
   calls `QuitGame` — there is no login page to return to; Soloroth.app brings the
   launcher back. `install.sh` passes `--show-login-ui` when there is no `login.env`, or
   when `WOW_SHOW_LOGIN_UI=1`. Glue Lua cannot read the process env, so the choice is
-  baked into the MPQ each launch.
+  baked into the MPQ each launch. When the page is shown, `LayoutLogin` keeps only the
+  account/password form and a bottom-left Back (`AccountLoginExitButton` →「后退」,
+  still `QuitGame`); hides WoW logo / Blizzard logo / version / rating /
+  disclaimer / TOS / credits / cinematics / community / manage-account /
+  save-name / realm name / Realmlist.
+  Overlay dialogs (TOS, keypad, survey, connection help) stay available.
+  Account / password / Login are re-anchored at x=0 (stock used +8). While a
+  `GlueDialog` is up, those three hide so they do not bleed through the panel.
+  `LayoutGlueDialog` re-centers a lone OK after every show/update (a prior
+  two-button layout can leave Button1 on BOTTOMRIGHT of center) and `Own`s
+  `GlueDialogBackground` at high opacity.
 - Character select hides the solo-irrelevant chrome (AddOns button, change-realm /
   realm name, billing / remaining-time frames, WoW logo). `LayoutCharSelect`
   runs after stock `CharacterSelect_OnShow` / `UpdateCharacterList` (and
