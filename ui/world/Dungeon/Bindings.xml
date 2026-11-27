@@ -1,5 +1,0 @@
-<Bindings>
-  <Binding name="DUNGEON_TOGGLE" header="DUNGEON">
-    Dungeon_Toggle();
-  </Binding>
-</Bindings>

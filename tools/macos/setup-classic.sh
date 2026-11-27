@@ -165,9 +165,9 @@ open(p, "w", encoding="utf-8").write(s)
 PY
 echo "benilla-config/config.toml: realm Azeroth, scriptMemory 0, showGameTips 0"
 
-# ---------------------------------------------------------------- addons ---
-step "addons"
-bash "$root/ui/install.sh" | grep -v '^addon ' || true
+# ---------------------------------------------------------- legacy UI prune ---
+step "prune-legacy-ui"
+bash "$root/tools/macos/prune-legacy-ui.sh" || true
 
 echo
 echo "Done. Create an account once with"

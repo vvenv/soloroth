@@ -9,17 +9,17 @@
 #   ./do.sh stop                    # 关服务器（交互可选连 MariaDB 一起关）
 #   ./do.sh stop --all              # 关服务器并关 MariaDB
 #   ./do.sh first                   # 第一次安装向导：编译 → 配置 → 开服 → 建账号 → 生成 App
-#   ./do.sh build [all|server|client]
+#   ./do.sh build [all|server|client|iter]   # iter = 客户端 play 配置（增量，日常改 UI）
 #   ./do.sh setup [--reset-db]
 #   ./do.sh account [账号 密码 [gm]]
 #   ./do.sh admin                   # 打开本地 Web 管理台（账号 / 角色 / SQL）
 #   ./do.sh app [目标目录]          # 生成 Soloroth.app（默认 /Applications）
-#   ./do.sh ui                      # 安装 / 更新产品界面（world + glue）
+#   ./do.sh ui                      # 清理旧 Lua 界面残留（patch-S / AddOns）
 #   ./do.sh addons                  # ui 的别名
 #   ./do.sh visual                  # 下载 HD 外观补丁（每次启动自动挂载）
 #   ./do.sh config                  # 应用 config/mangosd.overrides.conf
 #
-# 主菜单：开始玩 / 关服务器 / 编译 / 更新界面 / 应用配置 / 第一次安装 / 管理 / 更多 / 退出。
+# 主菜单：开始玩 / 关服务器 / 编译 / 应用配置 / 第一次安装 / 管理 / 更多 / 退出。
 # 「更多」里：开服务器、配置、建账号、生成 App、HD、对照表。子命令仍可直接 ./do.sh …
 # 菜单里 Esc / ← 返回上一级；主菜单 Esc 退出。
 # cargo / cmake 本身是增量的：提示说该编时再跑 build 即可，不必每次全编。
@@ -29,8 +29,21 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 MACOS="$ROOT/tools/macos"
-CLIENT_BIN="$ROOT/release/build/macos/client-target/release/benilla"
+CLIENT_BIN_RELEASE="$ROOT/release/build/macos/client-target/release/benilla"
+CLIENT_BIN_PLAY="$ROOT/release/build/macos/client-target/play/benilla"
 SERVER_BIN="$ROOT/release/build/macos/server-classic/bin/mangosd"
+
+# Newest existing client binary (release or play/iter), or empty.
+newest_client_bin() {
+  local a="$CLIENT_BIN_RELEASE" b="$CLIENT_BIN_PLAY"
+  if [ -x "$a" ] && [ -x "$b" ]; then
+    if [ "$b" -nt "$a" ]; then echo "$b"; else echo "$a"; fi
+  elif [ -x "$a" ]; then
+    echo "$a"
+  elif [ -x "$b" ]; then
+    echo "$b"
+  fi
+}
 LOG_TAG=soloroth
 # shellcheck source=tools/lib/log.sh
 source "$ROOT/tools/lib/log.sh"
@@ -104,23 +117,6 @@ _tree_newer_than() {
   [ -n "$(find "$root" "${args[@]}" -type f ! -name '.DS_Store' -newer "$ref" -print -quit 2>/dev/null)" ]
 }
 
-_ui_world_stale() {
-  local src="$ROOT/ui/world"
-  local dst="${BENILLA_HOME:-$ROOT/benilla-config}/AddOns"
-  [ -d "$src" ] || return 1
-  if [ ! -d "$dst" ]; then
-    return 0
-  fi
-  local f rel
-  while IFS= read -r -d '' f; do
-    rel="${f#"$src"/}"
-    if [ ! -e "$dst/$rel" ] || [ "$f" -nt "$dst/$rel" ]; then
-      return 0
-    fi
-  done < <(find "$src" -type f ! -name '.DS_Store' -print0 2>/dev/null)
-  return 1
-}
-
 _config_stale() {
   local o conf
   for o in mangosd realmd; do
@@ -134,48 +130,42 @@ _config_stale() {
   return 1
 }
 
-_glue_stale() {
-  local patch="$ROOT/Data/patch-S.MPQ"
-  [ -f "$patch" ] || return 1
-  _tree_newer_than "$ROOT/ui/glue" "$patch" __pycache__ && return 0
-  _tree_newer_than "$ROOT/ui/shared" "$patch"
-}
-
 # 刷新 HINT_*。stdout 给人看的提示行；菜单默认项写进全局。
 refresh_hints() {
   HINT_LINES=()
   HINT_MENU_DEFAULT=1
   HINT_BUILD_PART=all
-  local need_client=0 need_server=0 need_ui=0 need_config=0 need_glue=0
+  local need_client=0 need_server=0 need_config=0
   local need_first=0
 
-  if [ ! -x "$CLIENT_BIN" ] && [ ! -x "$SERVER_BIN" ]; then
+  local client_bin
+  client_bin="$(newest_client_bin)"
+
+  if [ -z "$client_bin" ] && [ ! -x "$SERVER_BIN" ]; then
     need_first=1
   else
-    if [ ! -x "$CLIENT_BIN" ] || _tree_newer_than "$ROOT/client" "$CLIENT_BIN" .git target; then
+    if [ -z "$client_bin" ] || _tree_newer_than "$ROOT/client" "$client_bin" .git target; then
       need_client=1
     fi
     if [ ! -x "$SERVER_BIN" ] || _tree_newer_than "$ROOT/server/core" "$SERVER_BIN" .git build 'cmake-build-*'; then
       need_server=1
     fi
   fi
-  _ui_world_stale && need_ui=1
   _config_stale && need_config=1
-  _glue_stale && need_glue=1
 
   if [ "$need_first" -eq 1 ]; then
     HINT_LINES+=("还没有编过 → 选「第一次安装」，或 ./do.sh first")
-    HINT_MENU_DEFAULT=6  # first
+    HINT_MENU_DEFAULT=5  # first
     return
   fi
 
   if [ "$need_client" -eq 1 ] && [ "$need_server" -eq 1 ]; then
-    HINT_LINES+=("服务端和客户端源码都比二进制新 → ./do.sh build（cargo/cmake 增量）")
+    HINT_LINES+=("服务端和客户端源码都比二进制新 → ./do.sh build server + ./do.sh build iter（日常）或 ./do.sh build")
     HINT_BUILD_PART=all
     HINT_MENU_DEFAULT=3  # build
   elif [ "$need_client" -eq 1 ]; then
-    HINT_LINES+=("客户端（client/）有改动 → ./do.sh build client（cargo 增量）")
-    HINT_BUILD_PART=client
+    HINT_LINES+=("客户端（client/）有改动 → ./do.sh build iter（快；发版再用 build client）")
+    HINT_BUILD_PART=iter
     HINT_MENU_DEFAULT=3
   elif [ "$need_server" -eq 1 ]; then
     HINT_LINES+=("服务端（server/core）有改动 → ./do.sh build server，再重启服务器")
@@ -183,23 +173,13 @@ refresh_hints() {
     HINT_MENU_DEFAULT=3
   fi
 
-  if [ "$need_ui" -eq 1 ] || [ "$need_glue" -eq 1 ]; then
-    if [ "$need_ui" -eq 1 ] && [ "$need_glue" -eq 1 ]; then
-      HINT_LINES+=("产品界面（ui/world + ui/glue）有改动 → ./do.sh ui，或再开客户端（play 会装）；world 改动需完全重启")
-    elif [ "$need_ui" -eq 1 ]; then
-      HINT_LINES+=("ui/world 有改动 → ./do.sh ui，然后完全重启客户端（/reload 不够）")
-    else
-      HINT_LINES+=("ui/glue 有改动 → ./do.sh ui，或再开一次客户端（play 会重打 patch-S）")
-    fi
-    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=4  # ui
-  fi
   if [ "$need_config" -eq 1 ]; then
     HINT_LINES+=("服务端 overrides 有改动 → ./do.sh config，再重启服务器")
-    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=5  # config
+    [ "$HINT_MENU_DEFAULT" -eq 1 ] && HINT_MENU_DEFAULT=4  # config
   fi
 
   if [ "${#HINT_LINES[@]}" -eq 0 ]; then
-    HINT_LINES+=("源码和当前二进制一致，开玩就行（改界面 / 配置 / 客户端 / 服务端才会提示）")
+    HINT_LINES+=("源码和当前二进制一致，开玩就行（改客户端 / 服务端 / 配置才会提示）")
   fi
 }
 
@@ -220,8 +200,8 @@ cmd_status() {
   print_hints
   echo "" >&2
   echo "对照：" >&2
-  echo "  改 ui/world 或 ui/glue           → ui（或再开客户端）；world 需完全重启" >&2
-  echo "  改 client/（Rust）               → build client（增量）" >&2
+  echo "  改 soloroth-ui / native_ui       → build iter（play 增量；装 App 再用 client）" >&2
+  echo "  改 client/（Rust）               → build iter；发版 / first → build client" >&2
   echo "  改 server/core（C++）            → build server（增量）+ 重启服务器" >&2
   echo "  改 config/*.overrides.conf       → config + 重启服务器" >&2
 }
@@ -273,12 +253,13 @@ cmd_build() {
   local part=""
   while [ $# -gt 0 ]; do
     case "$1" in
-      all|server|client) part="$1" ;;
+      all|server|client|iter|client-iter) part="$1" ;;
       -h|--help) usage 0 ;;
-      *) log_die "build 未知参数: $1（用 all / server / client）" ;;
+      *) log_die "build 未知参数: $1（用 all / server / client / iter）" ;;
     esac
     shift
   done
+  [ "$part" = "client-iter" ] && part=iter
 
   if [ -z "$part" ] && [ -t 0 ]; then
     refresh_hints
@@ -286,12 +267,14 @@ cmd_build() {
     case "$HINT_BUILD_PART" in
       all) def=1 ;;
       server) def=2 ;;
-      client) def=3 ;;
+      iter) def=3 ;;
+      client) def=4 ;;
     esac
     part="$(prompt_menu "编译哪边（已编过的会增量）" --default="$def" \
-      "all:服务端 + 客户端" \
+      "all:服务端 + 客户端（release）" \
       "server:只服务端" \
-      "client:只客户端")"
+      "iter:只客户端（迭代 play，日常改 UI）" \
+      "client:只客户端（release，装 App / 发版）")"
     if is_back "$part"; then
       return 0
     fi
@@ -299,7 +282,14 @@ cmd_build() {
   part="${part:-$HINT_BUILD_PART}"
   part="${part:-all}"
 
-  log_info "编译 ${part}（cargo/cmake 增量；第一次要一阵子）"
+  case "$part" in
+    iter)
+      log_info "编译客户端 iter（--profile play，增量；启动会优先用较新的 play 二进制）"
+      ;;
+    *)
+      log_info "编译 ${part}（cargo/cmake 增量；第一次要一阵子）"
+      ;;
+  esac
   run_macos build-classic.sh "$part"
   log_success "编译完成（${part}）"
 }
@@ -413,9 +403,9 @@ cmd_app() {
 }
 
 cmd_ui() {
-  log_info "安装产品界面（ui/world → AddOns，ui/glue → patch-S）"
-  bash "$ROOT/ui/install.sh" "$@"
-  log_success "界面已装；ui/world 新文件需要完全重启客户端（/reload 不够）"
+  log_info "清理旧 Lua 界面残留（AddOns / patch-S）"
+  bash "$ROOT/tools/macos/prune-legacy-ui.sh" "$@"
+  log_success "残留已清理（产品 UI 在 client Rust；改界面用 ./do.sh build iter）"
 }
 
 cmd_addons() {
@@ -480,7 +470,7 @@ run_more_menu() {
   local choice
   choice="$(prompt_menu "更多" --default=1 \
     "server:开服务器" \
-    "setup:配置（库 / 数据 / 界面）" \
+    "setup:配置（库 / 数据）" \
     "account:建账号" \
     "app:生成 App" \
     "visual:补下 / 校验 HD 外观" \
@@ -506,7 +496,6 @@ run_main_menu() {
       "play:开始玩" \
       "stop:关服务器" \
       "build:编译（增量）" \
-      "ui:更新界面" \
       "config:应用服务端配置" \
       "first:第一次安装" \
       "admin:管理界面（Web）" \
@@ -519,7 +508,7 @@ run_main_menu() {
       more)
         run_more_menu
         ;;
-      play|stop|build|ui|config|first|admin)
+      play|stop|build|config|first|admin)
         run_cmd_from_menu "$choice"
         ;;
       *)

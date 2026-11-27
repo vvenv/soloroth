@@ -1,5 +1,0 @@
-<Bindings>
-  <Binding name="BOTS_TOGGLE" header="BOTS">
-    Bots_Toggle()
-  </Binding>
-</Bindings>

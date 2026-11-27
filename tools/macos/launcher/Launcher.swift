@@ -1,16 +1,20 @@
 // Soloroth.app's launcher window. It starts the server (play.sh --no-client)
 // as soon as it opens, shows the art and an optional promo, and stays open
-// while the game runs (start-client.sh). Closing the window or ⌘Q leaves
-// the app; the server and an already-running client keep going.
+// while the game runs (start-client.sh). Account, password, and optional
+// character live in one sheet (··· →「设置…」, or before the first「开始游戏」),
+// writing login.env. The in-game AccountLogin page is never shown. Closing
+// the window or ⌘Q leaves the app; the server and an already-running client
+// keep going. The window always shows on open (SOLOROTH_SKIP_LAUNCHER=1 in
+// the launch script still bypasses it for automation).
 //
 //   Launcher --root <checkout>                         the window
 //   Launcher --root <checkout> --snapshot out.png      render it to a PNG and exit
 //            [--config extra.json]                     with extra keys on top
 //            [--hero N]                                show heroes[N], not a random one
 //
-// Exit codes: 1 the player closed the window, 2 skipped ("skip": true in the
-// config), 64 bad arguments. The launch script starts the game without the
-// window on any code but 1 and a signal (skip / missing Launcher).
+// Exit codes: 1 the player closed the window, 64 bad arguments. The launch
+// script starts the game without the window on any code but 1 and a signal
+// (missing Launcher / crash).
 //
 // Content comes from tools/macos/launcher/launcher.json; benilla-config/launcher.json
 // replaces any of its top-level keys. The promo shows only when it has a title or text.
@@ -27,7 +31,6 @@ struct Hero: Codable { var image: String?; var logo: Place?; var slogan: Place? 
 struct LogoStyle: Codable { var image: String?; var width: CGFloat? }
 struct SloganStyle: Codable { var text: String?; var size: CGFloat?; var rule: CGFloat? }
 struct Config: Codable {
-    var skip: Bool?
     var heroes: [Hero]?
     var logo: LogoStyle?
     var slogan: SloganStyle?
@@ -361,6 +364,306 @@ func linkButton(_ title: String, target: AnyObject, action: Selector) -> NSButto
     return button
 }
 
+// MARK: - login.env
+
+struct LoginCreds {
+    var user: String
+    var pass: String
+    var character: String
+}
+
+func loginEnvPath() -> String { "\(root)/benilla-config/login.env" }
+
+func readLoginEnv() -> LoginCreds {
+    var user = "", pass = "", character = ""
+    guard let text = try? String(contentsOfFile: loginEnvPath(), encoding: .utf8) else {
+        return LoginCreds(user: "", pass: "", character: "")
+    }
+    for raw in text.split(whereSeparator: \.isNewline) {
+        let line = raw.trimmingCharacters(in: .whitespaces)
+        if line.isEmpty || line.hasPrefix("#") { continue }
+        guard let eq = line.firstIndex(of: "=") else { continue }
+        let key = String(line[..<eq])
+        let value = String(line[line.index(after: eq)...])
+        switch key {
+        case "WOW_USER": user = value
+        case "WOW_PASS": pass = value
+        case "WOW_CHAR": character = value
+        default: break
+        }
+    }
+    return LoginCreds(user: user, pass: pass, character: character)
+}
+
+func loginEnvReady(_ creds: LoginCreds = readLoginEnv()) -> Bool {
+    nonEmpty(creds.user) != nil && nonEmpty(creds.pass) != nil
+}
+
+func writeLoginEnv(user: String, pass: String, character: String) throws {
+    let dir = "\(root)/benilla-config"
+    try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+    let body = [
+        "WOW_USER=\(user)",
+        "WOW_PASS=\(pass)",
+        "WOW_CHAR=\(character)",
+        "# WOW_CHAR=角色名  (进游戏时跳过角色选择)",
+        "",
+    ].joined(separator: "\n")
+    try body.write(toFile: loginEnvPath(), atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: loginEnvPath())
+}
+
+func probeAccountName() -> String {
+    guard let text = try? String(contentsOfFile: "\(root)/.probe-identity", encoding: .utf8) else {
+        return ""
+    }
+    for raw in text.split(whereSeparator: \.isNewline) {
+        if let value = raw.trimmingCharacters(in: .whitespaces).stripPrefix("WOW_USER=") {
+            return value.uppercased()
+        }
+    }
+    return ""
+}
+
+extension String {
+    func stripPrefix(_ prefix: String) -> String? {
+        guard hasPrefix(prefix) else { return nil }
+        return String(dropFirst(prefix.count))
+    }
+}
+
+enum LoginCheck: Equatable {
+    case ok
+    case wrongPassword
+    case missingAccount
+    case failed(String)
+}
+
+func checkLogin(user: String, pass: String) -> LoginCheck {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+    process.arguments = ["\(root)/tools/macos/check-login.py"]
+    process.currentDirectoryURL = URL(fileURLWithPath: root)
+    let input = Pipe()
+    let err = Pipe()
+    process.standardInput = input
+    process.standardOutput = FileHandle.nullDevice
+    process.standardError = err
+    do { try process.run() } catch {
+        return .failed(error.localizedDescription)
+    }
+    input.fileHandleForWriting.write(Data("\(user)\n\(pass)\n".utf8))
+    try? input.fileHandleForWriting.close()
+    process.waitUntilExit()
+    switch process.terminationStatus {
+    case 0: return .ok
+    case 1: return .wrongPassword
+    case 2: return .missingAccount
+    default:
+        let msg = String(data: err.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return .failed(msg.isEmpty ? "exit \(process.terminationStatus)" : msg)
+    }
+}
+
+func playerAccountCount() -> Int? {
+    let probe = probeAccountName()
+    let sql: String
+    if probe.isEmpty {
+        sql = "SELECT COUNT(*) FROM account"
+    } else {
+        sql = "SELECT COUNT(*) FROM account WHERE username <> UPPER('\(probe)')"
+    }
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "\(root)/server/mariadb/bin/mariadb")
+    process.arguments = ["-h127.0.0.1", "-uroot", "--skip-ssl", "-N", "-B", "classic_realmd", "-e", sql]
+    let out = Pipe()
+    process.standardOutput = out
+    process.standardError = FileHandle.nullDevice
+    do { try process.run() } catch { return nil }
+    process.waitUntilExit()
+    guard process.terminationStatus == 0 else { return nil }
+    let text = String(data: out.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+        .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    return Int(text)
+}
+
+func createGameAccount(user: String, pass: String) -> String? {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/bin/bash")
+    process.arguments = ["\(root)/tools/macos/create-account.sh", user, pass, "gm"]
+    process.currentDirectoryURL = URL(fileURLWithPath: root)
+    let out = Pipe()
+    process.standardOutput = out
+    process.standardError = out
+    do { try process.run() } catch {
+        return error.localizedDescription
+    }
+    process.waitUntilExit()
+    if process.terminationStatus == 0 { return nil }
+    let msg = String(data: out.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+        .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    return msg.isEmpty ? "create-account exited \(process.terminationStatus)" : msg
+}
+
+// MARK: - Settings sheet
+
+final class SettingsSheet: NSObject, NSWindowDelegate, NSTextFieldDelegate {
+    let panel: NSPanel
+    let userField: NSTextField
+    let passField: NSSecureTextField
+    let charField: NSTextField
+    let errorLabel: NSTextField
+    let okButton: NSButton
+    let cancelButton: NSButton
+    let hasSavedPassword: Bool
+    var onSave: ((String, String, String) -> Void)?
+    var saving = false
+
+    init(creds: LoginCreds) {
+        let width: CGFloat = 440, height: CGFloat = 320
+        hasSavedPassword = nonEmpty(creds.pass) != nil
+        panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: width, height: height),
+                        styleMask: [.titled], backing: .buffered, defer: false)
+        panel.title = "设置"
+        panel.isFloatingPanel = true
+        panel.becomesKeyOnlyIfNeeded = false
+        panel.appearance = NSAppearance(named: .darkAqua)
+        panel.backgroundColor = night
+
+        let content = Flipped(frame: NSRect(origin: .zero, size: NSSize(width: width, height: height)))
+        panel.contentView = content
+
+        let title = label("账号写在启动器里，游戏内不再显示登录页。", size: 12, color: muted, width: width - 48)
+        title.setFrameOrigin(NSPoint(x: 24, y: 18))
+        content.addSubview(title)
+
+        let userCaption = label("账号", size: 12, color: cream, weight: .medium, width: 80)
+        userCaption.setFrameOrigin(NSPoint(x: 24, y: 50))
+        content.addSubview(userCaption)
+        userField = NSTextField(frame: NSRect(x: 24, y: 72, width: width - 48, height: 28))
+        userField.stringValue = creds.user.isEmpty ? "PLAYER" : creds.user
+        userField.font = .systemFont(ofSize: 14)
+        userField.isBezeled = true
+        userField.bezelStyle = .roundedBezel
+        userField.focusRingType = .exterior
+        content.addSubview(userField)
+
+        let passCaption = label("密码", size: 12, color: cream, weight: .medium, width: 80)
+        passCaption.setFrameOrigin(NSPoint(x: 24, y: 110))
+        content.addSubview(passCaption)
+        passField = NSSecureTextField(frame: NSRect(x: 24, y: 132, width: width - 48, height: 28))
+        passField.font = .systemFont(ofSize: 14)
+        passField.isBezeled = true
+        passField.bezelStyle = .roundedBezel
+        passField.focusRingType = .exterior
+        passField.placeholderString = hasSavedPassword ? "已保存，留空则不改" : ""
+        content.addSubview(passField)
+
+        let charCaption = label("角色（可选）", size: 12, color: cream, weight: .medium, width: 160)
+        charCaption.setFrameOrigin(NSPoint(x: 24, y: 170))
+        content.addSubview(charCaption)
+        charField = NSTextField(frame: NSRect(x: 24, y: 192, width: width - 48, height: 28))
+        charField.stringValue = creds.character
+        charField.font = .systemFont(ofSize: 14)
+        charField.isBezeled = true
+        charField.bezelStyle = .roundedBezel
+        charField.focusRingType = .exterior
+        charField.placeholderString = "填写后进游戏跳过角色选择"
+        content.addSubview(charField)
+
+        errorLabel = label("", size: 12, color: srgb(0.95, 0.45, 0.40), width: width - 48)
+        errorLabel.setFrameOrigin(NSPoint(x: 24, y: 236))
+        content.addSubview(errorLabel)
+
+        cancelButton = NSButton(title: "取消", target: nil, action: nil)
+        cancelButton.bezelStyle = .rounded
+        cancelButton.frame = NSRect(x: width - 24 - 80 - 12 - 80, y: height - 44, width: 80, height: 28)
+        content.addSubview(cancelButton)
+
+        okButton = NSButton(title: "保存", target: nil, action: nil)
+        okButton.bezelStyle = .rounded
+        okButton.keyEquivalent = "\r"
+        okButton.frame = NSRect(x: width - 24 - 80, y: height - 44, width: 80, height: 28)
+        content.addSubview(okButton)
+
+        super.init()
+        userField.delegate = self
+        passField.delegate = self
+        charField.delegate = self
+        okButton.target = self
+        okButton.action = #selector(savePressed)
+        cancelButton.target = self
+        cancelButton.action = #selector(cancelPressed)
+        panel.delegate = self
+        if creds.user.isEmpty {
+            panel.initialFirstResponder = userField
+        } else if !hasSavedPassword {
+            panel.initialFirstResponder = passField
+        } else {
+            panel.initialFirstResponder = userField
+        }
+    }
+
+    func setError(_ text: String) {
+        errorLabel.stringValue = text
+    }
+
+    func setBusy(_ busy: Bool) {
+        saving = busy
+        okButton.isEnabled = !busy
+        cancelButton.isEnabled = !busy
+        userField.isEditable = !busy
+        passField.isEditable = !busy
+        charField.isEditable = !busy
+        okButton.title = busy ? "校验中…" : "保存"
+    }
+
+    @objc func savePressed() {
+        guard !saving else { return }
+        let user = userField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pass = passField.stringValue
+        let character = charField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !user.isEmpty else {
+            setError("请输入账号")
+            panel.makeFirstResponder(userField)
+            return
+        }
+        if pass.isEmpty && !hasSavedPassword {
+            setError("请输入密码")
+            panel.makeFirstResponder(passField)
+            return
+        }
+        setError("")
+        setBusy(true)
+        onSave?(user, pass, character)
+    }
+
+    @objc func cancelPressed() {
+        guard !saving else { return }
+        if let sheet = panel.sheetParent {
+            sheet.endSheet(panel, returnCode: .cancel)
+        } else {
+            panel.close()
+        }
+    }
+
+    func finish(ok: Bool) {
+        setBusy(false)
+        if ok {
+            if let sheet = panel.sheetParent {
+                sheet.endSheet(panel, returnCode: .OK)
+            } else {
+                panel.close()
+            }
+        }
+    }
+
+    func controlTextDidChange(_ obj: Notification) {
+        if !errorLabel.stringValue.isEmpty { setError("") }
+    }
+}
+
 // MARK: - The window
 
 enum ServerState {
@@ -381,6 +684,8 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var wantsPlay = false
     var clientRunning = false
     var links: [String] = []
+    var settingsSheet: SettingsSheet?
+    var playAfterAccountSave = false
 
     func build() {
         window.title = "Soloroth"
@@ -621,6 +926,11 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
             startServer()
             return
         }
+        guard loginEnvReady() else {
+            playAfterAccountSave = true
+            presentSettingsSheet()
+            return
+        }
         clientRunning = true
         set(.playing)
         run("start-client.sh") { code in
@@ -630,6 +940,86 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
                     self.set(.ready)
                 } else {
                     self.set(.ready, detail: "客户端退出（\(code)）")
+                }
+            }
+        }
+    }
+
+    func presentSettingsSheet() {
+        if settingsSheet != nil { return }
+        let existing = readLoginEnv()
+        let sheet = SettingsSheet(creds: existing)
+        settingsSheet = sheet
+        sheet.onSave = { [weak self] user, pass, character in
+            self?.saveSettings(user: user, pass: pass, character: character, sheet: sheet)
+        }
+        window.beginSheet(sheet.panel) { [weak self] response in
+            guard let self else { return }
+            self.settingsSheet = nil
+            let shouldPlay = self.playAfterAccountSave
+            self.playAfterAccountSave = false
+            if response == .OK, shouldPlay {
+                self.startClient()
+            } else if shouldPlay {
+                self.set(self.state, detail: "需要账号密码才能开始游戏")
+            }
+        }
+    }
+
+    func saveSettings(user: String, pass: String, character: String, sheet: SettingsSheet) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let existing = readLoginEnv()
+            let sameUser = user.uppercased() == existing.user.uppercased()
+            let keepPass = pass.isEmpty && sameUser && nonEmpty(existing.pass) != nil
+            let effectivePass = keepPass ? existing.pass : pass
+
+            let finishWrite = { (okPass: String) -> Void in
+                do {
+                    try writeLoginEnv(user: user.uppercased(), pass: okPass, character: character)
+                    sheet.finish(ok: true)
+                } catch {
+                    sheet.setError("无法写入设置：\(error.localizedDescription)")
+                    sheet.finish(ok: false)
+                }
+            }
+
+            if effectivePass.isEmpty {
+                DispatchQueue.main.async {
+                    sheet.setError(sameUser ? "请输入密码" : "换账号请输入密码")
+                    sheet.finish(ok: false)
+                }
+                return
+            }
+
+            if keepPass {
+                DispatchQueue.main.async { finishWrite(effectivePass) }
+                return
+            }
+
+            var check = checkLogin(user: user, pass: effectivePass)
+            if check == .missingAccount, playerAccountCount() == 0 {
+                if let err = createGameAccount(user: user, pass: effectivePass) {
+                    DispatchQueue.main.async {
+                        sheet.setError(err)
+                        sheet.finish(ok: false)
+                    }
+                    return
+                }
+                check = checkLogin(user: user, pass: effectivePass)
+            }
+            DispatchQueue.main.async {
+                switch check {
+                case .ok:
+                    finishWrite(effectivePass)
+                case .wrongPassword:
+                    sheet.setError("账号或密码不对")
+                    sheet.finish(ok: false)
+                case .missingAccount:
+                    sheet.setError("账号不存在；可先用「更多」里的管理界面建号")
+                    sheet.finish(ok: false)
+                case .failed(let msg):
+                    sheet.setError(msg)
+                    sheet.finish(ok: false)
                 }
             }
         }
@@ -656,10 +1046,9 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc func showMenu(_ sender: NSButton) {
         let menu = NSMenu()
+        menu.addItem(withTitle: "设置…", action: #selector(editSettings), keyEquivalent: "").target = self
         menu.addItem(withTitle: "打开管理界面", action: #selector(openAdmin), keyEquivalent: "").target = self
         menu.addItem(withTitle: "打开日志文件夹", action: #selector(openLogs), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "打开界面文件夹", action: #selector(openAddOns), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "编辑启动器设置", action: #selector(editConfig), keyEquivalent: "").target = self
         menu.addItem(.separator())
         let stop = menu.addItem(withTitle: "关闭服务器", action: #selector(stopServer), keyEquivalent: "")
         stop.target = self
@@ -671,27 +1060,16 @@ final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
     }
 
+    @objc func editSettings() {
+        playAfterAccountSave = false
+        presentSettingsSheet()
+    }
+
     @objc func openAdmin() {
         run("start-admin.sh") { _ in }
     }
 
     @objc func openLogs() { NSWorkspace.shared.open(URL(fileURLWithPath: "\(root)/server/logs")) }
-
-    @objc func openAddOns() {
-        let path = "\(root)/benilla-config/AddOns"
-        try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(URL(fileURLWithPath: path))
-    }
-
-    // Seeded with "skip" alone: a key written here replaces the repo's, so a full
-    // copy would pin every other key to the day it was made.
-    @objc func editConfig() {
-        let local = "\(root)/benilla-config/launcher.json"
-        if !FileManager.default.fileExists(atPath: local) {
-            FileManager.default.createFile(atPath: local, contents: Data("{\n  \"skip\": false\n}\n".utf8))
-        }
-        NSWorkspace.shared.open(URL(fileURLWithPath: local))
-    }
 
     @objc func stopServer() {
         wantsPlay = false
@@ -764,7 +1142,6 @@ if let out = snapshotPath {
     exit(0)
 }
 
-if launcher.config.skip == true { exit(2) }
 app.setActivationPolicy(.regular)
 app.delegate = launcher
 app.run()

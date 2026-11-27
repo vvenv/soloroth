@@ -16,16 +16,6 @@
 !/do.sh
 !/AGENTS.md
 
-# Product UI (world addons + glue skin); ui/install.sh syncs into benilla-config/AddOns
-# and Data/patch-S.MPQ.
-!/ui/
-/ui/*
-!/ui/AGENTS.md
-!/ui/install.sh
-!/ui/shared/
-!/ui/world/
-!/ui/glue/
-
 # Server configuration, the macOS scripts and the achievement generator.
 !/config/
 !/tools/

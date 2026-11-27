@@ -1,5 +1,0 @@
-<Bindings>
-  <Binding name="TELEPORT_TOGGLE" header="TELEPORT">
-    Teleport_Toggle();
-  </Binding>
-</Bindings>

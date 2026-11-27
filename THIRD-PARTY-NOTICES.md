@@ -13,25 +13,11 @@ It is not affiliated with or endorsed by Blizzard Entertainment and ships no gam
 | MariaDB Server | The local database (Homebrew) | GPL-2.0 | https://mariadb.org |
 | Hordes of Azeroth | Where Soloroth started (credits) | GPL-3.0 | https://github.com/jonhaldors/hordes-of-azeroth |
 
-## Third-party addons
+## Look inspiration
 
-`ui/world` carries the 1.12 addons the game is set up with (installed into the client's AddOns folder by `ui/install.sh`). pfUI, Atlas, and AtlasLoot are trimmed for this solo client (social, PvP, auction, mail, trade, battlegrounds, and other-client code are not shipped). SortBags' sorter lives in `ui/world/pfUI/modules/bagsort.lua`. The Chinese that `tools/macos/localize-addons.py` adds goes onto the installed copies only. They are not covered by this project's GPL: each keeps its own licence and belongs to its authors. Those marked "none shipped" come without a licence file; they are included as the vanilla community has long passed them around, and an author who wants one removed can open an issue.
-
-| Addon | Version | Author | Licence | Source |
-| --- | --- | --- | --- | --- |
-| pfUI | 5.5.4 | Eric Mauser (Shagu) | MIT (`pfUI/LICENSE`) | https://github.com/shagu/pfUI |
-| Atlas | 1.12.0 | Dan Gilbert | none shipped | http://www.atlasmod.com |
-| AtlasLoot | 4.06.06 | Daviesh | none shipped | AtlasLoot Enhanced for 1.12 |
-| SortBags (now `pfUI/modules/bagsort.lua`) | vanilla | shirsig | none shipped | https://github.com/shirsig/SortBags-vanilla |
-
-Teleport, Items, GMBox, Dungeon, Bots, Achievements and !Solo in the same folder are this project's own, under its GPL-3.0.
-
-Bundled pfUI style tables under `ui/world/!Solo/PfuiStylesData.lua` are decoded community `/share` exports (not the authors' full addons), kept for one-click switching in Soloroth:
-
-| Style id | Author | Source |
-| --- | --- | --- |
-| Solo: Clean | megajjh | https://pastebin.com/aTz0rQAa (r/pfUI) |
-| Solo: Compact | Khegful | https://pastebin.com/m2nLAtHA (r/pfUI) |
+The product UI (`client/crates/soloroth-ui`) is Rust-native. Its flat look is inspired by
+[pfUI](https://github.com/shagu/pfUI) (MIT, Eric Mauser / Shagu). Soloroth no longer ships
+Lua addons.
 
 ## benilla
 

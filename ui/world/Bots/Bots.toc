@@ -1,8 +1,0 @@
-## Interface: 11200
-## Title: Bots
-## Notes: Party bots — a duo, a trio or five — from a button under the minimap.
-## Author: local
-## Version: 1.0.0
-## SavedVariables: BotsDB
-
-Bots.lua

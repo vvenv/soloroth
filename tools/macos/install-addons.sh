@@ -1,7 +1,7 @@
 #!/bin/bash
-# Forwards to ui/install.sh (world + glue). Prefer ./do.sh ui or ui/install.sh.
+# Alias for tools/macos/prune-legacy-ui.sh (legacy product Lua / patch-S cleanup).
 #
 #   tools/macos/install-addons.sh
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
-exec bash "$root/ui/install.sh" "$@"
+exec bash "$root/tools/macos/prune-legacy-ui.sh" "$@"

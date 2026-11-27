@@ -5,12 +5,18 @@
 # server is already ready.
 #
 #   tools/macos/start-client.sh
+#
+# Picks the newer of release/benilla and play/benilla under client-target
+# (iter builds write play/). Override with SOLOROTH_CLIENT_PROFILE=release|play.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
-client="$root/release/build/macos/client-target/release/benilla"
-[ -x "$client" ] || { echo "no client build: tools/macos/build-classic.sh client" >&2; exit 1; }
 # shellcheck source=bundle.sh
 source "$root/tools/macos/bundle.sh"
+client="$(resolve_benilla_bin)"
+[ -n "$client" ] && [ -x "$client" ] || {
+  echo "no client build — try: tools/macos/build-classic.sh iter   # or client" >&2
+  exit 1
+}
 install_product_ui
 rebuild_enchant_scrolls_patch
 export_client_env

@@ -25,15 +25,16 @@ fi
 sleep 1
 tail -n +"$((before + 1))" "$out" | sed 's/\x1b\[[0-9;]*m//g' | grep -iE "account|gm|exist|error" || true
 
-# The first account becomes the one play.sh logs in with by itself.
+# The first account becomes the one the launcher / play.sh logs in with.
 login="${BENILLA_HOME:-$root/benilla-config}/login.env"
 if [ ! -f "$login" ] && printf '%s\n%s\n' "$name" "$pass" | python3 "$root/tools/macos/check-login.py"; then
     mkdir -p "$(dirname "$login")"
     ( umask 077; printf '%s\n' \
         "WOW_USER=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')" \
         "WOW_PASS=$pass" \
+        "WOW_CHAR=" \
         "# WOW_CHAR=角色名  (进游戏时跳过角色选择)" \
-        "# WOW_SHOW_LOGIN_UI=1  (显示游戏内登录层；默认隐藏)" \
         > "$login" )
     echo "play.sh logs in as $name by itself (saved in $login)"
 fi
+

@@ -5,22 +5,28 @@
 #
 #   tools/macos/play.sh                 server + client
 #   tools/macos/play.sh --server-only   just the server
+#   tools/macos/play.sh --no-client     server + visual/UI install, no client
 #
 # The client logs in by itself with the account in benilla-config/login.env
 # (WOW_USER, WOW_PASS, and optionally WOW_CHAR to go straight into the world
-# as that character). Without the file, the first launch asks for the account
-# once (a dialog when there is no terminal, as from Soloroth.app), checks it
-# against the server and saves it; with no account on the server yet it
-# creates one (PLAYER, with GM rights). Cancelling leaves no login.env, so the
-# AccountLoginUI overlay stays visible. With login.env the whole overlay is
-# hidden unless WOW_SHOW_LOGIN_UI=1 (in the env or in login.env).
+# as that character). AccountLogin is never shown: without a usable login.env
+# this script asks once (TTY, or an osascript dialog when there is no
+# terminal), checks against the server and saves it; with no account on the
+# server yet it creates one (PLAYER, with GM rights). Cancelling or a failed
+# ask refuses to start the client. Soloroth.app collects the same fields in
+# its launcher window instead.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 bash "$root/tools/macos/start-server.sh"
 [ "${1:-}" = "--server-only" ] && exit 0
 
-client="$root/release/build/macos/client-target/release/benilla"
-[ -x "$client" ] || { echo "no client build: tools/macos/build-classic.sh client" >&2; exit 1; }
+# shellcheck source=bundle.sh
+source "$root/tools/macos/bundle.sh"
+client="$(resolve_benilla_bin)"
+[ -n "$client" ] && [ -x "$client" ] || {
+  echo "no client build — try: ./do.sh build iter   # or build client" >&2
+  exit 1
+}
 export BENILLA_HOME="$root/benilla-config"
 login="$BENILLA_HOME/login.env"
 
@@ -45,13 +51,32 @@ EOF
 
 save_login() {
     mkdir -p "$BENILLA_HOME"
+    local char=""
+    if [ -f "$login" ]; then
+        char="$(sed -n 's/^WOW_CHAR=//p' "$login" | head -n1)"
+    fi
     ( umask 077; printf '%s\n' \
         "WOW_USER=$1" \
         "WOW_PASS=$2" \
+        "WOW_CHAR=${char}" \
         "# WOW_CHAR=角色名  (进游戏时跳过角色选择)" \
-        "# WOW_SHOW_LOGIN_UI=1  (显示游戏内登录层；默认隐藏)" \
         > "$login" )
     echo "saved the login to $login"
+}
+
+login_ready() {
+    local key value user="" pass=""
+    [ -f "$login" ] || return 1
+    while IFS='=' read -r key value || [ -n "$key" ]; do
+        key="${key%$'\r'}"
+        value="${value%$'\r'}"
+        case "$key" in ''|'#'*) continue ;; esac
+        case "$key" in
+            WOW_USER) user="$value" ;;
+            WOW_PASS) pass="$value" ;;
+        esac
+    done < "$login"
+    [ -n "$user" ] && [ -n "$pass" ]
 }
 
 first_login() {
@@ -66,32 +91,37 @@ first_login() {
         return
     fi
     user="$(sed -n 's/^accountName = "\(.*\)"$/\1/p' "$BENILLA_HOME/config.toml" 2>/dev/null || true)"
-    local prompt="第一次启动：输入游戏账号，以后自动登录"
+    [ -z "$user" ] && [ -f "$login" ] && user="$(sed -n 's/^WOW_USER=//p' "$login" | head -n1)"
+    local prompt="输入游戏账号，以后自动登录"
     for _ in 1 2 3; do
-        user="$(ask "$prompt" "${user:-PLAYER}")" || return 0
-        pass="$(ask "账号 $user 的密码" "" hidden)" || return 0
+        user="$(ask "$prompt" "${user:-PLAYER}")" || return 1
+        pass="$(ask "账号 $user 的密码" "" hidden)" || return 1
         if printf '%s\n%s\n' "$user" "$pass" | python3 "$root/tools/macos/check-login.py"; then
             save_login "$(printf '%s' "$user" | tr '[:lower:]' '[:upper:]')" "$pass"
-            return
+            return 0
         fi
         prompt="账号或密码不对，请重新输入账号"
         [ -t 0 ] && echo "$prompt" >&2
     done
+    return 1
 }
 
-[ -f "$login" ] || first_login
 # HD creature / world overlays (always on when the pack is downloaded).
 bash "$root/tools/macos/apply-visual.sh"
-# shellcheck source=bundle.sh
-source "$root/tools/macos/bundle.sh"
-# Product UI (ui/world → AddOns, ui/glue → patch-S) and enchant-scroll Spell.dbc
+# Prune leftover product Lua / patch-S, then enchant-scroll Spell.dbc
 # (Data/patch-T.MPQ); same install as start-client.sh.
 install_product_ui
 rebuild_enchant_scrolls_patch
-export_client_env
-# Soloroth.app's launcher window starts the server and the account itself,
-# then runs the client via start-client.sh (staged as Contents/MacOS/Soloroth
-# so the Dock keeps a single Soloroth icon) while the window stays open.
+# Soloroth.app's launcher window starts the server itself, then runs the
+# client via start-client.sh. Account is collected in the launcher sheet.
 [ "${1:-}" = "--no-client" ] && exit 0
+
+if ! login_ready; then
+    first_login || {
+        echo "no account saved — not starting the client (AccountLogin is never shown)" >&2
+        exit 1
+    }
+fi
+export_client_env
 cd "$root"
 exec "$(resolve_client "$client")" "$@"

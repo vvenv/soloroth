@@ -7,8 +7,8 @@
 # newer build replaces the copy on the next launch.
 
 # export_client_env: BENILLA_HOME, WOW_DATA, and the saved login.
-# $root is the checkout. login.env is optional; cancelling the first-launch
-# dialog leaves it absent and the client shows the login screen.
+# $root is the checkout. login.env must have WOW_USER and WOW_PASS before the
+# client starts (launcher sheet or play.sh); AccountLogin is never shown.
 export_client_env() {
     export BENILLA_HOME="$root/benilla-config"
     local login="$BENILLA_HOME/login.env"
@@ -20,11 +20,15 @@ export_client_env() {
             key="${key%$'\r'}"
             value="${value%$'\r'}"
             case "$key" in ''|'#'*) continue ;; esac
-            case "$key" in WOW_USER|WOW_PASS|WOW_CHAR|WOW_SHOW_LOGIN_UI) export "$key=$value" ;; esac
+            case "$key" in WOW_USER|WOW_PASS|WOW_CHAR) export "$key=$value" ;; esac
         done < "$login"
         # The client only auto-logs in as the account .probe-identity declares
         # (the agents' test account) unless told the player chose this one.
         export WOW_ALLOW_ACCOUNT=1
+        # Product: skip AccountLogin and quit on disconnect / char-select Back.
+        export WOW_NO_LOGIN_UI=1
+        # Rust native UI (FrameXML/Lua off). Set WOW_NATIVE_UI=0 to fall back.
+        export WOW_NATIVE_UI="${WOW_NATIVE_UI:-1}"
     fi
     export WOW_DATA="$root/Data"
     export WGPU_BACKEND="${WGPU_BACKEND:-metal}"
@@ -44,16 +48,14 @@ rebuild_enchant_scrolls_patch() {
     python3 "$root/tools/enchant-scrolls/build-patch.py" "$root/Data"
 }
 
-# Product UI (world addons + glue patch-S). Prefer calling this over a bare
-# glue rebuild so world and glue stay in sync. start-client.sh uses it when
-# the launcher opens the client with the server already up.
+# Prune leftover product Lua / patch-S. start-client.sh runs this each launch.
 install_product_ui() {
-    bash "$root/ui/install.sh" "$@"
+    bash "$root/tools/macos/prune-legacy-ui.sh" "$@"
 }
 
-# Glue-only alias kept for callers that only need patch-S.
+# Alias kept for older callers.
 rebuild_glue_patch() {
-    install_product_ui --glue-only
+    install_product_ui
 }
 
 # stage_client <bundle.app> <benilla binary>
@@ -78,6 +80,36 @@ stage_client() {
     chmod +x "$tmp"
     mv -f "$tmp" "$dest"
     printf '%s\n' "$dest"
+}
+
+# resolve_benilla_bin — newer of release/ and play/ under client-target, or
+# SOLOROTH_CLIENT_PROFILE=release|play to pin. Empty stdout if neither exists.
+resolve_benilla_bin() {
+    local target="$root/release/build/macos/client-target"
+    local release_bin="$target/release/benilla"
+    local play_bin="$target/play/benilla"
+    case "${SOLOROTH_CLIENT_PROFILE:-}" in
+        release)
+            [ -x "$release_bin" ] && printf '%s\n' "$release_bin"
+            return 0
+            ;;
+        play)
+            [ -x "$play_bin" ] && printf '%s\n' "$play_bin"
+            return 0
+            ;;
+        "")
+            if [ -x "$play_bin" ] && { [ ! -x "$release_bin" ] || [ "$play_bin" -nt "$release_bin" ]; }; then
+                printf '%s\n' "$play_bin"
+            elif [ -x "$release_bin" ]; then
+                printf '%s\n' "$release_bin"
+            fi
+            return 0
+            ;;
+        *)
+            echo "SOLOROTH_CLIENT_PROFILE must be release or play (got: $SOLOROTH_CLIENT_PROFILE)" >&2
+            return 2
+            ;;
+    esac
 }
 
 # resolve_client <benilla binary>

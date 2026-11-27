@@ -11,13 +11,13 @@
 #   tools/macos/make-app.sh <folder>     into <folder>
 #
 # The icon is tools/macos/AppIcon.png (1024x1024; render-icon.swift draws it).
-# Launcher output goes to server/logs/launcher.log. SOLOROTH_SKIP_LAUNCHER=1
-# (or "skip": true in launcher.json) goes straight to the game and exits with
-# the client (no window), as does a launcher that failed to build or crashed.
+# Launcher output goes to server/logs/launcher.log. The window always shows on
+# open; SOLOROTH_SKIP_LAUNCHER=1 (or a launcher that failed to build / crashed)
+# goes straight to play.sh without the window.
 #
 # The bundle's executable is a shell script named "launch". It runs the
-# launcher window (which owns the client); when the launcher is skipped or
-# missing it falls through to play.sh.
+# launcher window (which owns the client); when the launcher is skipped via
+# env or missing it falls through to play.sh.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 dest="${1:-}"
