@@ -37,7 +37,7 @@ tools/macos/create-account.sh 账号 密码 gm           # 建账号；gm 表示
 tools/macos/make-app.sh                              # 生成 /Applications/Soloroth.app
 ```
 
-1. **`build-classic.sh`**：编译服务端（`mangosd`、`realmd`），装到 `release/build/macos/server-classic`；再编译客户端，生成 `release/build/macos/client-target/release/benilla`。也可以只编一边：`build-classic.sh server` 或 `build-classic.sh client`。日常改 Rust / UI 用 **`build-classic.sh iter`**（或 `./do.sh build iter`）：`--profile play`（release 级优化 + incremental），产物在 `…/client-target/play/benilla`；`start-client.sh` / Soloroth.app 会自动选较新的那份。装 App、发版、`./do.sh first` 仍走 `client`（`--release`）。有 `sccache` 时脚本会自动设 `RUSTC_WRAPPER`。
+1. **`build-classic.sh`**：编译服务端（`mangosd`、`realmd`），装到 `release/build/macos/server-classic`；再编译客户端，生成 `release/build/macos/client-target/release/benilla`。也可以只编一边：`build-classic.sh server` 或 `build-classic.sh client`。日常改 Rust / UI 用 **`build-classic.sh iter`**（或 `./do.sh build iter`）：`--profile dev`（本仓库 crate `opt-level = 1` + incremental），产物在 `…/client-target/debug/benilla`。不要用 `play`/`release` 做日常迭代——它们对本 crate 是 opt 3，改一行 `soloroth-ui` 也会拖着巨大的 `benilla-app` 编将近一分钟。`start-client.sh` / Soloroth.app 会自动选较新的 debug / play / release。装 App、发版、`./do.sh first` 仍走 `client`（`--release`）。有 `sccache` 时脚本固定设 `RUSTC_WRAPPER`（不要在有/无 wrapper 之间切换，否则整树 Bevy 重编）。rust-analyzer 用独立 `target-ra/`（见 `.vscode/settings.json`），避免和 `do.sh` 抢同一个 target 锁。
 2. **`setup-classic.sh`**：重复运行是安全的，已有的东西不会动。它会：
    - 把服务端程序和地图数据链接进 `server/run`、`server/data`；
    - 初始化并启动 MariaDB（数据在 `server/mariadb-data`）；
@@ -80,13 +80,15 @@ tools/macos/make-app.sh                              # 生成 /Applications/Solo
 
 - `benilla-config/login.env` 是玩家自己的账号（不进 git）。账号密码只在启动器 sheet（或 `play.sh` 的 TTY/osascript）里输入。`bundle.sh` 在有该文件时导出 `WOW_NO_LOGIN_UI=1`：客户端不坐 `SET_GLUE_SCREEN("login")`，断线 / 返回登录改为退出进程。有账号密码时自动进角色选择；角色列表点「返回」、或服务器断开，都会退出客户端回到启动器。缺有效凭证时不启动客户端。
 
-产品界面是客户端 Rust 原生 UI（`client/crates/soloroth-ui`，`WOW_NATIVE_UI` 默认开）：进世界不加载 FrameXML/AddOns；选角由 native UI 绘制，stock GlueXML 画在客户端关掉。世界 / glue Lua 与 `patch-S` 已退役。`play.sh` / `start-client.sh` 每次跑 `tools/macos/prune-legacy-ui.sh`（只清残留）。同一路径打 `Data/patch-T.MPQ`。`WOW_NATIVE_UI=0` 回退 stock FrameXML（无产品 Lua 皮）。
+产品界面是客户端 Rust 原生 UI（`client/crates/soloroth-ui`，`WOW_NATIVE_UI` 默认开）：进世界不加载 FrameXML/AddOns；选角由 native UI 绘制，stock GlueXML 画在客户端关掉。世界 / glue Lua 与 `patch-S` 已退役。`play.sh` / `start-client.sh` 每次跑 `install_product_ui`：先打 `Data/patch-M.MPQ`（血条 TGA + Atlas BLP），再 `prune-legacy-ui.sh` 清残留 loose AddOns；另打 `Data/patch-T.MPQ`（附魔卷轴 Spell.dbc）。`WOW_NATIVE_UI=0` 回退 stock FrameXML（无产品 Lua 皮）。
 
 附魔卷轴数据：改 `tools/enchant-scrolls/gen-enchant-scrolls.py` 后运行它写出迁移和 `map.json`，再 `build-classic.sh server`；客户端侧 `tools/enchant-scrolls` 的 `build-patch.py` / 启动时的 `rebuild_enchant_scrolls_patch` 会按 `map.json` 重打 Spell.dbc。
 
+产品美术：`tools/macos/build-product-media.py`（`rebuild_product_media_patch`）把 `soloroth-ui/media/img` 与 wow-data Atlas 平面图打进 `patch-M`；源变才重写（`patch-M.stamp`）。不要再往 `benilla-config/AddOns` 同步。
+
 ## 产品界面与单人设置
 
-- `tools/macos/prune-legacy-ui.sh`（或 `./do.sh ui`）：清掉旧 `patch-S` / 产品 AddOns。改 `soloroth-ui` 需重编客户端。
+- `tools/macos/prune-legacy-ui.sh`（或 `./do.sh ui`）：清掉旧 `patch-S` / 产品 loose AddOns（含昔日的 `soloroth` / `Atlas`）。改 `soloroth-ui` 需重编客户端；改贴图源后下次启动会重打 `patch-M`。
 - 新产品界面写在 `client/crates/soloroth-ui`（及 `benilla-app` `native_ui`）。面板内容列用 `chrome::{PAD, after_title, content_band, body_band, footer_band}`：header（标题）→ tabs/toolbar → body → footer 左右对齐，别再各写一套 `r.x + 12` / 浮动顶栏钮。外壳宽度用 `chrome::width::{S,M,L,XL}`（360/420/480/560）按内容就近取档；`width::fit(content)` 给格子类（背包/银行/天赋）；地图单独 `MAP`。
 
 ### UI 验收清单
@@ -126,7 +128,7 @@ tools/macos/apply-visual.sh --status
 | `server/core` | 服务端（子模块 [soloroth-server](https://github.com/vvenv/soloroth-server)）：原版 vmangos 加上 macOS 修复、副本机器人 `src/game/PlayerBots/DungeonBotMgr.*`、成就 `src/game/AchievementMgr.*` 和副本进度 `src/game/DungeonProgress.*` |
 | `client` | 客户端（子模块 [soloroth-client](https://github.com/vvenv/soloroth-client)）：[benilla](https://github.com/samwhosung/benilla)，用 Rust 从零写的 1.12 客户端，加上少量修复；产品 UI 在 `crates/soloroth-ui` |
 | `config/` | 服务端配置改动（`*.overrides.conf`，含 `Instance.AutoReset = 0`：副本只认手动重置）和 MariaDB 配置 |
-| `tools/macos/` | 构建、安装、启动脚本（含 `start-client.sh`、`start-admin.sh`、`prune-legacy-ui.sh`） |
+| `tools/macos/` | 构建、安装、启动脚本（含 `start-client.sh`、`build-product-media.py`、`prune-legacy-ui.sh`） |
 | `tools/macos/launcher/` | Soloroth.app 的启动器窗口和它的内容配置 |
 | `tools/macos/admin/` | 本机 Web 管理台（`server.py`，`127.0.0.1:8765`） |
 | `tools/achievements/` | 成就定义的生成脚本 |

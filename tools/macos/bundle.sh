@@ -34,6 +34,15 @@ export_client_env() {
     export WGPU_BACKEND="${WGPU_BACKEND:-metal}"
 }
 
+# Data/patch-M.MPQ: soloroth bar/glow + Atlas floor-plan BLPs (classic Interface\AddOns paths).
+rebuild_product_media_patch() {
+    if [ "${WOW_STOCK_UI:-}" = 1 ]; then
+        python3 "$root/tools/macos/build-product-media.py" "$root/Data" --remove
+        return
+    fi
+    python3 "$root/tools/macos/build-product-media.py" "$root/Data"
+}
+
 # Data/patch-T.MPQ: Spell.dbc where enchant crafts CreateItem scrolls.
 # Needs tools/enchant-scrolls/map.json (from gen-enchant-scrolls.py).
 rebuild_enchant_scrolls_patch() {
@@ -48,8 +57,10 @@ rebuild_enchant_scrolls_patch() {
     python3 "$root/tools/enchant-scrolls/build-patch.py" "$root/Data"
 }
 
-# Prune leftover product Lua / patch-S. start-client.sh runs this each launch.
+# Prune leftover product Lua / patch-S / loose media. start-client.sh runs this each launch.
 install_product_ui() {
+    # Media patch before prune: can still read a leftover AddOns/Atlas as fallback.
+    rebuild_product_media_patch
     bash "$root/tools/macos/prune-legacy-ui.sh" "$@"
 }
 
@@ -82,12 +93,13 @@ stage_client() {
     printf '%s\n' "$dest"
 }
 
-# resolve_benilla_bin — newer of release/ and play/ under client-target, or
-# SOLOROTH_CLIENT_PROFILE=release|play to pin. Empty stdout if neither exists.
+# resolve_benilla_bin — newest of release/ / play/ / debug/ under client-target,
+# or SOLOROTH_CLIENT_PROFILE=release|play|dev to pin. Empty stdout if none.
 resolve_benilla_bin() {
     local target="$root/release/build/macos/client-target"
     local release_bin="$target/release/benilla"
     local play_bin="$target/play/benilla"
+    local debug_bin="$target/debug/benilla"
     case "${SOLOROTH_CLIENT_PROFILE:-}" in
         release)
             [ -x "$release_bin" ] && printf '%s\n' "$release_bin"
@@ -97,16 +109,23 @@ resolve_benilla_bin() {
             [ -x "$play_bin" ] && printf '%s\n' "$play_bin"
             return 0
             ;;
+        dev|debug)
+            [ -x "$debug_bin" ] && printf '%s\n' "$debug_bin"
+            return 0
+            ;;
         "")
-            if [ -x "$play_bin" ] && { [ ! -x "$release_bin" ] || [ "$play_bin" -nt "$release_bin" ]; }; then
-                printf '%s\n' "$play_bin"
-            elif [ -x "$release_bin" ]; then
-                printf '%s\n' "$release_bin"
-            fi
+            local best="" candidate
+            for candidate in "$debug_bin" "$play_bin" "$release_bin"; do
+                [ -x "$candidate" ] || continue
+                if [ -z "$best" ] || [ "$candidate" -nt "$best" ]; then
+                    best="$candidate"
+                fi
+            done
+            [ -n "$best" ] && printf '%s\n' "$best"
             return 0
             ;;
         *)
-            echo "SOLOROTH_CLIENT_PROFILE must be release or play (got: $SOLOROTH_CLIENT_PROFILE)" >&2
+            echo "SOLOROTH_CLIENT_PROFILE must be release, play, or dev (got: $SOLOROTH_CLIENT_PROFILE)" >&2
             return 2
             ;;
     esac

@@ -39,13 +39,24 @@ Docs (Chinese unless noted):
 
 - `./do.sh` (or `./do.sh first` / `play` / `build` / …) for the common paths.
 - `tools/macos/build-classic.sh client|server|iter|all` → `release/build/macos/...`.
-  Day-to-day Rust / UI: `./do.sh build iter` (`--profile play`, incremental). Shipping /
-  App / first install: `client` (`--release`). `start-client.sh` picks the newer of
-  `play/benilla` and `release/benilla` (`SOLOROTH_CLIENT_PROFILE=play|release` to pin).
-  Optional `sccache` → scripts set `RUSTC_WRAPPER` when present.
+  Day-to-day Rust / UI: `./do.sh build iter` (`--profile dev` → `debug/benilla`,
+  workspace crates at opt-level 1). Shipping / App / first: `client` (`--release`).
+  `start-client.sh` picks the newest of `debug` / `play` / `release`
+  (`SOLOROTH_CLIENT_PROFILE=dev|play|release` to pin). Optional `sccache` → scripts
+  always set `RUSTC_WRAPPER` when present (toggling it forces a full Bevy rebuild).
+  rust-analyzer uses `target-ra/` (`.vscode/settings.json`), not `client-target`.
+- Agent typecheck / `cargo check` (do not cold-compile into `client/target`):
+  - Prefer `CARGO_TARGET_DIR=<repo>/release/build/macos/client-target` (same as
+    `build-classic.sh` / `./do.sh build iter`) so incremental artifacts are warm.
+  - Set `RUSTC_WRAPPER=sccache` when present (scripts already do; bare `cargo` may not).
+  - UI-only edits: `cargo check -p soloroth-ui` or `cargo test -p soloroth-ui --lib …`
+    first — do not pull full `benilla-app` unless the host path changed.
+  - Host / native_ui: `cargo check --profile play -p benilla-app` under that
+    `CARGO_TARGET_DIR` (shares the iter `play/` cache). Default debug `client/target`
+    is a cold rebuild and is usually the wrong choice here.
 - Product UI is Rust (`soloroth-ui`); changes need a client rebuild. `WOW_NATIVE_UI=0`
   falls back to stock FrameXML. `play.sh` / `start-client.sh` run
-  `tools/macos/prune-legacy-ui.sh` each launch (deletes leftover `patch-S` / old AddOns).
+  `install_product_ui` each launch (`patch-M` media + prune leftover `patch-S` / loose AddOns).
 - `tools/macos/start-server.sh` / `stop-server.sh`; `play.sh` = server + visual patches +
   legacy-UI prune + client.
 - Start the server detached (`setsid`, or a double fork) when an agent shell launches it;

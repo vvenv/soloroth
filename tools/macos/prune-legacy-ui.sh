@@ -1,5 +1,6 @@
 #!/bin/bash
-# Prune leftover product Lua installs. UI is Rust (`soloroth-ui`); no patch-S / AddOns sync.
+# Prune leftover product Lua installs and loose media under AddOns.
+# UI is Rust (`soloroth-ui`); textures ship in Data/patch-M.MPQ.
 #
 #   tools/macos/prune-legacy-ui.sh
 #   tools/macos/prune-legacy-ui.sh --force   # same (kept for callers)
@@ -26,7 +27,7 @@ dest="$home/AddOns"
 patch="$root/Data/patch-S.MPQ"
 stamp="$home/glue-patch.stamp"
 
-echo "product UI is Rust (soloroth-ui) — no world AddOns / patch-S build"
+echo "product UI is Rust (soloroth-ui) — media in patch-M; no world AddOns / patch-S"
 
 if [ -f "$patch" ]; then
     rm -f "$patch"
@@ -35,19 +36,16 @@ fi
 rm -f "$stamp"
 
 if [ -d "$dest" ]; then
-    for name in '!Solo' pfUI AtlasLoot Bots Companions Dungeon Farm GMBox Items Teleport Achievements; do
+    for name in '!Solo' pfUI AtlasLoot Bots Companions Dungeon Farm GMBox Items Teleport Achievements \
+        soloroth Atlas; do
         if [ -d "$dest/$name" ]; then
             rm -rf "$dest/$name"
             echo "removed leftover AddOn $name"
         fi
     done
-    # Strip Atlas Lua/XML/toc but keep Images/Maps for native dungeon atlas.
-    if [ -d "$dest/Atlas" ]; then
-        find "$dest/Atlas" -maxdepth 1 -type f \( -name '*.lua' -o -name '*.xml' -o -name '*.toc' \) -delete
-        echo "stripped Atlas Lua (maps kept for native UI)"
+    # Drop empty AddOns tree (and .DS_Store-only leftovers).
+    if [ -d "$dest" ] && [ -z "$(find "$dest" -type f ! -name '.DS_Store' 2>/dev/null | head -1)" ]; then
+        rm -rf "$dest"
+        echo "removed empty $dest"
     fi
 fi
-
-# Art-only media for Rust UI (pfUI bar textures); keep `soloroth` out of the prune list above.
-bash "$root/tools/macos/install-soloroth-media.sh"
-bash "$root/tools/macos/install-atlas-maps.sh"

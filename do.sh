@@ -14,7 +14,7 @@
 #   ./do.sh account [账号 密码 [gm]]
 #   ./do.sh admin                   # 打开本地 Web 管理台（账号 / 角色 / SQL）
 #   ./do.sh app [目标目录]          # 生成 Soloroth.app（默认 /Applications）
-#   ./do.sh ui                      # 清理旧 Lua 界面残留（patch-S / AddOns）
+#   ./do.sh ui                      # 打 patch-M + 清理旧 Lua / loose AddOns 残留
 #   ./do.sh addons                  # ui 的别名
 #   ./do.sh visual                  # 下载 HD 外观补丁（每次启动自动挂载）
 #   ./do.sh config                  # 应用 config/mangosd.overrides.conf
@@ -31,18 +31,19 @@ cd "$ROOT"
 MACOS="$ROOT/tools/macos"
 CLIENT_BIN_RELEASE="$ROOT/release/build/macos/client-target/release/benilla"
 CLIENT_BIN_PLAY="$ROOT/release/build/macos/client-target/play/benilla"
+CLIENT_BIN_DEBUG="$ROOT/release/build/macos/client-target/debug/benilla"
 SERVER_BIN="$ROOT/release/build/macos/server-classic/bin/mangosd"
 
-# Newest existing client binary (release or play/iter), or empty.
+# Newest existing client binary (debug/iter, play, or release), or empty.
 newest_client_bin() {
-  local a="$CLIENT_BIN_RELEASE" b="$CLIENT_BIN_PLAY"
-  if [ -x "$a" ] && [ -x "$b" ]; then
-    if [ "$b" -nt "$a" ]; then echo "$b"; else echo "$a"; fi
-  elif [ -x "$a" ]; then
-    echo "$a"
-  elif [ -x "$b" ]; then
-    echo "$b"
-  fi
+  local best="" c
+  for c in "$CLIENT_BIN_DEBUG" "$CLIENT_BIN_PLAY" "$CLIENT_BIN_RELEASE"; do
+    [ -x "$c" ] || continue
+    if [ -z "$best" ] || [ "$c" -nt "$best" ]; then
+      best="$c"
+    fi
+  done
+  [ -n "$best" ] && echo "$best"
 }
 LOG_TAG=soloroth
 # shellcheck source=tools/lib/log.sh
@@ -164,7 +165,7 @@ refresh_hints() {
     HINT_BUILD_PART=all
     HINT_MENU_DEFAULT=3  # build
   elif [ "$need_client" -eq 1 ]; then
-    HINT_LINES+=("客户端（client/）有改动 → ./do.sh build iter（快；发版再用 build client）")
+    HINT_LINES+=("客户端（client/）有改动 → ./do.sh build iter（dev 增量；发版再用 build client）")
     HINT_BUILD_PART=iter
     HINT_MENU_DEFAULT=3
   elif [ "$need_server" -eq 1 ]; then
@@ -200,8 +201,9 @@ cmd_status() {
   print_hints
   echo "" >&2
   echo "对照：" >&2
-  echo "  改 soloroth-ui / native_ui       → build iter（play 增量；装 App 再用 client）" >&2
+  echo "  改 soloroth-ui / native_ui       → build iter（dev 增量；装 App 再用 client）" >&2
   echo "  改 client/（Rust）               → build iter；发版 / first → build client" >&2
+  echo "  只想看编译错（更快）             → cd client && cargo check -p soloroth-ui" >&2
   echo "  改 server/core（C++）            → build server（增量）+ 重启服务器" >&2
   echo "  改 config/*.overrides.conf       → config + 重启服务器" >&2
 }
@@ -273,7 +275,7 @@ cmd_build() {
     part="$(prompt_menu "编译哪边（已编过的会增量）" --default="$def" \
       "all:服务端 + 客户端（release）" \
       "server:只服务端" \
-      "iter:只客户端（迭代 play，日常改 UI）" \
+      "iter:只客户端（迭代 dev，日常改 UI）" \
       "client:只客户端（release，装 App / 发版）")"
     if is_back "$part"; then
       return 0
@@ -284,13 +286,16 @@ cmd_build() {
 
   case "$part" in
     iter)
-      log_info "编译客户端 iter（--profile play，增量；启动会优先用较新的 play 二进制）"
+      log_info "编译客户端 iter（--profile dev，增量；启动会优先用较新的 debug 二进制）"
       ;;
     *)
       log_info "编译 ${part}（cargo/cmake 增量；第一次要一阵子）"
       ;;
   esac
-  run_macos build-classic.sh "$part"
+  if ! run_macos build-classic.sh "$part"; then
+    log_error "编译失败（${part}）"
+    return 1
+  fi
   log_success "编译完成（${part}）"
 }
 
@@ -403,9 +408,10 @@ cmd_app() {
 }
 
 cmd_ui() {
-  log_info "清理旧 Lua 界面残留（AddOns / patch-S）"
+  log_info "产品美术 patch-M + 清理旧 Lua / loose AddOns 残留"
+  python3 "$ROOT/tools/macos/build-product-media.py" "$ROOT/Data"
   bash "$ROOT/tools/macos/prune-legacy-ui.sh" "$@"
-  log_success "残留已清理（产品 UI 在 client Rust；改界面用 ./do.sh build iter）"
+  log_success "patch-M 已就绪；残留已清理（产品 UI 在 client Rust；改界面用 ./do.sh build iter）"
 }
 
 cmd_addons() {

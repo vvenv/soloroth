@@ -9,8 +9,10 @@
 #         new migration file needs a fresh configure.
 # client: cargo --release → release/build/macos/client-target/release/benilla
 #         (shipping / Soloroth.app; no incremental — slow for one-line edits).
-# iter:   cargo --profile play → …/client-target/play/benilla
-#         (release opts + incremental; day-to-day Rust / UI loop).
+# iter:   cargo --profile dev → …/client-target/debug/benilla
+#         (workspace crates at opt-level 1 + incremental; day-to-day UI loop).
+#         Not --profile play: play inherits release (opt 3), so rebuilding
+#         benilla-app after a soloroth-ui edit still costs ~1 min.
 # all:    server + client (release).
 #
 # Needs: Xcode command line tools, Homebrew cmake, mariadb, openssl@3,
@@ -21,9 +23,9 @@ part="${1:-all}"
 jobs="$(sysctl -n hw.ncpu)"
 client_target="$root/release/build/macos/client-target"
 
-# Pick up sccache even when the invoking shell never exported RUSTC_WRAPPER
-# (Cursor, launchd, a fresh Terminal before ~/.zshrc reload).
-if [ -z "${RUSTC_WRAPPER:-}" ] && command -v sccache >/dev/null 2>&1; then
+# Always pin the wrapper when sccache is installed. Flipping RUSTC_WRAPPER
+# on/off between runs invalidates every fingerprint and rebuilds Bevy.
+if command -v sccache >/dev/null 2>&1; then
     export RUSTC_WRAPPER=sccache
 fi
 
@@ -44,26 +46,35 @@ build_server() {
     echo "== server: installed into ${prefix#$root/}"
 }
 
-# build_client_cargo <cargo-profile> — profile name is also the target subdir.
+# build_client_cargo <cargo-profile> — profile name is also the target subdir
+# (dev → debug/).
 build_client_cargo() {
     local profile="$1"
-    local out="$client_target/$profile/benilla"
+    local subdir="$profile"
+    [ "$profile" = "dev" ] && subdir=debug
+    local out="$client_target/$subdir/benilla"
+    local t0 t1
+    t0=$(date +%s)
     echo "== client: cargo build --profile $profile -p benilla${RUSTC_WRAPPER:+ (wrapper=$RUSTC_WRAPPER)}"
     (
         cd "$root/client"
         WOW_DATA="$root/Data" CARGO_TARGET_DIR="$client_target" \
             cargo build --profile "$profile" -p benilla
-    )
-    echo "== client: ${out#$root/}"
+    ) || {
+        echo "== client: FAILED ($profile)" >&2
+        exit 1
+    }
+    t1=$(date +%s)
+    echo "== client: ${out#$root/}  ($((t1 - t0))s)"
 }
 
 build_client() {
     build_client_cargo release
 }
 
-# Incremental day-to-day client build (see client/Cargo.toml [profile.play]).
+# Fast day-to-day client build (see client/Cargo.toml [profile.dev]).
 build_client_iter() {
-    build_client_cargo play
+    build_client_cargo dev
 }
 
 case "$part" in

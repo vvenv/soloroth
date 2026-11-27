@@ -3,12 +3,13 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 # Unattended client run for probes and screenshots (the dev build's WOW_* probe variables).
 client="${CLIENT_BIN:-$root/release/build/macos/client-target/release/benilla}"
-mkdir -p "$root/Logs" "$root/benilla-config/AddOns" "$root/client"
+mkdir -p "$root/Logs" "$root/benilla-config" "$root/client"
 # WOW_RIG character names need a checkout identity word.
 if [ ! -f "$root/client/.probe-identity" ]; then
   printf '%s\n' 'WOW_USER=PLAYER' 'WOW_CHAR=Probesmoke' 'WOW_PASS=player' > "$root/client/.probe-identity"
 fi
 export BENILLA_HOME="${BENILLA_HOME:-$root/benilla-config}"
+python3 "$root/tools/macos/build-product-media.py" "$root/Data"
 bash "$root/tools/macos/prune-legacy-ui.sh" --world-only
 export WOW_DATA="${WOW_DATA:-$root/Data}"
 export WOW_HOST="${WOW_HOST:-127.0.0.1}"

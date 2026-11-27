@@ -165,8 +165,9 @@ open(p, "w", encoding="utf-8").write(s)
 PY
 echo "benilla-config/config.toml: realm Azeroth, scriptMemory 0, showGameTips 0"
 
-# ---------------------------------------------------------- legacy UI prune ---
-step "prune-legacy-ui"
+# ------------------------------------------ product media + legacy UI prune ---
+step "product-media + prune-legacy-ui"
+python3 "$root/tools/macos/build-product-media.py" "$root/Data" || true
 bash "$root/tools/macos/prune-legacy-ui.sh" || true
 
 echo
