@@ -148,7 +148,7 @@ tools/macos/apply-visual.sh --status
 
 物品搜索目录 `client/crates/soloroth-ui/data/items.bin`：名字/拼音来自旧 Items 插件数据（`tools/items/lua_to_bin.py` → SIT1），图标由 `tools/items/bake-item-icons.py` 从 `item_template.display_id` × `ItemDisplayInfo.dbc` 写进 SIT2。改完需重编客户端。
 
-小动物 / 坐骑：服务端 `Player::CompanionUnlockSpell` / `AbsorbCompanionToken` 在 `StoreItem` 时把 on-use 含 `SUMMON_CRITTER` 或 `SPELL_AURA_MOUNTED` 的道具学会法术并销毁（登录加载同一路径，等于扫包迁移）。
+宠物 / 坐骑：服务端 `Player::CompanionUnlockSpell` / `AbsorbCompanionToken` 在 `StoreItem` 时把 on-use 含 `SUMMON_CRITTER` 或 `SPELL_AURA_MOUNTED` 的道具学会法术并销毁（登录加载同一路径，等于扫包迁移）。
 
 ## 跟进 vmangos 上游
 
